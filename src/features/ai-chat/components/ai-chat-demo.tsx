@@ -28,6 +28,13 @@ type ToolPart = {
   errorText?: string;
 };
 
+const STATUS_LABELS: Record<string, string> = {
+  submitted: '提交中',
+  streaming: '生成中',
+  ready: '就绪',
+  error: '错误'
+};
+
 function ToolMarker({ part }: { part: ToolPart }) {
   const name = part.toolName ?? part.type.replace(/^tool-/, '');
   const running = part.state === 'input-streaming' || part.state === 'input-available';
@@ -40,11 +47,11 @@ function ToolMarker({ part }: { part: ToolPart }) {
         <MarkerIcon>
           <Icons.code />
         </MarkerIcon>
-        {running ? (
-          <MarkerContent className='shimmer'>Running {name}…</MarkerContent>
+          {running ? (
+          <MarkerContent className='shimmer'>正在运行 {name}…</MarkerContent>
         ) : (
           <MarkerContent>
-            {errored ? 'Failed' : 'Called'}{' '}
+            {errored ? '失败' : '已调用'}{' '}
             <span className='text-foreground font-medium'>{name}</span>
           </MarkerContent>
         )}
@@ -80,11 +87,11 @@ export function AiChatDemo() {
             <Icons.sparkles className='size-4' />
           </div>
           <div className='min-w-0'>
-            <p className='text-sm font-medium'>Release Assistant</p>
-            <p className='text-muted-foreground text-xs'>Scripted demo · streamed via useChat</p>
+            <p className='text-sm font-medium'>发布助手</p>
+            <p className='text-muted-foreground text-xs'>脚本化演示 · 通过 useChat 流式输出</p>
           </div>
-          <Badge variant='outline' className='ml-auto capitalize'>
-            {status}
+          <Badge variant='outline' className='ml-auto'>
+            {STATUS_LABELS[status] ?? status}
           </Badge>
         </div>
 
@@ -96,8 +103,7 @@ export function AiChatDemo() {
                   <div className='text-muted-foreground flex flex-1 flex-col items-center justify-center gap-2 text-center text-sm'>
                     <Icons.sparkles className='size-8' />
                     <p>
-                      Press <span className='text-foreground font-medium'>Send</span> to stream the
-                      conversation.
+                      点击 <span className='text-foreground font-medium'>发送</span> 开始流式对话。
                     </p>
                   </div>
                 ) : (
@@ -170,7 +176,7 @@ export function AiChatDemo() {
                       </MessageAvatar>
                       <MessageContent>
                         <Marker>
-                          <MarkerContent className='shimmer'>Thinking…</MarkerContent>
+                          <MarkerContent className='shimmer'>思考中…</MarkerContent>
                         </Marker>
                       </MessageContent>
                     </Message>
@@ -189,12 +195,12 @@ export function AiChatDemo() {
             onClick={() => setMessages(demoChat.get(0))}
             disabled={isBusy || messages.length === 0}
           >
-            Restart
+            重新开始
           </Button>
           <LoadingButton
             className='ml-auto'
             loading={isBusy}
-            loadingLabel='Streaming response'
+            loadingLabel='正在生成回复'
             disabled={!nextMessage}
             onClick={() => {
               if (nextMessage) void sendMessage(nextMessage);
@@ -202,10 +208,10 @@ export function AiChatDemo() {
           >
             {nextMessage ? (
               <>
-                <Icons.send className='size-4' /> Send next message
+                <Icons.send className='size-4' /> 发送下一条消息
               </>
             ) : (
-              'End of demo'
+              '演示结束'
             )}
           </LoadingButton>
         </div>

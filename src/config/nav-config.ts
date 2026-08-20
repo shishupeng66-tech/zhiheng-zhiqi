@@ -35,10 +35,10 @@ import { NavGroup } from '@/types';
  */
 export const navGroups: NavGroup[] = [
   {
-    label: 'Overview',
+    label: '概览',
     items: [
       {
-        title: 'Dashboard',
+        title: '仪表盘',
         url: '/dashboard/overview',
         icon: 'dashboard',
         isActive: false,
@@ -46,14 +46,14 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
-        title: 'Workspaces',
+        title: '工作空间',
         url: '/dashboard/workspaces',
         icon: 'workspace',
         isActive: false,
         items: []
       },
       {
-        title: 'Teams',
+        title: '团队',
         url: '/dashboard/workspaces/team',
         icon: 'teams',
         isActive: false,
@@ -61,7 +61,7 @@ export const navGroups: NavGroup[] = [
         access: { requireOrg: true }
       },
       {
-        title: 'Product',
+        title: '产品',
         url: '/dashboard/product',
         icon: 'product',
         shortcut: ['p', 'p'],
@@ -69,7 +69,7 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
-        title: 'Users',
+        title: '用户',
         url: '/dashboard/users',
         icon: 'teams',
         shortcut: ['u', 'u'],
@@ -77,7 +77,7 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
-        title: 'Kanban',
+        title: '看板',
         url: '/dashboard/kanban',
         icon: 'kanban',
         shortcut: ['k', 'k'],
@@ -85,7 +85,7 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
-        title: 'Chat',
+        title: '聊天',
         url: '/dashboard/chat',
         icon: 'chat',
         shortcut: ['c', 'c'],
@@ -93,7 +93,7 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
-        title: 'AI Chat',
+        title: 'AI 聊天',
         url: '/dashboard/ai-chat',
         icon: 'sparkles',
         shortcut: ['a', 'i'],
@@ -103,32 +103,32 @@ export const navGroups: NavGroup[] = [
     ]
   },
   {
-    label: 'Elements',
+    label: '组件',
     items: [
       {
-        title: 'Forms',
+        title: '表单',
         url: '#',
         icon: 'forms',
         isActive: true,
         items: [
           {
-            title: 'Basic Form',
+            title: '基础表单',
             url: '/dashboard/forms/basic',
             icon: 'forms',
             shortcut: ['f', 'f']
           },
           {
-            title: 'Multi-Step Form',
+            title: '分步表单',
             url: '/dashboard/forms/multi-step',
             icon: 'forms'
           },
           {
-            title: 'Sheet & Dialog',
+            title: '抽屉与弹窗',
             url: '/dashboard/forms/sheet-form',
             icon: 'forms'
           },
           {
-            title: 'Advanced Patterns',
+            title: '高级模式',
             url: '/dashboard/forms/advanced',
             icon: 'forms'
           }
@@ -142,7 +142,7 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
-        title: 'Icons',
+        title: '图标',
         url: '/dashboard/elements/icons',
         icon: 'palette',
         isActive: false,
@@ -160,7 +160,7 @@ export const navGroups: NavGroup[] = [
         isActive: false,
         items: [
           {
-            title: 'Exclusive',
+            title: '专属',
             url: '/dashboard/exclusive',
             icon: 'exclusive',
             shortcut: ['e', 'e']
@@ -168,32 +168,32 @@ export const navGroups: NavGroup[] = [
         ]
       },
       {
-        title: 'Account',
+        title: '账户',
         url: '#',
         icon: 'account',
         isActive: true,
         items: [
           {
-            title: 'Profile',
+            title: '个人资料',
             url: '/dashboard/profile',
             icon: 'profile',
             shortcut: ['m', 'm']
           },
           {
-            title: 'Notifications',
+            title: '通知',
             url: '/dashboard/notifications',
             icon: 'notification',
             shortcut: ['n', 'n']
           },
           {
-            title: 'Billing',
+            title: '账单',
             url: '/dashboard/billing',
             icon: 'billing',
             shortcut: ['b', 'b'],
             access: { requireOrg: true }
           },
           {
-            title: 'Login',
+            title: '登录',
             shortcut: ['l', 'l'],
             url: '/',
             icon: 'login'

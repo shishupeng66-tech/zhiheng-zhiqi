@@ -10,16 +10,45 @@ type BreadcrumbItem = {
 
 // This allows to add custom title as well
 const routeMapping: Record<string, BreadcrumbItem[]> = {
-  '/dashboard': [{ title: 'Dashboard', link: '/dashboard' }],
+  '/dashboard': [{ title: '仪表盘', link: '/dashboard' }],
   '/dashboard/employee': [
-    { title: 'Dashboard', link: '/dashboard' },
-    { title: 'Employee', link: '/dashboard/employee' }
+    { title: '仪表盘', link: '/dashboard' },
+    { title: '员工', link: '/dashboard/employee' }
   ],
   '/dashboard/product': [
-    { title: 'Dashboard', link: '/dashboard' },
-    { title: 'Product', link: '/dashboard/product' }
+    { title: '仪表盘', link: '/dashboard' },
+    { title: '产品', link: '/dashboard/product' }
   ]
   // Add more custom mappings as needed
+};
+
+// Map individual path segments to Chinese labels (used as a fallback
+// for routes that don't have an explicit routeMapping entry)
+const segmentLabels: Record<string, string> = {
+  dashboard: '仪表盘',
+  overview: '概览',
+  workspaces: '工作空间',
+  team: '团队',
+  product: '产品',
+  products: '产品',
+  users: '用户',
+  kanban: '看板',
+  chat: '聊天',
+  'ai-chat': 'AI 聊天',
+  forms: '表单',
+  basic: '基础表单',
+  'multi-step': '分步表单',
+  'sheet-form': '抽屉与弹窗',
+  advanced: '高级模式',
+  'react-query': 'React Query',
+  elements: '组件',
+  icons: '图标',
+  exclusive: '专属',
+  account: '账户',
+  profile: '个人资料',
+  notifications: '通知',
+  billing: '账单',
+  employee: '员工'
 };
 
 export function useBreadcrumbs() {
@@ -36,7 +65,7 @@ export function useBreadcrumbs() {
     return segments.map((segment, index) => {
       const path = `/${segments.slice(0, index + 1).join('/')}`;
       return {
-        title: segment.charAt(0).toUpperCase() + segment.slice(1),
+        title: segmentLabels[segment] ?? segment.charAt(0).toUpperCase() + segment.slice(1),
         link: path
       };
     });

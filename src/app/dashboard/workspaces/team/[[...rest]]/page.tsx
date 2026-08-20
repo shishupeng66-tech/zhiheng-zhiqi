@@ -7,8 +7,8 @@ import { teamInfoContent } from '@/config/infoconfig';
 export default function TeamPage() {
   return (
     <PageContainer
-      pageTitle='Team Management'
-      pageDescription='Manage your workspace team, members, roles, security and more.'
+      pageTitle='团队管理'
+      pageDescription='管理当前工作空间的团队成员、角色、安全设置等。'
       infoContent={teamInfoContent}
     >
       <OrganizationProfile />

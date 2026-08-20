@@ -22,9 +22,9 @@ import { userSchema, type UserFormValues } from '../schemas/user';
 import { ROLE_OPTIONS } from './users-table/options';
 
 const STATUS_OPTIONS = [
-  { value: 'Active', label: 'Active' },
-  { value: 'Inactive', label: 'Inactive' },
-  { value: 'Invited', label: 'Invited' }
+  { value: 'Active', label: '启用' },
+  { value: 'Inactive', label: '停用' },
+  { value: 'Invited', label: '已邀请' }
 ];
 
 interface UserFormSheetProps {
@@ -39,20 +39,20 @@ export function UserFormSheet({ user, open, onOpenChange }: UserFormSheetProps) 
   const createMutation = useMutation({
     ...createUserMutation,
     onSuccess: () => {
-      toast.success('User created');
+      toast.success('用户已创建');
       onOpenChange(false);
       form.reset();
     },
-    onError: () => toast.error("Couldn't create user. Try again.")
+    onError: () => toast.error('无法创建用户，请重试。')
   });
 
   const updateMutation = useMutation({
     ...updateUserMutation,
     onSuccess: () => {
-      toast.success('User updated');
+      toast.success('用户已更新');
       onOpenChange(false);
     },
-    onError: () => toast.error("Couldn't update user. Try again.")
+    onError: () => toast.error('无法更新用户，请重试。')
   });
 
   const form = useAppForm({
@@ -82,11 +82,11 @@ export function UserFormSheet({ user, open, onOpenChange }: UserFormSheetProps) 
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className='flex flex-col'>
         <SheetHeader>
-          <SheetTitle>{isEdit ? 'Edit User' : 'New User'}</SheetTitle>
+          <SheetTitle>{isEdit ? '编辑用户' : '新建用户'}</SheetTitle>
           <SheetDescription>
             {isEdit
-              ? 'Update the user details below.'
-              : 'Fill in the details to create a new user.'}
+              ? '在下方更新用户详情。'
+              : '填写详细信息以创建新用户。'}
           </SheetDescription>
         </SheetHeader>
 
@@ -104,13 +104,13 @@ export function UserFormSheet({ user, open, onOpenChange }: UserFormSheetProps) 
                 <form.AppField
                   name='first_name'
                   children={(field) => (
-                    <field.TextField label='First Name' required placeholder='John' />
+                    <field.TextField label='名' required placeholder='请输入名' />
                   )}
                 />
                 <form.AppField
                   name='last_name'
                   children={(field) => (
-                    <field.TextField label='Last Name' required placeholder='Doe' />
+                    <field.TextField label='姓' required placeholder='请输入姓' />
                   )}
                 />
               </div>
@@ -119,10 +119,10 @@ export function UserFormSheet({ user, open, onOpenChange }: UserFormSheetProps) 
                 name='email'
                 children={(field) => (
                   <field.TextField
-                    label='Email'
+                    label='邮箱'
                     required
                     type='email'
-                    placeholder='john@example.com'
+                    placeholder='zhangsan@example.com'
                   />
                 )}
               />
@@ -130,7 +130,7 @@ export function UserFormSheet({ user, open, onOpenChange }: UserFormSheetProps) 
               <form.AppField
                 name='phone'
                 children={(field) => (
-                  <field.TextField label='Phone' required type='tel' placeholder='(555) 123-4567' />
+                  <field.TextField label='电话' required type='tel' placeholder='请输入电话号码' />
                 )}
               />
 
@@ -138,10 +138,10 @@ export function UserFormSheet({ user, open, onOpenChange }: UserFormSheetProps) 
                 name='role'
                 children={(field) => (
                   <field.SelectField
-                    label='Role'
+                    label='角色'
                     required
                     options={ROLE_OPTIONS}
-                    placeholder='Select role'
+                    placeholder='请选择角色'
                   />
                 )}
               />
@@ -150,10 +150,10 @@ export function UserFormSheet({ user, open, onOpenChange }: UserFormSheetProps) 
                 name='status'
                 children={(field) => (
                   <field.SelectField
-                    label='Status'
+                    label='状态'
                     required
                     options={STATUS_OPTIONS}
-                    placeholder='Select status'
+                    placeholder='请选择状态'
                   />
                 )}
               />
@@ -163,10 +163,10 @@ export function UserFormSheet({ user, open, onOpenChange }: UserFormSheetProps) 
 
         <SheetFooter>
           <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
-            Cancel
+            取消
           </Button>
           <LoadingButton loading={isPending} type='submit' form='user-form-sheet'>
-            {isEdit ? 'Update User' : 'Create User'}
+            {isEdit ? '更新用户' : '创建用户'}
           </LoadingButton>
         </SheetFooter>
       </SheetContent>
@@ -180,7 +180,7 @@ export function UserFormSheetTrigger() {
   return (
     <>
       <Button onClick={() => setOpen(true)}>
-        <Icons.add className='mr-2 h-4 w-4' /> Add User
+        <Icons.add className='mr-2 h-4 w-4' /> 添加用户
       </Button>
       <UserFormSheet open={open} onOpenChange={setOpen} />
     </>

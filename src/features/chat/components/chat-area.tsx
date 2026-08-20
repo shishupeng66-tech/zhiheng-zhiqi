@@ -51,7 +51,7 @@ export function ChatArea({
     const lastMessage = conversation.messages[conversation.messages.length - 1];
     if (!lastMessage) return;
     liveRegionRef.current.textContent =
-      lastMessage.author + ' at ' + lastMessage.timestamp + ': ' + lastMessage.text;
+      lastMessage.author + ' 于 ' + lastMessage.timestamp + ' 说：' + lastMessage.text;
   }, [conversation.messages]);
 
   return (
@@ -71,7 +71,7 @@ export function ChatArea({
             ref={messagesContainerRef}
             className='[&::-webkit-scrollbar-thumb]:bg-muted relative min-h-0 flex-1 space-y-3 overflow-y-auto pr-2 sm:space-y-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full'
             aria-live='off'
-            aria-label={'Message thread with ' + conversation.name}
+            aria-label={'与 ' + conversation.name + ' 的会话'}
           >
             <AnimatePresence initial={false}>
               {conversation.messages.map((message) => (

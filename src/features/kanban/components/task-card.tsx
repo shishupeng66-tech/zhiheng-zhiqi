@@ -4,6 +4,12 @@ import { Badge } from '@/components/ui/badge';
 import { KanbanItem } from '@/components/ui/kanban';
 import type { Task } from '../utils/store';
 
+const PRIORITY_LABELS: Record<string, string> = {
+  low: '低',
+  medium: '中',
+  high: '高'
+};
+
 interface TaskCardProps extends Omit<React.ComponentProps<typeof KanbanItem>, 'value'> {
   task: Task;
 }
@@ -27,9 +33,9 @@ export function TaskCard({ task, ...props }: TaskCardProps) {
                   ? 'default'
                   : 'secondary'
             }
-            className='pointer-events-none h-5 rounded-sm px-1.5 text-[11px] capitalize'
+            className='pointer-events-none h-5 rounded-sm px-1.5 text-[11px]'
           >
-            {task.priority}
+            {PRIORITY_LABELS[task.priority] ?? task.priority}
           </Badge>
         </div>
         <div className='text-muted-foreground flex items-center justify-between text-xs'>

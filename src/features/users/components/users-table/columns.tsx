@@ -12,7 +12,7 @@ export const columns: ColumnDef<User>[] = [
     id: 'name',
     accessorFn: (row) => `${row.first_name} ${row.last_name}`,
     header: ({ column }: { column: Column<User, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Name' />
+      <DataTableColumnHeader column={column} title='姓名' />
     ),
     cell: ({ row }) => (
       <div className='flex flex-col'>
@@ -23,8 +23,8 @@ export const columns: ColumnDef<User>[] = [
       </div>
     ),
     meta: {
-      label: 'Name',
-      placeholder: 'Search users...',
+      label: '姓名',
+      placeholder: '搜索用户...',
       variant: 'text' as const,
       icon: Icons.text
     },
@@ -32,14 +32,14 @@ export const columns: ColumnDef<User>[] = [
   },
   {
     accessorKey: 'phone',
-    header: 'PHONE'
+    header: '电话'
   },
   {
     id: 'role',
     accessorKey: 'role',
     enableSorting: false,
     header: ({ column }: { column: Column<User, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Role' />
+      <DataTableColumnHeader column={column} title='角色' />
     ),
     cell: ({ cell }) => {
       return (
@@ -50,14 +50,14 @@ export const columns: ColumnDef<User>[] = [
     },
     enableColumnFilter: true,
     meta: {
-      label: 'roles',
+      label: '角色',
       variant: 'multiSelect' as const,
       options: ROLE_OPTIONS
     }
   },
   {
     accessorKey: 'status',
-    header: 'STATUS',
+    header: '状态',
     cell: ({ cell }) => {
       const status = cell.getValue<User['status']>();
       const variant =

@@ -8,10 +8,10 @@ export default function CtaGithub() {
       size='sm'
       className='group hidden sm:flex'
       nativeButton={false}
-      aria-label='View on GitHub'
+      aria-label='在 GitHub 上查看'
       render={
         <a
-          aria-label='View on GitHub'
+          aria-label='在 GitHub 上查看'
           href='https://github.com/Kiranism/next-shadcn-dashboard-starter'
           rel='noopener noreferrer'
           target='_blank'

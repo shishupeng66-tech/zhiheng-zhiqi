@@ -1,40 +1,40 @@
 import type { InfobarContent } from '@/components/ui/infobar';
 
 export const usersInfoContent: InfobarContent = {
-  title: 'Users — React Query + nuqs Pattern',
+  title: '用户 — React Query + nuqs 模式',
   sections: [
     {
-      title: 'Overview',
+      title: '概述',
       description:
-        'This page demonstrates client-side data fetching with React Query combined with nuqs URL search params — as an alternative to the Products page which uses server-side RSC fetching. Both patterns use the same DataTable, useDataTable hook, and nuqs URL state.',
+        '本页演示了结合 React Query 的客户端数据获取与 nuqs URL 搜索参数——作为产品页（使用服务端 RSC 获取）的替代方案。两种模式使用相同的 DataTable、useDataTable Hook 与 nuqs URL 状态。',
       links: [
         {
-          title: 'TanStack Query SSR Docs',
+          title: 'TanStack Query SSR 文档',
           url: 'https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr'
         }
       ]
     },
     {
-      title: 'Server Prefetch + Client Hydration',
+      title: '服务端预取 + 客户端水合',
       description:
-        'The server component reads search params via searchParamsCache, builds filters, and calls queryClient.prefetchQuery(). The dehydrated state is passed to HydrationBoundary so the client starts with cached data. The client component reads the same search params via useQueryState and calls useSuspenseQuery with matching filters.',
+        '服务端组件通过 searchParamsCache 读取搜索参数、构建筛选条件并调用 queryClient.prefetchQuery()。脱水后的状态会传给 HydrationBoundary，使客户端以缓存数据启动。客户端组件通过 useQueryState 读取相同的搜索参数，并使用匹配的筛选条件调用 useSuspenseQuery。',
       links: []
     },
     {
-      title: 'URL State with nuqs',
+      title: '使用 nuqs 管理 URL 状态',
       description:
-        'Pagination, search, and role filters are synced to the URL via nuqs. The useDataTable hook manages the TanStack Table state and debounces filter changes before updating the URL. When the URL changes, React Query automatically refetches because the query key includes the filters.',
+        '分页、搜索与角色筛选通过 nuqs 同步到 URL。useDataTable Hook 管理 TanStack Table 的状态，并在更新 URL 前对筛选变更进行防抖。当 URL 变化时，由于查询键包含筛选条件，React Query 会自动重新获取。',
       links: [
         {
-          title: 'nuqs Documentation',
+          title: 'nuqs 文档',
           url: 'https://nuqs.47ng.com'
         }
       ]
     },
     {
-      title: 'Products vs Users Pattern',
+      title: '产品页与用户页模式对比',
       description:
-        'Products: searchParams → RSC fetch → pass data as props to client table. Users: searchParams → server prefetch → HydrationBoundary → client useSuspenseQuery. The Users pattern enables background refetching, cache sharing across components, and optimistic mutations.',
+        '产品页：searchParams → RSC 获取 → 作为 props 传给客户端表格。用户页：searchParams → 服务端预取 → HydrationBoundary → 客户端 useSuspenseQuery。用户页模式支持后台重新获取、跨组件缓存共享与乐观更新。',
       links: []
     }
   ]

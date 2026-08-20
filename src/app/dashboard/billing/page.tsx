@@ -18,32 +18,31 @@ export default function BillingPage() {
       accessFallback={
         <div className='flex min-h-[400px] items-center justify-center'>
           <div className='space-y-2 text-center'>
-            <h2 className='text-2xl font-semibold'>No Organization Selected</h2>
+            <h2 className='text-2xl font-semibold'>未选择组织</h2>
             <p className='text-muted-foreground'>
-              Please select or create an organization to view billing information.
+              请选择或创建一个组织以查看账单信息。
             </p>
           </div>
         </div>
       }
       infoContent={billingInfoContent}
-      pageTitle='Billing & Plans'
-      pageDescription={`Manage your subscription and usage limits for ${organization?.name}`}
+      pageTitle='账单与套餐'
+      pageDescription={`管理 ${organization?.name} 的订阅与使用额度`}
     >
       <div className='space-y-6'>
         {/* Info Alert */}
         <Alert>
           <Icons.info className='h-4 w-4' />
           <AlertDescription>
-            Plans and subscriptions are managed through Clerk Billing. Subscribe to a plan to unlock
-            features and higher limits.
+            套餐与订阅通过 Clerk Billing 管理。订阅套餐以解锁更多功能与更高的额度限制。
           </AlertDescription>
         </Alert>
 
         {/* Clerk Pricing Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Available Plans</CardTitle>
-            <CardDescription>Choose a plan that fits your organization's needs</CardDescription>
+            <CardTitle>可用套餐</CardTitle>
+            <CardDescription>选择适合你组织需求的套餐</CardDescription>
           </CardHeader>
           <CardContent>
             <div className='mx-auto max-w-4xl'>

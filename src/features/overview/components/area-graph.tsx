@@ -14,27 +14,27 @@ import { Icons } from '@/components/icons';
 import React from 'react';
 
 const chartData = [
-  { month: 'January', desktop: 342, mobile: 245 },
-  { month: 'February', desktop: 876, mobile: 654 },
-  { month: 'March', desktop: 512, mobile: 387 },
-  { month: 'April', desktop: 629, mobile: 521 },
-  { month: 'May', desktop: 458, mobile: 412 },
-  { month: 'June', desktop: 781, mobile: 598 },
-  { month: 'July', desktop: 394, mobile: 312 },
-  { month: 'August', desktop: 925, mobile: 743 },
-  { month: 'September', desktop: 647, mobile: 489 },
-  { month: 'October', desktop: 532, mobile: 476 },
-  { month: 'November', desktop: 803, mobile: 687 },
-  { month: 'December', desktop: 271, mobile: 198 }
+  { month: '一月', desktop: 342, mobile: 245 },
+  { month: '二月', desktop: 876, mobile: 654 },
+  { month: '三月', desktop: 512, mobile: 387 },
+  { month: '四月', desktop: 629, mobile: 521 },
+  { month: '五月', desktop: 458, mobile: 412 },
+  { month: '六月', desktop: 781, mobile: 598 },
+  { month: '七月', desktop: 394, mobile: 312 },
+  { month: '八月', desktop: 925, mobile: 743 },
+  { month: '九月', desktop: 647, mobile: 489 },
+  { month: '十月', desktop: 532, mobile: 476 },
+  { month: '十一月', desktop: 803, mobile: 687 },
+  { month: '十二月', desktop: 271, mobile: 198 }
 ];
 
 const chartConfig = {
   desktop: {
-    label: 'Desktop',
+    label: '桌面端',
     color: 'var(--chart-1)'
   },
   mobile: {
-    label: 'Mobile',
+    label: '移动端',
     color: 'var(--chart-2)'
   }
 } satisfies ChartConfig;
@@ -44,13 +44,13 @@ export function AreaGraph() {
     <Card>
       <CardHeader>
         <CardTitle>
-          Dotted Area Chart
+          点状面积图
           <Badge variant='outline'>
             <Icons.trendingUp />
             -5.2%
           </Badge>
         </CardTitle>
-        <CardDescription>Showing total visitors for the last 6 months</CardDescription>
+        <CardDescription>展示过去 6 个月的总访客数</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig}>
