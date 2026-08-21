@@ -75,3 +75,31 @@ export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type UserWorkspace = typeof userWorkspaces.$inferSelect;
 export type NewUserWorkspace = typeof userWorkspaces.$inferInsert;
+
+/**
+ * 登录会话表（sessions）
+ * 本地 Session 体系：每次成功登录生成随机且不可预测的 session_token，
+ * 写入 HttpOnly Cookie；中间件 / 服务端据此识别当前用户。
+ * expires_at 过期即视为无效；destroySession 删除该行即完成登出。
+ * session_token 使用 256bit 随机十六进制（crypto.randomBytes(32)），不可被猜测。
+ */
+export const sessions = sqliteTable(
+  'sessions',
+  {
+    id: text('id').primaryKey(),
+    /** 随机不可预测的会话令牌，全局唯一 */
+    sessionToken: text('session_token').notNull(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** 会话过期时间（毫秒时间戳） */
+    expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull()
+  },
+  (table) => ({
+    sessionTokenUnique: uniqueIndex('sessions_token_unique').on(table.sessionToken)
+  })
+);
+
+export type Session = typeof sessions.$inferSelect;
+export type NewSession = typeof sessions.$inferInsert;

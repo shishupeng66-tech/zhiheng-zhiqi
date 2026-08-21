@@ -1,26 +1,29 @@
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { SignUp as ClerkSignUpForm } from '@clerk/nextjs';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { InteractiveGridPattern } from './interactive-grid';
 
 export const metadata: Metadata = {
   title: '注册',
-  description: '使用组件构建的注册表单。'
+  description: '注册功能已关闭'
 };
 
+/**
+ * 注册入口已关闭（本地企业部署：账号由系统管理员统一创建）。
+ * 保留本文件结构作为备份，不再挂载 Clerk <SignUp>。
+ */
 export default function SignUpViewPage() {
   return (
-    <div className='relative h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0'>
+    <div className='relative flex min-h-screen flex-col items-center justify-center overflow-hidden md:grid lg:max-w-none lg:grid-cols-2 lg:px-0'>
       <Link
-        href='/examples/authentication'
+        href='/auth/sign-in'
         className={cn(
           buttonVariants({ variant: 'ghost' }),
           'absolute top-4 right-4 hidden md:top-8 md:right-8'
         )}
       >
-        注册
+        返回登录
       </Link>
       <div className='relative hidden h-full flex-col p-10 lg:flex dark:border-r'>
         <div className='absolute inset-0 bg-sidebar' />
@@ -56,7 +59,20 @@ export default function SignUpViewPage() {
       </div>
       <div className='flex h-full items-center justify-center p-4 lg:p-8'>
         <div className='flex w-full max-w-md flex-col items-center justify-center space-y-6'>
-          <ClerkSignUpForm />
+          <div className='flex flex-col space-y-2 text-center'>
+            <h1 className='text-2xl font-semibold tracking-tight'>注册功能已关闭</h1>
+            <p className='text-muted-foreground text-sm'>
+              本系统为企业内部部署，账号由系统管理员统一创建。
+            </p>
+          </div>
+          <div className='bg-muted w-full rounded-lg border p-6 text-center text-sm text-muted-foreground'>
+            如需开通账号，请联系贵公司的系统管理员。
+            <br />
+            已拥有账号？请直接登录。
+          </div>
+          <Link href='/auth/sign-in' className={cn(buttonVariants(), 'w-full')}>
+            前往登录
+          </Link>
         </div>
       </div>
     </div>
