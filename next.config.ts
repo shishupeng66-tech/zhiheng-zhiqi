@@ -24,6 +24,8 @@ const baseConfig: NextConfig = {
     ]
   },
   transpilePackages: ['geist'],
+  // better-sqlite3 是原生模块，交由 Node 运行时直接 require，不被 Next 打包
+  serverExternalPackages: ['better-sqlite3'],
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production'
   }

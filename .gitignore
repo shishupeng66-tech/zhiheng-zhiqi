@@ -42,6 +42,18 @@ next-env.d.ts
 # clerk configuration (can include secrets)
 /.clerk/
 
+# local SQLite database (企业本地部署数据，禁止提交真实库到 Git)
+/data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.sqlite-jwal
+*.sqlite-wal
+*.sqlite-shm
+
 
 # cursor 
 .cursorrules
