@@ -41,7 +41,7 @@ const chartConfig = {
     color: 'var(--chart-4)'
   },
   other: {
-    label: 'Other',
+    label: '其他',
     color: 'var(--chart-5)'
   }
 } satisfies ChartConfig;

@@ -158,11 +158,7 @@ export default function MultiStepProductForm() {
                 <form.AppField
                   name='name'
                   children={(field) => (
-                    <field.TextField
-                      label='产品名称'
-                      required
-                      placeholder='请输入产品名称'
-                    />
+                    <field.TextField label='产品名称' required placeholder='请输入产品名称' />
                   )}
                 />
 

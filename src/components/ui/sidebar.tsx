@@ -189,8 +189,8 @@ function Sidebar({
           side={side}
         >
           <SheetHeader className='sr-only'>
-            <SheetTitle>Sidebar</SheetTitle>
-            <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+            <SheetTitle>侧边栏</SheetTitle>
+            <SheetDescription>显示移动端侧边栏。</SheetDescription>
           </SheetHeader>
           <div className='flex h-full w-full flex-col'>{children}</div>
         </SheetContent>
@@ -261,7 +261,7 @@ function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<t
       {...props}
     >
       <IconLayoutSidebar />
-      <span className='sr-only'>Toggle Sidebar</span>
+      <span className='sr-only'>切换侧边栏</span>
     </Button>
   );
 }

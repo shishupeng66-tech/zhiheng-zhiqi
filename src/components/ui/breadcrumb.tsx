@@ -87,7 +87,7 @@ function BreadcrumbEllipsis({ className, ...props }: React.ComponentProps<'span'
       {...props}
     >
       <IconDots />
-      <span className='sr-only'>More</span>
+      <span className='sr-only'>更多</span>
     </span>
   );
 }

@@ -47,7 +47,7 @@ function ToolMarker({ part }: { part: ToolPart }) {
         <MarkerIcon>
           <Icons.code />
         </MarkerIcon>
-          {running ? (
+        {running ? (
           <MarkerContent className='shimmer'>正在运行 {name}…</MarkerContent>
         ) : (
           <MarkerContent>

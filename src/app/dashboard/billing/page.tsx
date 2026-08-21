@@ -19,9 +19,7 @@ export default function BillingPage() {
         <div className='flex min-h-[400px] items-center justify-center'>
           <div className='space-y-2 text-center'>
             <h2 className='text-2xl font-semibold'>未选择组织</h2>
-            <p className='text-muted-foreground'>
-              请选择或创建一个组织以查看账单信息。
-            </p>
+            <p className='text-muted-foreground'>请选择或创建一个组织以查看账单信息。</p>
           </div>
         </div>
       }

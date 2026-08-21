@@ -20,16 +20,7 @@ export type Product = {
 };
 
 function generateRandomProductData(id: number): Product {
-  const categories = [
-    'Electronics',
-    'Furniture',
-    'Clothing',
-    'Toys',
-    'Groceries',
-    'Books',
-    'Jewelry',
-    'Beauty Products'
-  ];
+  const categories = ['电子产品', '家具', '服装', '玩具', '食品杂货', '图书', '珠宝', '美妆个护'];
 
   return {
     id,
@@ -140,7 +131,7 @@ export const fakeProducts = {
     return {
       success: true,
       time: currentTime,
-      message: 'Sample data for testing and learning purposes',
+      message: '用于测试与学习的示例数据',
       total_products: totalProducts,
       offset,
       limit,
@@ -158,7 +149,7 @@ export const fakeProducts = {
     if (!product) {
       return {
         success: false,
-        message: `Product with ID ${id} not found`
+        message: `未找到 ID 为 ${id} 的产品`
       };
     }
 
@@ -189,7 +180,7 @@ export const fakeProducts = {
 
     return {
       success: true,
-      message: 'Product created successfully',
+      message: '产品创建成功',
       product: newProduct
     };
   },
@@ -206,7 +197,7 @@ export const fakeProducts = {
     if (index === -1) {
       return {
         success: false,
-        message: `Product with ID ${id} not found`
+        message: `未找到 ID 为 ${id} 的产品`
       };
     }
 
@@ -218,7 +209,7 @@ export const fakeProducts = {
 
     return {
       success: true,
-      message: 'Product updated successfully',
+      message: '产品更新成功',
       product: this.records[index]
     };
   },
@@ -237,7 +228,7 @@ export const fakeProducts = {
 
     return {
       success: true,
-      message: 'Product deleted successfully'
+      message: '产品删除成功'
     };
   }
 };

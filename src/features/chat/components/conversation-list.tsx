@@ -64,11 +64,7 @@ export function ConversationList({ conversations, selectedId, onSelect }: Conver
         />
       </div>
 
-      <div
-        className='flex-1 space-y-2 overflow-y-auto pr-1'
-        aria-label='会话列表'
-        role='list'
-      >
+      <div className='flex-1 space-y-2 overflow-y-auto pr-1' aria-label='会话列表' role='list'>
         {filtered.length === 0 ? (
           <p className='text-muted-foreground py-8 text-center text-xs'>未找到会话</p>
         ) : null}

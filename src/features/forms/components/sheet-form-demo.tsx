@@ -94,9 +94,7 @@ function SheetFormSection() {
           <SheetContent className='flex flex-col'>
             <SheetHeader>
               <SheetTitle>新建产品</SheetTitle>
-              <SheetDescription>
-                填写以下信息以创建新产品。
-              </SheetDescription>
+              <SheetDescription>填写以下信息以创建新产品。</SheetDescription>
             </SheetHeader>
 
             <form
@@ -111,11 +109,7 @@ function SheetFormSection() {
                 <form.AppField
                   name='name'
                   children={(field) => (
-                    <field.TextField
-                      label='产品名称'
-                      required
-                      placeholder='请输入产品名称'
-                    />
+                    <field.TextField label='产品名称' required placeholder='请输入产品名称' />
                   )}
                 />
 
@@ -203,9 +197,7 @@ function DialogFormSection() {
     <Card>
       <CardHeader>
         <CardTitle>弹窗表单</CardTitle>
-        <CardDescription>
-          在弹窗（Dialog）内的快捷反馈表单，提交按钮位于弹窗底部。
-        </CardDescription>
+        <CardDescription>在弹窗（Dialog）内的快捷反馈表单，提交按钮位于弹窗底部。</CardDescription>
       </CardHeader>
       <CardContent>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -280,9 +272,7 @@ function ToastDemoSection() {
     <Card className='md:col-span-2'>
       <CardHeader>
         <CardTitle>Toast 通知</CardTitle>
-        <CardDescription>
-          触发不同类型的 Toast 以预览通知样式。
-        </CardDescription>
+        <CardDescription>触发不同类型的 Toast 以预览通知样式。</CardDescription>
       </CardHeader>
       <CardContent className='flex flex-wrap gap-2'>
         <Button variant='outline' onClick={() => toast('默认通知')}>

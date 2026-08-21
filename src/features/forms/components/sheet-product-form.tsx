@@ -53,14 +53,14 @@ export default function SheetProductForm() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger render={<Button />}>
-          <Icons.add className='mr-2 h-4 w-4' />
-          添加产品
-        </SheetTrigger>
-        <SheetContent className='flex flex-col'>
-          <SheetHeader>
-            <SheetTitle>新建产品</SheetTitle>
-            <SheetDescription>填写详细信息以创建新产品。</SheetDescription>
-          </SheetHeader>
+        <Icons.add className='mr-2 h-4 w-4' />
+        添加产品
+      </SheetTrigger>
+      <SheetContent className='flex flex-col'>
+        <SheetHeader>
+          <SheetTitle>新建产品</SheetTitle>
+          <SheetDescription>填写详细信息以创建新产品。</SheetDescription>
+        </SheetHeader>
 
         <div className='flex-1 overflow-auto'>
           <form

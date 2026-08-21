@@ -16,7 +16,7 @@ export function UserAvatarProfile({ className, showInfo = false, user }: UserAva
       <Avatar className={className}>
         <AvatarImage src={user?.imageUrl || ''} alt={user?.fullName || ''} />
         <AvatarFallback className='rounded-lg'>
-          {user?.fullName?.slice(0, 2)?.toUpperCase() || 'CN'}
+          {user?.fullName?.slice(0, 2)?.toUpperCase() || '用户'}
         </AvatarFallback>
       </Avatar>
 

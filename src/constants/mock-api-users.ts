@@ -20,8 +20,8 @@ export type User = {
 };
 
 function generateRandomUserData(id: number): User {
-  const roles = ['Developer', 'Designer', 'Manager', 'QA', 'DevOps', 'Product Owner'];
-  const statuses = ['Active', 'Inactive', 'Invited'];
+  const roles = ['开发工程师', '设计师', '经理', '测试工程师', '运维工程师', '产品经理'];
+  const statuses = ['启用', '停用', '已邀请'];
 
   return {
     id,
@@ -79,7 +79,7 @@ export const fakeUsers = {
 
     return {
       success: true,
-      message: 'User created successfully',
+      message: '用户创建成功',
       user: newUser
     };
   },
@@ -101,7 +101,7 @@ export const fakeUsers = {
 
     return {
       success: true,
-      message: 'User updated successfully',
+      message: '用户更新成功',
       user: this.records[index]
     };
   },
@@ -119,7 +119,7 @@ export const fakeUsers = {
 
     return {
       success: true,
-      message: 'User deleted successfully'
+      message: '用户删除成功'
     };
   },
 
@@ -179,7 +179,7 @@ export const fakeUsers = {
     return {
       success: true,
       time: new Date().toISOString(),
-      message: 'Sample data for testing and learning purposes',
+      message: '用于测试与学习的示例数据',
       total_users: totalUsers,
       offset,
       limit,

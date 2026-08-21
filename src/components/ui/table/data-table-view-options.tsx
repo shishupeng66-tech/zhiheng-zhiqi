@@ -41,9 +41,9 @@ export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps
           />
         }
       >
-          <Icons.adjustments />
-          显示列
-          <Icons.chevronsUpDown className='ml-auto opacity-50' />
+        <Icons.adjustments />
+        显示列
+        <Icons.chevronsUpDown className='ml-auto opacity-50' />
       </PopoverTrigger>
       <PopoverContent align='end' className='w-44 p-0'>
         <Command>

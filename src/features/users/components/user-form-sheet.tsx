@@ -84,9 +84,7 @@ export function UserFormSheet({ user, open, onOpenChange }: UserFormSheetProps) 
         <SheetHeader>
           <SheetTitle>{isEdit ? '编辑用户' : '新建用户'}</SheetTitle>
           <SheetDescription>
-            {isEdit
-              ? '在下方更新用户详情。'
-              : '填写详细信息以创建新用户。'}
+            {isEdit ? '在下方更新用户详情。' : '填写详细信息以创建新用户。'}
           </SheetDescription>
         </SheetHeader>
 

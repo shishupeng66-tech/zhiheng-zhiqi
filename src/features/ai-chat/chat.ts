@@ -22,15 +22,15 @@ export type DemoUIMessage = UIMessage<unknown, Record<string, never>, Tools>;
  * script shows off reasoning, a tool call, and streamed text across two turns.
  */
 export const demoChat = createChat<unknown, Record<string, never>, Tools>()
-  .user('How did revenue do last month, and what should I focus on next?')
+  .user('上个月营收表现如何？接下来我应该把精力放在哪里？')
   .sleep(500)
   .assistant(({ writer }) => {
     writer.reasoning(
-      "The user is asking two things — last month's revenue trend and a recommendation. I'll pull the numbers from the metrics tool first, then base the suggestion on what the data shows."
+      '用户问了两件事——上个月的营收走势，以及接下来的建议。我先调用指标工具拉取数据，再依据数据给出建议。'
     );
     writer
       .tool('getRevenue', {
-        title: 'Fetching revenue metrics',
+        title: '正在获取营收指标',
         input: { period: 'last-month' }
       })
       .sleep(900)
@@ -38,21 +38,19 @@ export const demoChat = createChat<unknown, Record<string, never>, Tools>()
         period: 'last-month',
         revenue: 1250,
         changePct: 12.5,
-        topDriver: 'returning customers'
+        topDriver: '老客户复购'
       });
-    writer.text(
-      'Last month you brought in $1,250 — up 12.5% from the month before, so revenue is clearly trending up. '
-    );
-    writer.text('Most of that growth came from returning customers.');
+    writer.text('上个月您共获得 1250 美元营收，比前一个月增长 12.5%，营收整体明显呈上升趋势。');
+    writer.text('这波增长主要来自于老客户复购。');
   })
-  .user('Great. Where should I put my energy next?')
+  .user('很好。那接下来我应该把精力放在哪里？')
   .sleep(500)
   .assistant(({ writer }) => {
     writer.reasoning(
-      "Revenue is healthy and driven by retention, so the weak spot is acquisition. I'll point them there with a concrete, low-lift action."
+      '营收健康且主要由留存驱动，因此短板在获客。我用一个具体、低成本的动作来引导他。'
     );
     writer.text(
-      "Since returning customers are carrying growth, I'd shift focus to new-customer acquisition — it slipped about 20% this period. A referral incentive or a small targeted campaign would rebalance the funnel without much lift."
+      '既然增长主要靠老客户复购，我会把重心转向新客获客——本周期获客下滑了约 20%。一个推荐返利或一场小规模精准投放，就能以很低的成本重新平衡转化漏斗。'
     );
   });
 

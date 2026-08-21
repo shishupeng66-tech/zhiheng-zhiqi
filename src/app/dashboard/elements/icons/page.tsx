@@ -1,7 +1,7 @@
 import IconsViewPage from '@/features/elements/components/icons-view-page';
 
 export const metadata = {
-  title: 'Dashboard : Icons'
+  title: '仪表盘：图标'
 };
 
 export default function page() {

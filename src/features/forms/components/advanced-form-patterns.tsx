@@ -37,19 +37,19 @@ type AdvancedFormValues = {
 
 const countryStateMap: Record<string, { value: string; label: string }[]> = {
   us: [
-    { value: 'ca', label: 'California' },
-    { value: 'ny', label: 'New York' },
-    { value: 'tx', label: 'Texas' }
+    { value: 'ca', label: '加利福尼亚' },
+    { value: 'ny', label: '纽约' },
+    { value: 'tx', label: '得克萨斯' }
   ],
   uk: [
-    { value: 'ldn', label: 'London' },
-    { value: 'mnc', label: 'Manchester' },
-    { value: 'brm', label: 'Birmingham' }
+    { value: 'ldn', label: '伦敦' },
+    { value: 'mnc', label: '曼彻斯特' },
+    { value: 'brm', label: '伯明翰' }
   ],
   au: [
-    { value: 'nsw', label: 'New South Wales' },
-    { value: 'vic', label: 'Victoria' },
-    { value: 'qld', label: 'Queensland' }
+    { value: 'nsw', label: '新南威尔士' },
+    { value: 'vic', label: '维多利亚' },
+    { value: 'qld', label: '昆士兰' }
   ]
 };
 
@@ -160,12 +160,7 @@ export default function AdvancedFormPatterns() {
             <form.AppField
               name='email'
               children={(field) => (
-                <field.TextField
-                  label='邮箱'
-                  required
-                  type='email'
-                  placeholder='you@example.com'
-                />
+                <field.TextField label='邮箱' required type='email' placeholder='you@example.com' />
               )}
             />
 
@@ -346,9 +341,7 @@ export default function AdvancedFormPatterns() {
           {/* ─── Section 4: Preferences (listeners / side effects) ─── */}
           <div className='space-y-1'>
             <h3 className='text-lg font-semibold'>偏好设置</h3>
-            <p className='text-muted-foreground text-sm'>
-              监听器副作用——选择国家会重置省/州
-            </p>
+            <p className='text-muted-foreground text-sm'>监听器副作用——选择国家会重置省/州</p>
           </div>
 
           <FieldGroup className='grid grid-cols-1 gap-4 md:grid-cols-2'>

@@ -155,8 +155,8 @@ export default function AppSidebar() {
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem onClick={() => router.push('/dashboard/notifications')}>
-                      <Icons.notification className='mr-2 h-4 w-4' />
-                      通知
+                    <Icons.notification className='mr-2 h-4 w-4' />
+                    通知
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />

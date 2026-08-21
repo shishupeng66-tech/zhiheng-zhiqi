@@ -23,6 +23,14 @@ import {
 } from '@/components/ui/sidebar';
 import { useEffect } from 'react';
 
+// Clerk 组织角色展示映射（仅影响我们 UI 的渲染文本，不改 Clerk 底层）
+const ORG_ROLE_LABEL: Record<string, string> = {
+  'org:admin': '管理员',
+  'org:owner': '所有者',
+  'org:member': '成员',
+  'org:basic_member': '成员'
+};
+
 export function OrgSwitcher() {
   const { isMobile, state } = useSidebar();
   const router = useRouter();
@@ -161,8 +169,10 @@ export function OrgSwitcher() {
             >
               <span className='truncate font-medium'>{displayOrganization.name}</span>
               <span className='text-muted-foreground truncate text-xs'>
-                {userMemberships.data.find((m) => m.organization.id === displayOrganization.id)
-                  ?.role || '组织'}
+                {ORG_ROLE_LABEL[
+                  userMemberships.data.find((m) => m.organization.id === displayOrganization.id)
+                    ?.role ?? ''
+                ] ?? '组织'}
               </span>
             </div>
             <Icons.chevronsUpDown
@@ -180,9 +190,7 @@ export function OrgSwitcher() {
             sideOffset={4}
           >
             <DropdownMenuGroup>
-              <DropdownMenuLabel className='text-muted-foreground text-xs'>
-                组织
-              </DropdownMenuLabel>
+              <DropdownMenuLabel className='text-muted-foreground text-xs'>组织</DropdownMenuLabel>
             </DropdownMenuGroup>
             <DropdownMenuGroup>
               {userMemberships.data.map((membership, index) => {

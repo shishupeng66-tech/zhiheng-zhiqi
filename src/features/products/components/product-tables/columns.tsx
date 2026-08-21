@@ -50,12 +50,14 @@ export const columns: ColumnDef<Product>[] = [
     ),
     cell: ({ cell }) => {
       const status = cell.getValue<Product['category']>();
+      const categoryLabel =
+        CATEGORY_OPTIONS.find((option) => option.value === status)?.label ?? status;
       const Icon = status === 'active' ? Icons.circleCheck : Icons.xCircle;
 
       return (
         <Badge variant='outline' className='capitalize'>
           <Icon />
-          {status}
+          {categoryLabel}
         </Badge>
       );
     },

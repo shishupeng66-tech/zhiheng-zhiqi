@@ -7,10 +7,7 @@ export const metadata = {
 
 export default function Page() {
   return (
-    <PageContainer
-      pageTitle='基础表单'
-      pageDescription='涵盖所有字段类型的综合表单示例。'
-    >
+    <PageContainer pageTitle='基础表单' pageDescription='涵盖所有字段类型的综合表单示例。'>
       <DemoForm />
     </PageContainer>
   );

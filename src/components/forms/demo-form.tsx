@@ -173,9 +173,7 @@ export default function DemoForm() {
             <FieldGroup className='grid grid-cols-1 gap-4 md:grid-cols-2'>
               <form.AppField
                 name='name'
-                children={(field) => (
-                  <field.TextField label='姓名' required placeholder='张三' />
-                )}
+                children={(field) => <field.TextField label='姓名' required placeholder='张三' />}
               />
 
               {/* Async validation: simulated server-side email check */}
@@ -252,7 +250,7 @@ export default function DemoForm() {
             <form.AppField
               name='bio'
               children={(field) => (
-                  <field.TextareaField
+                <field.TextareaField
                   label='个人简介'
                   required
                   placeholder='介绍一下你自己……'
@@ -332,10 +330,7 @@ export default function DemoForm() {
             <form.AppField
               name='newsletter'
               children={(field) => (
-                <field.SwitchField
-                  label='订阅新闻邮件'
-                  description='接收新功能与产品的更新通知'
-                />
+                <field.SwitchField label='订阅新闻邮件' description='接收新功能与产品的更新通知' />
               )}
             />
 
@@ -343,10 +338,7 @@ export default function DemoForm() {
               name='formatting'
               mode='array'
               children={(field) => (
-                <field.ToggleGroupField
-                  label='文本格式'
-                  description='可多选的切换组'
-                >
+                <field.ToggleGroupField label='文本格式' description='可多选的切换组'>
                   <ToggleGroupItem value='bold' aria-label='加粗'>
                     <Icons.bold className='h-4 w-4' />
                   </ToggleGroupItem>
@@ -362,9 +354,7 @@ export default function DemoForm() {
 
             <form.AppField
               name='terms'
-              children={(field) => (
-                <field.CheckboxField label='我同意服务条款与条件' required />
-              )}
+              children={(field) => <field.CheckboxField label='我同意服务条款与条件' required />}
             />
 
             {/* ─── SLIDER ─── */}
@@ -405,7 +395,7 @@ export default function DemoForm() {
 
             <form.AppField
               name='dateRange'
-              children={(field) => <field.DateRangeField label='Date Range' />}
+              children={(field) => <field.DateRangeField label='日期范围' />}
             />
 
             {/* ─── SPECIAL INPUTS ─── */}
@@ -415,21 +405,14 @@ export default function DemoForm() {
               <form.AppField
                 name='otp'
                 children={(field) => (
-                  <field.OtpField
-                    label='验证码'
-                    required
-                    description='6 位验证码输入框'
-                  />
+                  <field.OtpField label='验证码' required description='6 位验证码输入框' />
                 )}
               />
 
               <form.AppField
                 name='favoriteColor'
                 children={(field) => (
-                  <field.ColorField
-                    label='喜欢的颜色'
-                    description='原生取色器（含十六进制）'
-                  />
+                  <field.ColorField label='喜欢的颜色' description='原生取色器（含十六进制）' />
                 )}
               />
             </FieldGroup>
@@ -438,11 +421,7 @@ export default function DemoForm() {
               name='tags'
               mode='array'
               children={(field) => (
-                  <field.TagsField
-                  label='标签'
-                  required
-                  description='按回车或点击“添加”创建标签'
-                />
+                <field.TagsField label='标签' required description='按回车或点击“添加”创建标签' />
               )}
             />
 

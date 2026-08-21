@@ -1,12 +1,12 @@
 import type { InfobarContent } from '@/components/ui/infobar';
 
 export const reactQueryInfoContent: InfobarContent = {
-  title: 'React Query Pattern',
+  title: 'React Query 模式',
   sections: [
     {
-      title: 'Server Prefetch',
+      title: '服务端预取',
       description:
-        'Data is prefetched on the server using getQueryClient().prefetchQuery(). The dehydrated state is passed to HydrationBoundary so the client starts with cached data — no loading spinners on first load.',
+        '数据在服务端通过 getQueryClient().prefetchQuery() 进行预取。脱水后的状态会传入 HydrationBoundary，使客户端直接以缓存数据启动——首次加载无需出现加载动画。',
       links: [
         {
           title: 'TanStack Query SSR Docs',
@@ -15,9 +15,9 @@ export const reactQueryInfoContent: InfobarContent = {
       ]
     },
     {
-      title: 'Query Options',
+      title: '查询选项',
       description:
-        'Query keys and fetch functions are defined in a shared queryOptions() object. This is reused across server prefetch and client hooks, keeping them in sync.',
+        '查询键与获取函数定义在一个共享的 queryOptions() 对象中。服务端预取与客户端 hooks 复用同一对象，始终保持一致。',
       links: [
         {
           title: 'queryOptions API',
@@ -26,15 +26,15 @@ export const reactQueryInfoContent: InfobarContent = {
       ]
     },
     {
-      title: 'Suspense Query',
+      title: 'Suspense 查询',
       description:
-        'The client uses useSuspenseQuery() which integrates with React Suspense. Combined with server prefetch, data is available immediately — Suspense only shows the fallback on subsequent navigations if the cache is stale.',
+        '客户端使用 useSuspenseQuery()，与 React Suspense 集成。配合服务端预取，数据可立即可用——只有当缓存过期、且在后续导航时，Suspense 才会展示回退界面。',
       links: []
     },
     {
-      title: 'Optimistic Mutations',
+      title: '乐观更新',
       description:
-        'Mutations use onMutate to optimistically update the cache before the request completes. On error, the previous state is rolled back. On settle, the query is invalidated to refetch fresh data.',
+        '变更通过 onMutate 在请求完成前乐观地更新缓存。若发生错误则回滚到之前的状态；请求结束后会使查询失效以重新获取最新数据。',
       links: [
         {
           title: 'Optimistic Updates Guide',

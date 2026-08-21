@@ -47,9 +47,7 @@ export default function NewTaskDialog() {
         if (!next) setTitleError(null);
       }}
     >
-      <DialogTrigger render={<Button variant='secondary' size='sm' />}>
-        + 新增任务
-      </DialogTrigger>
+      <DialogTrigger render={<Button variant='secondary' size='sm' />}>+ 新增任务</DialogTrigger>
       <DialogContent className='sm:max-w-[425px]'>
         <DialogHeader>
           <DialogTitle>新增任务</DialogTitle>

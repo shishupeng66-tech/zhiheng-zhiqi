@@ -46,7 +46,7 @@ export function UserNav() {
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuItem>
-              <SignOutButton redirectUrl='/auth/sign-in' />
+              <SignOutButton redirectUrl='/auth/sign-in'>退出登录</SignOutButton>
             </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>

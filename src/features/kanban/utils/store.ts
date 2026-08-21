@@ -23,76 +23,76 @@ const initialColumns: Record<string, Task[]> = {
   backlog: [
     {
       id: '1',
-      title: 'Migrate to Stripe billing API',
+      title: '迁移至 Stripe 计费 API',
       priority: 'high',
-      assignee: 'Sarah Chen',
+      assignee: '陈思雅',
       dueDate: '2026-04-08'
     },
     {
       id: '2',
-      title: 'Add CSV export to reports',
+      title: '为报表新增 CSV 导出功能',
       priority: 'medium',
-      assignee: 'Marcus Rivera',
+      assignee: '李远',
       dueDate: '2026-04-12'
     },
     {
       id: '3',
-      title: 'Update onboarding flow copy',
+      title: '更新新用户引导文案',
       priority: 'low',
-      assignee: 'Priya Sharma',
+      assignee: '王敏',
       dueDate: '2026-04-15'
     },
     {
       id: '9',
-      title: 'Audit RBAC permissions',
+      title: '审计 RBAC 权限',
       priority: 'medium',
-      assignee: 'Jordan Kim',
+      assignee: '金乔',
       dueDate: '2026-04-10'
     }
   ],
   inProgress: [
     {
       id: '4',
-      title: 'Refactor notification service',
+      title: '重构通知服务',
       priority: 'high',
-      assignee: 'Alex Turner',
+      assignee: '张磊',
       dueDate: '2026-04-03'
     },
     {
       id: '5',
-      title: 'Build team invitation flow',
+      title: '搭建团队邀请流程',
       priority: 'medium',
-      assignee: 'Emily Nakamura',
+      assignee: '赵琳',
       dueDate: '2026-04-06'
     },
     {
       id: '10',
-      title: 'Fix timezone handling in scheduler',
+      title: '修复调度器时区处理',
       priority: 'high',
-      assignee: 'Sarah Chen',
+      assignee: '陈思雅',
       dueDate: '2026-04-04'
     }
   ],
   done: [
     {
       id: '6',
-      title: 'SSO integration with Okta',
+      title: '对接 Okta 单点登录',
       priority: 'high',
-      assignee: 'Jordan Kim',
+      assignee: '金乔',
       dueDate: '2026-03-22'
     },
     {
       id: '7',
-      title: 'Dashboard analytics charts',
+      title: '仪表盘数据分析图表',
       priority: 'medium',
-      assignee: 'Marcus Rivera',
+      assignee: '李远',
       dueDate: '2026-03-20'
     },
     {
       id: '8',
-      title: 'Webhook retry mechanism',
+      title: 'Webhook 重试机制',
       priority: 'low',
-      assignee: 'Alex Turner',
+      assignee: '张磊',
       dueDate: '2026-03-18'
     }
   ]

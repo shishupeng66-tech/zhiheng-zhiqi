@@ -1,12 +1,12 @@
 import * as z from 'zod';
 
 export const userSchema = z.object({
-  first_name: z.string().min(2, 'First name must be at least 2 characters'),
-  last_name: z.string().min(2, 'Last name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email'),
-  phone: z.string().min(1, 'Phone number is required'),
-  role: z.string().min(1, 'Please select a role'),
-  status: z.string().min(1, 'Please select a status')
+  first_name: z.string().min(2, '名至少需要 2 个字符'),
+  last_name: z.string().min(2, '姓至少需要 2 个字符'),
+  email: z.string().email('请输入有效的邮箱地址'),
+  phone: z.string().min(1, '请输入电话号码'),
+  role: z.string().min(1, '请选择角色'),
+  status: z.string().min(1, '请选择状态')
 });
 
 export type UserFormValues = z.infer<typeof userSchema>;

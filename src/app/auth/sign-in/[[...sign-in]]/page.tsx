@@ -2,8 +2,8 @@ import { Metadata } from 'next';
 import SignInViewPage from '@/features/auth/components/sign-in-view';
 
 export const metadata: Metadata = {
-  title: 'Authentication | Sign In',
-  description: 'Sign In page for authentication.'
+  title: '登录 | 身份验证',
+  description: '登录认证页面。'
 };
 
 export default async function Page() {

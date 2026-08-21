@@ -26,10 +26,10 @@ export function PokemonInfo() {
       {/* Pokemon selector */}
       <Card>
         <CardHeader>
-          <CardTitle>Pick a Pokemon</CardTitle>
+          <CardTitle>选择一个宝可梦</CardTitle>
           <CardDescription>
-            Each selection triggers <code>useSuspenseQuery</code> — cached results are instant, new
-            fetches show the Suspense fallback.
+            每次选择都会触发 <code>useSuspenseQuery</code> —— 已缓存的结果可即时显示，新请求则展示
+            Suspense 回退界面。
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -62,7 +62,7 @@ export function PokemonInfo() {
             </div>
           </div>
           <CardDescription>
-            Height: {data.height / 10}m &middot; Weight: {data.weight / 10}kg
+            身高：{data.height / 10}m &middot; 体重：{data.weight / 10}kg
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -90,7 +90,7 @@ export function PokemonInfo() {
         </CardContent>
         <CardFooter>
           <p className='text-muted-foreground text-xs'>
-            Data from PokeAPI &middot; Prefetched on server, hydrated on client
+            数据来自 PokeAPI &middot; 服务端预取，客户端水合
           </p>
         </CardFooter>
       </Card>

@@ -269,8 +269,8 @@ function Infobar({
           side={side}
         >
           <SheetHeader className='sr-only'>
-            <SheetTitle>Infobar</SheetTitle>
-            <SheetDescription>Displays the mobile infobar.</SheetDescription>
+            <SheetTitle>信息栏</SheetTitle>
+            <SheetDescription>显示移动端信息栏。</SheetDescription>
           </SheetHeader>
           <div className='flex h-full w-full flex-col'>{children}</div>
         </SheetContent>
