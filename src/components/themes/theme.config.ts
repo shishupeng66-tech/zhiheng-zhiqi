@@ -6,43 +6,43 @@ export const DEFAULT_THEME = 'vercel';
 
 export const THEMES = [
   {
-    name: 'Claude',
+    name: '暖橘',
     value: 'claude'
   },
   {
-    name: 'Discord',
+    name: '靛紫',
     value: 'discord'
   },
   {
-    name: 'Supabase',
+    name: '翠绿',
     value: 'supabase'
   },
   {
-    name: 'Vercel',
+    name: '墨白',
     value: 'vercel'
   },
   {
-    name: 'Mono',
+    name: '素灰',
     value: 'mono'
   },
   {
-    name: 'Notebook',
+    name: '素笺',
     value: 'notebook'
   },
   {
-    name: 'Light Green',
+    name: '嫩绿',
     value: 'light-green'
   },
   {
-    name: 'Zen',
+    name: '禅灰',
     value: 'zen'
   },
   {
-    name: 'Astro Vista',
+    name: '落日',
     value: 'astro-vista'
   },
   {
-    name: 'WhatsApp',
+    name: '碧青',
     value: 'whatsapp'
   }
 ];
