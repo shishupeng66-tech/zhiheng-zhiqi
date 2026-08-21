@@ -35,6 +35,9 @@ export function getDb() {
   _sqlite = new Database(dbPath);
   _sqlite.pragma('journal_mode = WAL');
   _sqlite.pragma('foreign_keys = ON');
+  // 多 worker 服务（Next 16 生产模式）下多个连接可能并发写同一 SQLite 文件；
+  // 不设 busy_timeout 时会立刻返回 SQLITE_BUSY 导致请求崩溃（HTTP 000）。
+  _sqlite.pragma('busy_timeout = 5000');
   _db = drizzle(_sqlite, { schema });
   return _db;
 }
@@ -55,6 +58,7 @@ export function runMigrations(migrationsFolder = './drizzle'): void {
   ensureDirFor(dbPath);
   const sqlite = _sqlite ?? new Database(dbPath);
   sqlite.pragma('foreign_keys = ON');
+  sqlite.pragma('busy_timeout = 5000');
   migrate(drizzle(sqlite, { schema }), { migrationsFolder });
   if (!_sqlite) {
     _sqlite = sqlite;
