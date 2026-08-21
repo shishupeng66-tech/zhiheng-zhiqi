@@ -13,6 +13,21 @@ export type Role = (typeof roles)[number];
 export const statuses = ['active', 'disabled'] as const;
 export type Status = (typeof statuses)[number];
 
+export const workspaceStatuses = ['active', 'disabled', 'archived'] as const;
+export type WorkspaceStatus = (typeof workspaceStatuses)[number];
+
+export const workspaceTypes = [
+  'video-production',
+  'sales',
+  'customer-service',
+  'knowledge',
+  'production-management'
+] as const;
+export type WorkspaceType = (typeof workspaceTypes)[number];
+
+export const workspaceMemberRoles = ['owner', 'admin', 'editor', 'member', 'viewer'] as const;
+export type WorkspaceMemberRole = (typeof workspaceMemberRoles)[number];
+
 /**
  * 系统账号表（users）
  * 企业员工账号体系的核心表，本地 SQLite 存储，绝不依赖公网。
@@ -45,6 +60,50 @@ export const users = sqliteTable(
   })
 );
 
+export const workspaces = sqliteTable(
+  'workspaces',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    slug: text('slug').notNull(),
+    description: text('description'),
+    icon: text('icon'),
+    workspaceType: text('workspace_type', { enum: workspaceTypes }).notNull(),
+    status: text('status', { enum: workspaceStatuses }).notNull().default('active'),
+    enabledModules: text('enabled_modules', { mode: 'json' }).$type<string[]>().notNull(),
+    moduleConfig: text('module_config', { mode: 'json' })
+      .$type<Record<string, unknown>>()
+      .notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull()
+  },
+  (table) => ({
+    slugUnique: uniqueIndex('workspaces_slug_unique').on(table.slug)
+  })
+);
+
+export const workspaceMembers = sqliteTable(
+  'workspace_members',
+  {
+    id: text('id').primaryKey(),
+    workspaceId: text('workspace_id')
+      .notNull()
+      .references(() => workspaces.id),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id),
+    role: text('role', { enum: workspaceMemberRoles }).notNull().default('member'),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull()
+  },
+  (table) => ({
+    workspaceMemberUnique: uniqueIndex('workspace_members_workspace_user_unique').on(
+      table.workspaceId,
+      table.userId
+    )
+  })
+);
+
 /**
  * 用户-工作空间关系表（user_workspaces）【预留】
  * 本轮不实现完整 Workspace 权限逻辑；仅建立与未来本地工作空间兼容的数据结构。
@@ -73,5 +132,9 @@ export const userWorkspaces = sqliteTable(
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type Workspace = typeof workspaces.$inferSelect;
+export type NewWorkspace = typeof workspaces.$inferInsert;
+export type WorkspaceMember = typeof workspaceMembers.$inferSelect;
+export type NewWorkspaceMember = typeof workspaceMembers.$inferInsert;
 export type UserWorkspace = typeof userWorkspaces.$inferSelect;
 export type NewUserWorkspace = typeof userWorkspaces.$inferInsert;

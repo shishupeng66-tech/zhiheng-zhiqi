@@ -1,5 +1,8 @@
+import { loadEnvConfig } from '@next/env';
 import { runMigrations } from '../src/lib/db';
 import { findUserByUsername, createUser } from '../src/services/users';
+
+loadEnvConfig(process.cwd());
 
 /**
  * 初始化首个超级管理员（super_admin）
