@@ -48,9 +48,7 @@ export function useFilteredNavItems(items: NavItem[]) {
         }
 
         if (item.access.role) {
-          if (!accessContext.hasOrg) {
-            return false;
-          }
+          // 角色可见性不依赖 organization（本地账号体系下始终生效）
           if (accessContext.role !== item.access.role) {
             return false;
           }
@@ -83,9 +81,6 @@ export function useFilteredNavItems(items: NavItem[]) {
               }
             }
             if (childItem.access.role) {
-              if (!accessContext.hasOrg) {
-                return false;
-              }
               if (accessContext.role !== childItem.access.role) {
                 return false;
               }

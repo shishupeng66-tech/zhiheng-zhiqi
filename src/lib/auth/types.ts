@@ -16,6 +16,8 @@ export type PublicUser = {
   role: Role;
   status: Status;
   mustChangePassword: boolean;
+  /** 账号创建时间（timestamp_ms 模式，由 SQLite 映射为 Date；用于管理后台展示） */
+  createdAt: Date | null;
 };
 
 /** 登录失败原因（用于前端文案） */

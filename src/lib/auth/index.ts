@@ -1,12 +1,7 @@
 import { cookies } from 'next/headers';
 import { findUserByUsername } from '../../services/users';
 import { verifyPassword } from './password';
-import {
-  createSession,
-  destroySession,
-  getUserBySessionToken,
-  SESSION_COOKIE
-} from './session';
+import { createSession, destroySession, getUserBySessionToken, SESSION_COOKIE } from './session';
 import type { LoginError, PublicUser } from './types';
 import type { Role, Status, User } from '../db/schema';
 
@@ -26,7 +21,8 @@ export function toPublicUser(user: User): PublicUser {
     avatar: user.avatar,
     role: user.role as Role,
     status: user.status as Status,
-    mustChangePassword: user.mustChangePassword
+    mustChangePassword: user.mustChangePassword,
+    createdAt: user.createdAt
   };
 }
 

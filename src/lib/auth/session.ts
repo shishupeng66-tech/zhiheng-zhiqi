@@ -47,9 +47,15 @@ export async function destroySession(token: string | undefined | null): Promise<
  * - 令牌不存在或已过期 → 清理过期行并返回 null
  * - 用户不存在或已禁用 → null
  */
-export async function getUserBySessionToken(token: string | undefined | null): Promise<User | null> {
+export async function getUserBySessionToken(
+  token: string | undefined | null
+): Promise<User | null> {
   if (!token) return null;
-  const session = await getDb().select().from(sessions).where(eq(sessions.sessionToken, token)).get();
+  const session = await getDb()
+    .select()
+    .from(sessions)
+    .where(eq(sessions.sessionToken, token))
+    .get();
   if (!session) return null;
   if (session.expiresAt.getTime() < Date.now()) {
     await getDb().delete(sessions).where(eq(sessions.sessionToken, token));
@@ -58,4 +64,12 @@ export async function getUserBySessionToken(token: string | undefined | null): P
   const user = await getDb().select().from(users).where(eq(users.id, session.userId)).get();
   if (!user || user.status === 'disabled') return null;
   return user;
+}
+
+/**
+ * 删除指定用户的全部会话（用于：禁用账号 / 重置密码 / 用户自助修改密码后让其余设备下线）。
+ * 与 destroySession（按令牌删除单条）不同，此函数按 userId 整批清除。
+ */
+export async function deleteUserSessions(userId: string): Promise<void> {
+  await getDb().delete(sessions).where(eq(sessions.userId, userId));
 }
