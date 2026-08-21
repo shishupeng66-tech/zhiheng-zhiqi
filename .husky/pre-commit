@@ -1,1 +1,2 @@
-npx lint-staged
+# RAYON_NUM_THREADS=1 avoids a Windows oxfmt race that panics on parallel writes
+RAYON_NUM_THREADS=1 npx lint-staged
