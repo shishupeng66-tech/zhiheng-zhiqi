@@ -6,29 +6,19 @@ export const workspacesInfoContent: InfobarContent = {
     {
       title: '概述',
       description:
-        '工作空间页面允许你管理多个工作空间并在它们之间切换。该能力由 Clerk Organizations 提供，支持多租户工作空间管理。你可以查看所有可用的工作空间、创建新的工作空间，并切换当前激活的工作空间。',
-      links: [
-        {
-          title: 'Clerk 组织文档',
-          url: 'https://clerk.com/docs/organizations/overview'
-        }
-      ]
+        '工作空间页面允许你管理多个工作空间并在它们之间切换。该能力由知衡智企本地账号体系提供，支持企业内的多工作空间隔离管理。你可以查看所有可用的工作空间、创建新的工作空间，并切换当前激活的工作空间。',
+      links: []
     },
     {
       title: '创建工作空间',
       description:
         '要创建新的工作空间，点击“创建组织”按钮。系统会提示你输入工作空间名称并配置初始设置。创建完成后，即可切换到新工作空间并开始管理。',
-      links: [
-        {
-          title: '多租户认证指南',
-          url: 'https://clerk.com/blog/how-to-build-multitenant-authentication-with-clerk'
-        }
-      ]
+      links: []
     },
     {
       title: '切换工作空间',
       description:
-        '点击列表中的某个工作空间即可在它们之间切换。所选工作空间会成为当前激活的组织上下文，所有组织相关的功能都会使用该工作空间。',
+        '点击列表中的某个工作空间即可在它们之间切换。所选工作空间会成为当前激活的上下文，所有相关的功能都会使用该工作空间。',
       links: []
     },
     {
@@ -40,13 +30,8 @@ export const workspacesInfoContent: InfobarContent = {
     {
       title: '服务端权限校验',
       description:
-        '本应用遵循 Clerk 推荐的多租户认证模式。服务端的权限校验确保用户只能访问其当前激活组织下的资源。',
-      links: [
-        {
-          title: 'Clerk 组织文档',
-          url: 'https://clerk.com/docs/organizations/overview'
-        }
-      ]
+        '本应用遵循基于服务端会话的权限校验模式。服务端的权限校验确保用户只能访问其当前激活工作空间下的资源。',
+      links: []
     }
   ]
 };
@@ -57,13 +42,8 @@ export const teamInfoContent: InfobarContent = {
     {
       title: '概述',
       description:
-        '团队管理页面允许你管理当前工作空间的团队，包括成员、角色、安全设置等。该页面通过 Clerk 的 OrganizationProfile 组件提供完整的组织管理功能。',
-      links: [
-        {
-          title: 'Clerk 组织文档',
-          url: 'https://clerk.com/docs/organizations/overview'
-        }
-      ]
+        '团队管理页面允许你管理当前工作空间的团队，包括成员、角色、安全设置等。该页面由知衡智企本地账号体系提供完整的组织管理功能。',
+      links: []
     },
     {
       title: '管理团队成员',
@@ -74,13 +54,8 @@ export const teamInfoContent: InfobarContent = {
     {
       title: '角色与权限',
       description:
-        '在 Clerk Dashboard 的 Organizations 设置中配置默认角色与权限。角色定义了团队成员在工作空间内可执行的操作。常见角色包括管理员（admin）、成员（member）以及你自定义的角色。',
-      links: [
-        {
-          title: 'Clerk 组织文档',
-          url: 'https://clerk.com/docs/organizations/overview'
-        }
-      ]
+        '在员工管理（系统管理）中配置默认角色与权限。角色定义了团队成员在工作空间内可执行的操作。内置角色包括系统管理员（super_admin）、管理层（manager）与普通员工（employee）。',
+      links: []
     },
     {
       title: '安全设置',
@@ -97,7 +72,7 @@ export const teamInfoContent: InfobarContent = {
     {
       title: '导航 RBAC 系统',
       description:
-        '应用内置了完全基于客户端的导航过滤系统，使用 `useNav` Hook。它支持 `requireOrg`、`permission` 与 `role` 校验以实现即时访问控制。导航项在 `src/config/nav-config.ts` 中通过 `access` 属性配置。',
+        '应用内置了基于客户端的导航过滤系统，使用 `useNav` Hook。它支持 `requireOrg`、`permission` 与 `role` 校验以实现即时访问控制。导航项在 `src/config/nav-config.ts` 中通过 `access` 属性配置。',
       links: []
     }
   ]
@@ -109,58 +84,31 @@ export const billingInfoContent: InfobarContent = {
     {
       title: '概述',
       description:
-        '账单页面允许你管理组织的订阅与使用额度。套餐与订阅通过 Clerk Billing for B2B 管理，提供组织级订阅管理并集成 Stripe 支付。',
-      links: [
-        {
-          title: 'Clerk 账单文档',
-          url: 'https://clerk.com/docs/billing/overview'
-        }
-      ]
+        '账单页面用于查看企业的订阅与使用额度。当前为本地企业部署版，套餐与额度由系统管理员在后台统一配置，不依赖任何第三方计费平台。',
+      links: []
     },
     {
       title: '可用套餐',
       description:
-        '通过价格表查看并订阅可用套餐。套餐在 Clerk Dashboard 中创建与管理。在套餐上开启“Publicly available”（公开可用）即可在价格表中展示。常见套餐包括免费版、专业版与团队版。',
-      links: [
-        {
-          title: 'Clerk Dashboard - 套餐',
-          url: 'https://dashboard.clerk.com/~/billing/plans'
-        }
-      ]
+        '套餐与功能由系统管理员在后台配置与开通。常见套餐包括免费版、专业版与团队版，可按需为工作空间分配。',
+      links: []
     },
     {
       title: '套餐功能',
       description:
-        '每个套餐可包含特定的功能，用于解锁应用内的能力。功能在 Clerk Dashboard 中添加到套餐，并可在代码中使用 `has()` 函数配合 `feature` 校验来检查。',
+        '每个套餐可包含特定的功能，用于解锁应用内的能力。功能在后台开通后，代码侧按角色与权限进行校验。',
       links: []
     },
     {
       title: '访问控制',
       description:
-        '套餐与功能在整个应用中用于访问控制。服务端校验使用 `has()` 函数验证套餐或功能权限；客户端保护使用 `<Show>` 组件依据订阅状态条件渲染内容。',
-      links: []
-    },
-    {
-      title: '计费结构',
-      description:
-        'Clerk Billing 每笔交易收取 0.7% 的费用，外加直接支付给 Stripe 的交易手续费。Clerk Billing 与 Stripe Billing 并不相同——套餐与定价通过 Clerk Dashboard 管理，不会与已有的 Stripe 产品同步。Clerk 仅使用 Stripe 进行支付处理。',
+        '套餐与功能在整个应用中用于访问控制。服务端依据当前用户角色与权限进行校验；客户端依据订阅状态条件渲染内容。',
       links: []
     },
     {
       title: '配置要求',
       description:
-        '要启用账单，请进入 Clerk Dashboard 的 Billing Settings 并为此应用开启账单。可选择 Clerk 的开发网关（用于测试）或你自己的 Stripe 账户（用于生产）。注意：用于开发的 Stripe 账户不能用于生产环境。',
-      links: [
-        {
-          title: '账单设置',
-          url: 'https://dashboard.clerk.com/~/billing/settings'
-        }
-      ]
-    },
-    {
-      title: 'Beta 状态',
-      description:
-        '账单功能当前处于 Beta 阶段，其 API 属于实验性质，可能会发生破坏性变更。为降低潜在影响，建议固定你的 SDK 与 `clerk-js` 包版本。',
+        '如需调整订阅或额度，请联系系统管理员。本地部署版不接入外部支付网关，所有计费策略由管理员后台维护。',
       links: []
     }
   ]

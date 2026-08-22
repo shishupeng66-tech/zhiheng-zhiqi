@@ -6,13 +6,13 @@ This file provides essential information for AI coding agents working on this pr
 
 ## Project Overview
 
-**Next.js Admin Dashboard Starter** is a production-ready admin dashboard template built with:
+**知衡智企 (企业AI工作平台)** is built with:
 
 - **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript 5.7
 - **Styling**: Tailwind CSS v4
 - **UI Components**: shadcn/ui (New York style)
-- **Authentication**: Clerk (with Organizations/Billing support)
+- **Authentication**: 本地账号体系（SQLite + 会话 Cookie，无第三方依赖）
 - **Error Tracking**: Sentry
 - **Charts**: Recharts
 - **Containerization**: Docker (Node.js & Bun Dockerfiles)
@@ -53,9 +53,9 @@ The project follows a feature-based folder structure designed for scalability in
 
 ### Authentication & Authorization
 
-- Clerk for authentication and user management
-- Clerk Organizations for multi-tenant workspaces
-- Clerk Billing for subscription management (B2B)
+- 本地账号体系进行用户与权限管理（SQLite + bcrypt + 会话 Cookie）
+- 工作空间（Workspace）提供企业内多工作空间隔离
+- 套餐与额度由系统管理员后台统一配置（本地部署，不依赖第三方计费）
 - Client-side RBAC for navigation visibility
 
 ### Data & APIs
@@ -92,7 +92,7 @@ The project follows a feature-based folder structure designed for scalability in
 │   │   ├── notifications/ # Notifications page
 │   │   ├── workspaces/    # Organization management
 │   │   ├── billing/       # Subscription billing
-│   │   ├── exclusive/     # Pro plan feature example
+│   │   ├── exclusive/     # 专属区域（占位示例）
 │   │   └── profile/       # User profile
 │   ├── api/               # API routes (if any)
 │   ├── layout.tsx         # Root layout with providers
@@ -153,7 +153,6 @@ The project follows a feature-based folder structure designed for scalability in
     └── themes/            # Individual theme files
 
 /docs                      # Documentation
-│   ├── clerk_setup.md     # Clerk configuration guide
 │   ├── nav-rbac.md        # Navigation RBAC documentation
 │   └── themes.md          # Theme customization guide
 
@@ -204,17 +203,17 @@ bun run prepare      # Install Husky hooks
 
 Copy `env.example.txt` to `.env.local` and configure:
 
-### Required for Authentication (Clerk)
+### Required for Authentication (本地账号体系)
 
 ```env
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
-CLERK_SECRET_KEY=sk_...
+# 首个超级管理员（仅首次 init-admin 使用）
+INITIAL_ADMIN_USERNAME=admin
+INITIAL_ADMIN_PASSWORD=ChangeMe@2026
+INITIAL_ADMIN_NAME=系统管理员
+INITIAL_ADMIN_EMPLOYEE_NO=A0001
 
-# Redirect URLs
-NEXT_PUBLIC_CLERK_SIGN_IN_URL="/auth/sign-in"
-NEXT_PUBLIC_CLERK_SIGN_UP_URL="/auth/sign-up"
-NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL="/dashboard/overview"
-NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="/dashboard/overview"
+# SQLite 数据库路径（可选，默认 ./data/zhiheng_local.db）
+DATABASE_PATH=./data/zhiheng_local.db
 ```
 
 ### Optional for Error Tracking (Sentry)
@@ -227,7 +226,7 @@ SENTRY_AUTH_TOKEN=sntrys_...
 NEXT_PUBLIC_SENTRY_DISABLED="false"  # Set to "true" to disable in dev
 ```
 
-**Note**: Clerk supports "keyless mode" - the app works without API keys for initial development.
+**Note**: 本地账号体系在首次启动后通过 `bun run init-admin` 初始化超级管理员，无需任何第三方密钥。
 
 ---
 
@@ -339,7 +338,7 @@ export const navGroups: NavGroup[] = [
 
 ### Client-Side Filtering
 
-The `useFilteredNavItems()` hook in `src/hooks/use-nav.ts` filters navigation client-side using Clerk's `useOrganization()` and `useUser()` hooks. This is for UX only - actual security checks must happen server-side.
+The `useFilteredNavItems()` hook in `src/hooks/use-nav.ts` filters navigation client-side using the local session context. This is for UX only - actual security checks must happen server-side.
 
 ---
 
@@ -347,39 +346,31 @@ The `useFilteredNavItems()` hook in `src/hooks/use-nav.ts` filters navigation cl
 
 ### Protected Routes
 
-Dashboard routes use Clerk's middleware pattern. Pages that require organization:
+Dashboard routes are protected by the local session middleware (`src/proxy.ts`). Pages that require an active session:
 
 ```tsx
-import { auth } from '@clerk/nextjs';
+import { getCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 
 export default async function Page() {
-  const { orgId } = await auth();
-  if (!orgId) redirect('/dashboard/workspaces');
+  const user = await getCurrentUser();
+  if (!user) redirect('/auth/sign-in');
   // ...
 }
 ```
 
-### Plan/Feature Protection
+### Role / Permission Protection
 
-Use Clerk's `<Protect>` component for client-side:
-
-```tsx
-import { Protect } from '@clerk/nextjs';
-
-<Protect plan='pro' fallback={<UpgradePrompt />}>
-  <PremiumContent />
-</Protect>;
-```
-
-Use `has()` function for server-side checks:
+Use server-side checks against the current user's role and permissions:
 
 ```tsx
-import { auth } from '@clerk/nextjs';
+import { getCurrentUser } from '@/lib/auth';
 
-const { has } = await auth();
-const hasFeature = has({ feature: 'premium_access' });
+const user = await getCurrentUser();
+const canAccess = user?.role === 'super_admin';
 ```
+
+Use the client-side `useFilteredNavItems()` hook for navigation visibility only.
 
 ---
 
@@ -559,8 +550,7 @@ Canonical guide: [docs/deployment.md](./docs/deployment.md) (Vercel, production 
 
 Ensure these are set in your deployment platform:
 
-- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
-- `CLERK_SECRET_KEY`
+- `DATABASE_PATH` 与 `INITIAL_ADMIN_*` 等本地账号变量
 - All `NEXT_PUBLIC_*` variables for client-side access
 - `SENTRY_*` variables if using error tracking
 
@@ -576,7 +566,7 @@ Both use `output: 'standalone'` in `next.config.ts`. Pass `NEXT_PUBLIC_*` vars a
 ### Build Considerations
 
 - Output: `standalone` (optimized for Docker/self-hosting)
-- Images: Configured for `api.slingacademy.com`, `img.clerk.com`, `clerk.com`
+- Images: 示例产品图片加载自 `api.slingacademy.com`（示例数据；后续替换为业务图片源）。
 - Sentry source maps uploaded automatically in CI
 
 ---
@@ -589,9 +579,7 @@ A single `scripts/cleanup.js` file handles removal of optional features:
 # Interactive mode — prompts for each feature
 node scripts/cleanup.js --interactive
 
-# Remove specific features
-node scripts/cleanup.js clerk           # Remove auth/org/billing
-node scripts/cleanup.js kanban          # Remove kanban board
+# Remove specific featuresnode scripts/cleanup.js kanban          # Remove kanban board
 node scripts/cleanup.js chat            # Remove messaging UI
 node scripts/cleanup.js ai-chat         # Remove AI chat demo
 node scripts/cleanup.js notifications   # Remove notification center
@@ -719,11 +707,6 @@ See "Theming System" section above or `docs/themes.md`.
 - Ensure using Tailwind CSS v4 syntax (`@import 'tailwindcss'`)
 - Check `postcss.config.js` uses `@tailwindcss/postcss`
 
-**Clerk keyless mode popup**
-
-- Normal in development without API keys
-- Click popup to claim application or set env variables
-
 **Theme not applying**
 
 - Check theme name matches in CSS `[data-theme]` and `theme.config.ts`
@@ -738,9 +721,7 @@ See "Theming System" section above or `docs/themes.md`.
 
 ## External Documentation
 
-- [Next.js App Router](https://nextjs.org/docs/app)
-- [Clerk Next.js SDK](https://clerk.com/docs/references/nextjs)
-- [shadcn/ui](https://ui.shadcn.com/docs)
+- [Next.js App Router](https://nextjs.org/docs/app)- [shadcn/ui](https://ui.shadcn.com/docs)
 - [Tailwind CSS v4](https://tailwindcss.com/docs)
 - [TanStack Table](https://tanstack.com/table/latest)
 - [Sentry Next.js](https://docs.sentry.io/platforms/javascript/guides/nextjs/)

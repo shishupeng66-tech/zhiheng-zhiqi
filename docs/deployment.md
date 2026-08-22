@@ -1,6 +1,6 @@
 # Deployment
 
-The starter deploys to Vercel out of the box, or anywhere Docker runs. `next.config.ts` sets `output: 'standalone'`, so production builds are optimized for self-hosting.
+The project deploys to Vercel out of the box, or anywhere Docker runs. `next.config.ts` sets `output: 'standalone'`, so production builds are optimized for self-hosting.
 
 ## Vercel (Recommended)
 
@@ -14,8 +14,8 @@ For other platforms, see the [Next.js deployment docs](https://nextjs.org/docs/a
 
 Ensure these are set in your deployment platform:
 
-- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
-- `CLERK_SECRET_KEY`
+- `DATABASE_PATH` — SQLite database file path (local deployment, e.g. `/var/lib/zhiheng/zhiheng_local.db`)
+- `INITIAL_ADMIN_*` — first super-admin bootstrap variables (initialization only)
 - All `NEXT_PUBLIC_*` variables for client-side access
 - `SENTRY_*` variables if using error tracking
 
@@ -30,22 +30,22 @@ Build the image:
 ```bash
 # Node.js
 docker build \
-  --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_xxxxx \
-  -t shadcn-dashboard .
+  --build-arg NEXT_PUBLIC_SENTRY_DSN=https://...@....ingest.sentry.io/... \
+  -t zhiheng-zhiqi .
 
 # OR Bun
 docker build -f Dockerfile.bun \
-  --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_xxxxx \
-  -t shadcn-dashboard .
+  --build-arg NEXT_PUBLIC_SENTRY_DSN=https://...@....ingest.sentry.io/... \
+  -t zhiheng-zhiqi .
 ```
 
 Run the container:
 
 ```bash
 docker run -d -p 3000:3000 \
-  -e NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_xxxxx \
-  -e CLERK_SECRET_KEY=sk_live_xxxxx \
+  -e DATABASE_PATH=/var/lib/zhiheng/zhiheng_local.db \
+  -e INITIAL_ADMIN_USERNAME=admin \
   --restart unless-stopped \
-  --name shadcn-dashboard \
-  shadcn-dashboard
+  --name zhiheng-zhiqi \
+  zhiheng-zhiqi
 ```
