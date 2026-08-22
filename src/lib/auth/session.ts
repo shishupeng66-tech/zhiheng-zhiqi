@@ -1,5 +1,5 @@
 import { randomBytes, randomUUID } from 'node:crypto';
-import { eq } from 'drizzle-orm';
+import { and, eq, ne } from 'drizzle-orm';
 import { getDb } from '../db';
 import { sessions, users, type User } from '../db/schema';
 
@@ -62,7 +62,7 @@ export async function getUserBySessionToken(
     return null;
   }
   const user = await getDb().select().from(users).where(eq(users.id, session.userId)).get();
-  if (!user || user.status === 'disabled') return null;
+  if (!user || user.status !== 'active') return null;
   return user;
 }
 
@@ -72,4 +72,17 @@ export async function getUserBySessionToken(
  */
 export async function deleteUserSessions(userId: string): Promise<void> {
   await getDb().delete(sessions).where(eq(sessions.userId, userId));
+}
+
+export async function deleteOtherUserSessions(
+  userId: string,
+  keepToken: string | undefined | null
+): Promise<void> {
+  if (!keepToken) {
+    await deleteUserSessions(userId);
+    return;
+  }
+  await getDb()
+    .delete(sessions)
+    .where(and(eq(sessions.userId, userId), ne(sessions.sessionToken, keepToken)));
 }

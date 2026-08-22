@@ -9,13 +9,7 @@ const UserContext = createContext<PublicUser | null>(null);
  * 由 dashboard 布局（Server Component）读取 getCurrentUser() 后注入，
  * 供 user-nav / app-sidebar / use-nav 等客户端组件获取本地当前用户。
  */
-export function UserProvider({
-  user,
-  children
-}: {
-  user: PublicUser | null;
-  children: ReactNode;
-}) {
+export function UserProvider({ user, children }: { user: PublicUser | null; children: ReactNode }) {
   return <UserContext.Provider value={user}>{children}</UserContext.Provider>;
 }
 

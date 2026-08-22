@@ -1,7 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,14 +12,31 @@ import { Icons } from '@/components/icons';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/components/auth/user-provider';
 import { roleLabel, statusLabel } from '@/constants/rbac';
+import { cn } from '@/lib/utils';
+
+const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
+const ACCEPTED_AVATAR_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+
+function getInitial(name: string) {
+  return name.trim().slice(0, 1).toUpperCase() || '+';
+}
+
+function safeInternalRedirect(value: string | null) {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return '/dashboard';
+  return value;
+}
 
 export default function ProfileViewPage() {
   const user = useCurrentUser();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const [name, setName] = React.useState('');
   const [phone, setPhone] = React.useState('');
   const [avatar, setAvatar] = React.useState('');
+  const [avatarPreview, setAvatarPreview] = React.useState('');
+  const [avatarFile, setAvatarFile] = React.useState<File | null>(null);
   const [profileSaving, setProfileSaving] = React.useState(false);
 
   const [currentPwd, setCurrentPwd] = React.useState('');
@@ -27,17 +45,58 @@ export default function ProfileViewPage() {
   const [pwdSaving, setPwdSaving] = React.useState(false);
   const [pwdError, setPwdError] = React.useState('');
 
-  // 仅在切换登录用户时用服务端上下文初始化可编辑字段
   React.useEffect(() => {
     if (user) {
       setName(user.name ?? '');
       setPhone(user.phone ?? '');
       setAvatar(user.avatar ?? '');
+      setAvatarPreview(user.avatar ?? '');
+      setAvatarFile(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user]);
+
+  React.useEffect(() => {
+    return () => {
+      if (avatarPreview.startsWith('blob:')) URL.revokeObjectURL(avatarPreview);
+    };
+  }, [avatarPreview]);
 
   if (!user) return null;
+
+  function chooseAvatar(file: File | undefined) {
+    if (!file) return;
+    if (!ACCEPTED_AVATAR_TYPES.includes(file.type)) {
+      toast.error('头像仅支持 png、jpg、jpeg、webp 格式');
+      return;
+    }
+    if (file.size > MAX_AVATAR_SIZE) {
+      toast.error('头像图片不能超过 2MB');
+      return;
+    }
+    if (avatarPreview.startsWith('blob:')) URL.revokeObjectURL(avatarPreview);
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  }
+
+  function removeAvatar() {
+    if (avatarPreview.startsWith('blob:')) URL.revokeObjectURL(avatarPreview);
+    setAvatarFile(null);
+    setAvatarPreview('');
+    setAvatar('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  async function uploadAvatarIfNeeded() {
+    if (!avatarFile) return avatar.trim() || null;
+    const data = new FormData();
+    data.set('avatar', avatarFile);
+    const res = await fetch('/api/profile/avatar', { method: 'POST', body: data });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok || typeof body.url !== 'string') {
+      throw new Error(body.message ?? '头像上传失败');
+    }
+    return body.url as string;
+  }
 
   async function saveProfile(e: React.FormEvent) {
     e.preventDefault();
@@ -47,13 +106,14 @@ export default function ProfileViewPage() {
     }
     setProfileSaving(true);
     try {
+      const nextAvatar = await uploadAvatarIfNeeded();
       const res = await fetch('/api/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(),
           phone: phone.trim() || null,
-          avatar: avatar.trim() || null
+          avatar: nextAvatar
         })
       });
       const d = await res.json().catch(() => ({}));
@@ -61,11 +121,13 @@ export default function ProfileViewPage() {
         toast.error(d.message ?? '保存失败');
         return;
       }
+      setAvatar(nextAvatar ?? '');
+      setAvatarFile(null);
+      setAvatarPreview(nextAvatar ?? '');
       toast.success('个人资料已更新');
-      // 重新拉取服务端用户上下文，刷新只读展示
       router.refresh();
-    } catch {
-      toast.error('网络错误，保存失败');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '网络错误，保存失败');
     } finally {
       setProfileSaving(false);
     }
@@ -94,9 +156,8 @@ export default function ProfileViewPage() {
         setPwdError(d.message ?? '修改失败');
         return;
       }
-      toast.success('密码修改成功，即将跳转登录页');
-      // 服务端已使本人全部会话失效 → 强制重新登录
-      router.push('/auth/sign-in');
+      toast.success('密码修改成功');
+      router.push(safeInternalRedirect(searchParams.get('redirect_url') ?? d.redirectTo));
       router.refresh();
     } catch {
       setPwdError('网络错误，修改失败');
@@ -110,7 +171,7 @@ export default function ProfileViewPage() {
       {user.mustChangePassword && (
         <div className='flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300'>
           <Icons.warning className='size-4 shrink-0' />
-          检测到您仍使用初始密码，请尽快在下方「修改密码」中设置新密码。
+          检测到您仍在使用初始密码，请先在下方修改密码。
         </div>
       )}
 
@@ -118,15 +179,15 @@ export default function ProfileViewPage() {
         <CardHeader>
           <CardTitle>基本信息</CardTitle>
           <CardDescription>
-            查看您的企业账号信息（账号、工号、部门、岗位、角色等由系统管理员维护，不可自助修改）
+            查看您的企业账号信息。账号、工号、部门、岗位、角色由系统管理员维护。
           </CardDescription>
         </CardHeader>
         <CardContent className='grid grid-cols-1 gap-x-8 gap-y-3 text-sm sm:grid-cols-2'>
           <InfoRow label='姓名' value={user.name} />
           <InfoRow label='账号' value={user.username} />
           <InfoRow label='工号' value={user.employeeNo} />
-          <InfoRow label='部门' value={user.department ?? '—'} />
-          <InfoRow label='岗位' value={user.position ?? '—'} />
+          <InfoRow label='部门' value={user.department ?? '-'} />
+          <InfoRow label='岗位' value={user.position ?? '-'} />
           <InfoRow
             label='角色'
             value={
@@ -173,6 +234,47 @@ export default function ProfileViewPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={saveProfile} className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
+            <div className='flex flex-col items-center gap-2 sm:col-span-2'>
+              <button
+                type='button'
+                className={cn(
+                  'flex size-24 items-center justify-center overflow-hidden rounded-full border border-dashed border-border bg-muted text-muted-foreground transition hover:border-primary hover:text-primary',
+                  avatarPreview && 'border-solid'
+                )}
+                onClick={() => fileInputRef.current?.click()}
+                aria-label='上传头像'
+              >
+                <Avatar className='size-full'>
+                  {avatarPreview ? <AvatarImage src={avatarPreview} alt='头像预览' /> : null}
+                  <AvatarFallback className='text-3xl'>
+                    {avatarPreview ? getInitial(name) : '+'}
+                  </AvatarFallback>
+                </Avatar>
+              </button>
+              <input
+                ref={fileInputRef}
+                type='file'
+                className='hidden'
+                accept='image/png,image/jpeg,image/webp'
+                onChange={(event) => chooseAvatar(event.target.files?.[0])}
+              />
+              <div className='flex items-center gap-2'>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {avatarPreview ? '更换头像' : '上传头像'}
+                </Button>
+                {avatarPreview ? (
+                  <Button type='button' variant='ghost' size='sm' onClick={removeAvatar}>
+                    移除头像
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+
             <div className='space-y-2'>
               <Label htmlFor='profile-name'>姓名</Label>
               <Input id='profile-name' value={name} onChange={(e) => setName(e.target.value)} />
@@ -186,21 +288,12 @@ export default function ProfileViewPage() {
                 placeholder='选填'
               />
             </div>
-            <div className='space-y-2 sm:col-span-2'>
-              <Label htmlFor='profile-avatar'>头像 URL</Label>
-              <Input
-                id='profile-avatar'
-                value={avatar}
-                onChange={(e) => setAvatar(e.target.value)}
-                placeholder='https://…（选填）'
-              />
-            </div>
             <div className='sm:col-span-2'>
               <Button type='submit' disabled={profileSaving}>
                 {profileSaving ? (
                   <>
                     <Icons.spinner className='animate-spin' />
-                    保存中…
+                    保存中...
                   </>
                 ) : (
                   '保存修改'
@@ -215,7 +308,7 @@ export default function ProfileViewPage() {
         <CardHeader>
           <CardTitle>修改密码</CardTitle>
           <CardDescription>
-            修改密码后，您在其他设备上的登录会话将立即失效，需使用新密码重新登录。
+            修改密码后，当前会话保持有效，其他设备上的登录会话会失效。
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -256,7 +349,7 @@ export default function ProfileViewPage() {
                 {pwdSaving ? (
                   <>
                     <Icons.spinner className='animate-spin' />
-                    修改中…
+                    修改中...
                   </>
                 ) : (
                   '修改密码'

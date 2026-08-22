@@ -10,6 +10,10 @@ type BreadcrumbItem = {
 
 // This allows to add custom title as well
 const routeMapping: Record<string, BreadcrumbItem[]> = {
+  '/dashboard/system/employees': [
+    { title: '系统管理', link: '/dashboard/system/employees' },
+    { title: '员工管理', link: '/dashboard/system/employees' }
+  ],
   '/dashboard': [{ title: '仪表盘', link: '/dashboard' }],
   '/dashboard/employee': [
     { title: '仪表盘', link: '/dashboard' },
@@ -48,7 +52,9 @@ const segmentLabels: Record<string, string> = {
   profile: '个人资料',
   notifications: '通知',
   billing: '账单',
-  employee: '员工'
+  system: '系统管理',
+  employee: '员工',
+  employees: '员工管理'
 };
 
 export function useBreadcrumbs() {

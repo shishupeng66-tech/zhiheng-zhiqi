@@ -63,7 +63,7 @@ export default function ResetPasswordDialog({
         setError(d.message ?? '重置失败');
         return;
       }
-      toast.success('密码已重置，该员工需使用新密码重新登录');
+      toast.success('密码已重置，该员工旧会话已失效');
       onOpenChange(false);
       onSaved();
     } catch {
@@ -79,8 +79,8 @@ export default function ResetPasswordDialog({
         <DialogHeader>
           <DialogTitle>重置密码</DialogTitle>
           <DialogDescription>
-            为 {target?.name}（{target?.username}
-            ）重置登录密码。重置后该员工全部会话失效，需使用新密码重新登录。
+            为 {target?.name}（{target?.username}）设置新登录密码。确认后该员工旧 session
+            会立即失效。
           </DialogDescription>
         </DialogHeader>
 
@@ -105,7 +105,7 @@ export default function ResetPasswordDialog({
               autoComplete='new-password'
             />
           </div>
-          {error && <p className='text-destructive text-sm'>{error}</p>}
+          {error && <p className='text-sm text-destructive'>{error}</p>}
           <DialogFooter>
             <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
               取消
@@ -114,10 +114,10 @@ export default function ResetPasswordDialog({
               {saving ? (
                 <>
                   <Icons.spinner className='animate-spin' />
-                  重置中…
+                  重置中...
                 </>
               ) : (
-                '重置密码'
+                '确认重置'
               )}
             </Button>
           </DialogFooter>

@@ -1,4 +1,7 @@
+import { loadEnvConfig } from '@next/env';
 import { runMigrations } from '../src/lib/db';
+
+loadEnvConfig(process.cwd());
 
 /**
  * 应用数据库迁移（drizzle 迁移，使用 better-sqlite3 驱动）。

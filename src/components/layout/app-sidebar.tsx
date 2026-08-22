@@ -155,7 +155,11 @@ export default function AppSidebar() {
                   <DropdownMenuLabel className='p-0 font-normal'>
                     <div className='px-1 py-1.5'>
                       {currentUser && (
-                        <UserAvatarProfile className='h-8 w-8 rounded-lg' showInfo user={currentUser} />
+                        <UserAvatarProfile
+                          className='h-8 w-8 rounded-lg'
+                          showInfo
+                          user={currentUser}
+                        />
                       )}
                     </div>
                   </DropdownMenuLabel>

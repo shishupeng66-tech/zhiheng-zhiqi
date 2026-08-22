@@ -7,7 +7,7 @@ import type { Role, Status } from '@/lib/db/schema';
 export const dynamic = 'force-dynamic';
 
 const ROLES: Role[] = ['super_admin', 'manager', 'employee'];
-const STATUSES: Status[] = ['active', 'disabled'];
+const STATUSES: Status[] = ['active', 'disabled', 'deleted'];
 
 /**
  * GET /api/system/employees
@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
       phone: body.phone ? String(body.phone) : null,
       department: body.department ? String(body.department) : null,
       position: body.position ? String(body.position) : null,
+      avatar: body.avatar ? String(body.avatar) : null,
       status:
         body.status && STATUSES.includes(body.status as Status)
           ? (body.status as Status)

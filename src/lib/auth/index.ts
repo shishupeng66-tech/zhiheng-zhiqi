@@ -37,7 +37,7 @@ export type LoginResult =
 export async function login(username: string, password: string): Promise<LoginResult> {
   const user = await findUserByUsername(username);
   if (!user) return { ok: false, error: 'not_found' };
-  if (user.status === 'disabled') return { ok: false, error: 'disabled' };
+  if (user.status !== 'active') return { ok: false, error: 'disabled' };
   const ok = await verifyPassword(password, user.passwordHash);
   if (!ok) return { ok: false, error: 'invalid_password' };
   const { token, expiresAt } = await createSession(user.id);

@@ -1,13 +1,17 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getCurrentUser, toPublicUser } from '@/lib/auth';
-import { findUserById, updateEmployee, type UpdateEmployeeInput } from '@/services/users';
+import {
+  deleteEmployee,
+  findUserById,
+  updateEmployee,
+  type UpdateEmployeeInput
+} from '@/services/users';
 import { serviceErrorResponse } from '@/lib/api/error-response';
 
 export const dynamic = 'force-dynamic';
 
 type Ctx = { params: Promise<{ id: string }> };
 
-/** GET /api/system/employees/:id — 单个员工详情（仅超级管理员） */
 export async function GET(_request: NextRequest, { params }: Ctx) {
   const actor = await getCurrentUser();
   if (!actor || actor.role !== 'super_admin') {
@@ -21,11 +25,6 @@ export async function GET(_request: NextRequest, { params }: Ctx) {
   return NextResponse.json({ user: toPublicUser(user) });
 }
 
-/**
- * PATCH /api/system/employees/:id
- * 编辑员工资料（姓名 / 手机号 / 部门 / 岗位 / 头像）。
- * 角色与状态不在此处处理（走 /role 与 /status 接口），以保证安全校验集中。
- */
 export async function PATCH(request: NextRequest, { params }: Ctx) {
   const actor = await getCurrentUser();
   if (!actor || actor.role !== 'super_admin') {
@@ -42,7 +41,9 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
 
   try {
     const patch: UpdateEmployeeInput = {};
+    if (typeof body.username === 'string') patch.username = body.username;
     if (typeof body.name === 'string') patch.name = body.name;
+    if (typeof body.employeeNo === 'string') patch.employeeNo = body.employeeNo;
     if (body.phone === null || typeof body.phone === 'string') patch.phone = body.phone;
     if (body.department === null || typeof body.department === 'string')
       patch.department = body.department;
@@ -50,6 +51,21 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
     if (body.avatar === null || typeof body.avatar === 'string') patch.avatar = body.avatar;
 
     const updated = await updateEmployee(id, patch);
+    return NextResponse.json({ user: toPublicUser(updated) });
+  } catch (e) {
+    return serviceErrorResponse(e);
+  }
+}
+
+export async function DELETE(_request: NextRequest, { params }: Ctx) {
+  const actor = await getCurrentUser();
+  if (!actor || actor.role !== 'super_admin') {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+  const { id } = await params;
+
+  try {
+    const updated = await deleteEmployee(id, { id: actor.id, role: actor.role });
     return NextResponse.json({ user: toPublicUser(updated) });
   } catch (e) {
     return serviceErrorResponse(e);

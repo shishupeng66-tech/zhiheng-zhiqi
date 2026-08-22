@@ -1,15 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { deleteUserSessions, findUserById, updatePassword } from '@/services/users';
+import { getCurrentUser, SESSION_COOKIE } from '@/lib/auth';
+import { findUserById, updatePassword } from '@/services/users';
 import { verifyPassword } from '@/lib/auth/password';
+import { deleteOtherUserSessions } from '@/lib/auth/session';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * POST /api/profile/change-password
- * 员工自助修改密码：校验当前密码后更新，并使其全部会话失效（强制重新登录）。
- * 成功后客户端应跳转至登录页重新登录。
- */
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
   if (!user) {
@@ -46,8 +42,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  await updatePassword(user.id, next); // 写入新哈希并置 mustChangePassword=false
-  await deleteUserSessions(user.id); // 使本人全部会话失效 → 强制重新登录
+  await updatePassword(user.id, next);
+  await deleteOtherUserSessions(user.id, request.cookies.get(SESSION_COOKIE)?.value);
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, redirectTo: '/dashboard' });
 }

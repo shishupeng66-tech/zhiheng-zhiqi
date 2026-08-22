@@ -45,9 +45,7 @@ export function UserNav() {
           <DropdownMenuLabel className='font-normal'>
             <div className='flex flex-col space-y-1'>
               <p className='text-sm leading-none font-medium'>{user.name}</p>
-              {subtitle && (
-                <p className='text-muted-foreground text-xs leading-none'>{subtitle}</p>
-              )}
+              {subtitle && <p className='text-muted-foreground text-xs leading-none'>{subtitle}</p>}
               <p className='text-muted-foreground text-xs leading-none'>{user.username}</p>
             </div>
           </DropdownMenuLabel>

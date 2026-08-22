@@ -1,6 +1,17 @@
 'use client';
 
 import * as React from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,13 +21,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -41,6 +46,33 @@ const ROLE_BADGE: Record<Role, 'default' | 'secondary' | 'outline'> = {
   employee: 'outline'
 };
 
+const roleFilterLabels: Record<string, string> = {
+  all: '全部角色',
+  super_admin: '超级管理员',
+  manager: '管理者',
+  employee: '员工'
+};
+
+const statusFilterLabels: Record<string, string> = {
+  all: '全部状态',
+  active: '启用',
+  disabled: '停用',
+  deleted: '已删除'
+};
+
+function getInitial(name: string) {
+  return name.trim().slice(0, 1).toUpperCase() || '员';
+}
+
+function EmployeeAvatar({ user }: { user: PublicUser }) {
+  return (
+    <Avatar className='size-8'>
+      {user.avatar ? <AvatarImage src={user.avatar} alt={user.name} /> : null}
+      <AvatarFallback>{getInitial(user.name)}</AvatarFallback>
+    </Avatar>
+  );
+}
+
 export default function EmployeesClient({ currentUserId }: { currentUserId: string }) {
   const [users, setUsers] = React.useState<PublicUser[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -53,6 +85,8 @@ export default function EmployeesClient({ currentUserId }: { currentUserId: stri
   const [formOpen, setFormOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<PublicUser | null>(null);
   const [resetTarget, setResetTarget] = React.useState<PublicUser | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<PublicUser | null>(null);
+  const [deleting, setDeleting] = React.useState(false);
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -84,8 +118,9 @@ export default function EmployeesClient({ currentUserId }: { currentUserId: stri
   }, [load]);
 
   async function toggleStatus(u: PublicUser) {
+    if (u.status === 'deleted') return;
     if (u.id === currentUserId && u.role === 'super_admin') {
-      toast.error('超级管理员不能禁用自己。');
+      toast.error('超级管理员不能停用自己');
       return;
     }
     const next: Status = u.status === 'active' ? 'disabled' : 'active';
@@ -100,17 +135,44 @@ export default function EmployeesClient({ currentUserId }: { currentUserId: stri
         toast.error(data.message ?? '操作失败');
         return;
       }
-      toast.success(next === 'disabled' ? '已禁用该账号' : '已启用该账号');
+      toast.success(next === 'disabled' ? '已停用该账号' : '已启用该账号');
       void load();
     } catch {
       toast.error('网络错误，操作失败');
     }
   }
 
+  async function deleteUser() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/system/employees/${deleteTarget.id}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.message ?? '删除失败');
+        return;
+      }
+      toast.success('已删除该账号');
+      setDeleteTarget(null);
+      void load();
+    } catch {
+      toast.error('网络错误，删除失败');
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  function openEdit(user: PublicUser) {
+    setEditing(user);
+    setFormOpen(true);
+  }
+
   return (
     <PageContainer
       pageTitle='员工管理'
-      pageDescription='管理系统内员工账号、角色与状态'
+      pageDescription='管理员工账号、角色与状态'
       pageHeaderAction={
         <Button
           onClick={() => {
@@ -123,7 +185,6 @@ export default function EmployeesClient({ currentUserId }: { currentUserId: stri
         </Button>
       }
     >
-      {/* 工具栏：搜索 + 过滤 */}
       <div className='mb-4 flex flex-wrap items-center gap-2'>
         <form
           className='flex flex-1 items-center gap-2'
@@ -133,7 +194,7 @@ export default function EmployeesClient({ currentUserId }: { currentUserId: stri
           }}
         >
           <div className='relative w-full max-w-xs'>
-            <Icons.search className='text-muted-foreground pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2' />
+            <Icons.search className='pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground' />
             <Input
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
@@ -147,25 +208,26 @@ export default function EmployeesClient({ currentUserId }: { currentUserId: stri
         </form>
 
         <Select value={roleFilter} onValueChange={(v) => setRoleFilter((v as string) ?? 'all')}>
-          <SelectTrigger className='w-[140px]'>
-            <SelectValue placeholder='全部角色' />
+          <SelectTrigger className='w-[150px]'>
+            <span>{roleFilterLabels[roleFilter] ?? '全部角色'}</span>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value='all'>全部角色</SelectItem>
             <SelectItem value='super_admin'>超级管理员</SelectItem>
-            <SelectItem value='manager'>管理层</SelectItem>
+            <SelectItem value='manager'>管理者</SelectItem>
             <SelectItem value='employee'>员工</SelectItem>
           </SelectContent>
         </Select>
 
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter((v as string) ?? 'all')}>
-          <SelectTrigger className='w-[120px]'>
-            <SelectValue placeholder='全部状态' />
+          <SelectTrigger className='w-[140px]'>
+            <span>{statusFilterLabels[statusFilter] ?? '全部状态'}</span>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value='all'>全部状态</SelectItem>
             <SelectItem value='active'>启用</SelectItem>
-            <SelectItem value='disabled'>禁用</SelectItem>
+            <SelectItem value='disabled'>停用</SelectItem>
+            <SelectItem value='deleted'>已删除</SelectItem>
           </SelectContent>
         </Select>
 
@@ -175,7 +237,6 @@ export default function EmployeesClient({ currentUserId }: { currentUserId: stri
         </Button>
       </div>
 
-      {/* 表格 */}
       <div className='rounded-lg border'>
         <Table>
           <TableHeader>
@@ -195,26 +256,32 @@ export default function EmployeesClient({ currentUserId }: { currentUserId: stri
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={10} className='text-muted-foreground py-8 text-center'>
-                  加载中…
+                <TableCell colSpan={10} className='py-8 text-center text-muted-foreground'>
+                  加载中...
                 </TableCell>
               </TableRow>
             ) : users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className='text-muted-foreground py-8 text-center'>
+                <TableCell colSpan={10} className='py-8 text-center text-muted-foreground'>
                   暂无员工数据
                 </TableCell>
               </TableRow>
             ) : (
               users.map((u) => {
                 const isSelf = u.id === currentUserId;
+                const isDeleted = u.status === 'deleted';
                 return (
-                  <TableRow key={u.id}>
-                    <TableCell className='font-medium'>{u.name}</TableCell>
+                  <TableRow key={u.id} className={isDeleted ? 'opacity-70' : undefined}>
+                    <TableCell className='font-medium'>
+                      <div className='flex items-center gap-2'>
+                        <EmployeeAvatar user={u} />
+                        <span>{u.name}</span>
+                      </div>
+                    </TableCell>
                     <TableCell>{u.username}</TableCell>
                     <TableCell>{u.employeeNo}</TableCell>
-                    <TableCell>{u.department ?? '—'}</TableCell>
-                    <TableCell>{u.position ?? '—'}</TableCell>
+                    <TableCell>{u.department ?? '-'}</TableCell>
+                    <TableCell>{u.position ?? '-'}</TableCell>
                     <TableCell>
                       <Badge variant={ROLE_BADGE[u.role]}>{roleLabel(u.role)}</Badge>
                     </TableCell>
@@ -239,7 +306,7 @@ export default function EmployeesClient({ currentUserId }: { currentUserId: stri
                             month: '2-digit',
                             day: '2-digit'
                           })
-                        : '—'}
+                        : '-'}
                     </TableCell>
                     <TableCell className='text-right'>
                       <DropdownMenu>
@@ -251,34 +318,39 @@ export default function EmployeesClient({ currentUserId }: { currentUserId: stri
                           }
                         />
                         <DropdownMenuContent align='end'>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setEditing(u);
-                              setFormOpen(true);
-                            }}
-                          >
+                          <DropdownMenuItem disabled={isDeleted} onClick={() => openEdit(u)}>
                             <Icons.edit />
-                            编辑
+                            编辑员工
                           </DropdownMenuItem>
-                          <DropdownMenuItem disabled={isSelf} onClick={() => setResetTarget(u)}>
+                          <DropdownMenuItem
+                            disabled={isSelf || isDeleted}
+                            onClick={() => setResetTarget(u)}
+                          >
                             <Icons.lock />
                             重置密码
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            disabled={isSelf && u.role === 'super_admin'}
+                            disabled={isDeleted || (isSelf && u.role === 'super_admin')}
                             onClick={() => void toggleStatus(u)}
                           >
                             {u.status === 'active' ? (
                               <>
                                 <Icons.circleX />
-                                禁用
+                                停用账号
                               </>
                             ) : (
                               <>
                                 <Icons.check />
-                                启用
+                                启用账号
                               </>
                             )}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            disabled={isSelf || isDeleted}
+                            onClick={() => setDeleteTarget(u)}
+                          >
+                            <Icons.trash />
+                            删除账号
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -305,6 +377,32 @@ export default function EmployeesClient({ currentUserId }: { currentUserId: stri
         target={resetTarget}
         onSaved={() => void load()}
       />
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除账号</AlertDialogTitle>
+            <AlertDialogDescription>
+              删除后该员工将无法登录，旧 session
+              会失效，工作空间成员关系会被移除，但历史业务数据会保留。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              variant='destructive'
+              disabled={deleting}
+              onClick={() => void deleteUser()}
+            >
+              {deleting ? '删除中...' : '确认删除'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageContainer>
   );
 }
