@@ -31,19 +31,6 @@ export type WorkspaceAccessResult =
   | { ok: true; context: WorkspaceAccessContext }
   | { ok: false; reason: 'unauthenticated' | 'not_found' | 'inactive' | 'forbidden' };
 
-const legacyVideoWorkspaceModules = [
-  'overview',
-  'assets',
-  'topics',
-  'scripts',
-  'ai-video',
-  'projects',
-  'review',
-  'publish',
-  'analytics',
-  'members'
-];
-
 const enterpriseMediaWorkspaceModules = [
   'overview',
   'assets',
@@ -82,18 +69,6 @@ const enterpriseAdminPermissions = [
   'publish:manage',
   'analytics:view'
 ] satisfies WorkspacePermission[];
-
-export const defaultVideoWorkspace = {
-  id: 'workspace-video-production',
-  name: '短视频生产',
-  slug: 'video-production',
-  description: '企业短视频内容策划、素材管理、AI视频生产、审核发布与数据复盘工作台',
-  icon: 'video',
-  workspaceType: 'video-production' as WorkspaceType,
-  status: 'active' as const,
-  enabledModules: legacyVideoWorkspaceModules,
-  moduleConfig: {}
-};
 
 export const defaultWorkspaces = [
   {
