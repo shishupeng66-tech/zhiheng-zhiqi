@@ -48,7 +48,7 @@ export const rolePermissionMap: Record<WorkspaceMemberRole, WorkspacePermission[
 export const workspaceRoleLabels: Record<WorkspaceMemberRole, string> = {
   owner: '所有者',
   admin: '管理员',
-  editor: '编辑',
+  editor: '编辑者',
   member: '成员',
   viewer: '只读'
 };

@@ -1,4 +1,4 @@
-import { and, desc, eq, like, or, sql } from 'drizzle-orm';
+import { and, desc, eq, like, ne, or, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../lib/db';
 import {
@@ -130,10 +130,15 @@ export type UpdateEmployeeInput = Partial<{
 
 export type Actor = { id: string; role: Role };
 
-export async function listUsers(opts?: { role?: Role; status?: Status }): Promise<User[]> {
+export async function listUsers(opts?: {
+  role?: Role;
+  status?: Status;
+  includeDeleted?: boolean;
+}): Promise<User[]> {
   const conditions = [];
   if (opts?.role) conditions.push(eq(users.role, opts.role));
   if (opts?.status) conditions.push(eq(users.status, opts.status));
+  if (!opts?.status && !opts?.includeDeleted) conditions.push(ne(users.status, 'deleted'));
   return getDb()
     .select()
     .from(users)
@@ -146,6 +151,7 @@ export async function searchUsers(opts: {
   q?: string;
   role?: Role;
   status?: Status;
+  includeDeleted?: boolean;
 }): Promise<User[]> {
   const q = opts.q?.trim().replace(/[%_\\]/g, '');
   const conditions = [];
@@ -160,6 +166,7 @@ export async function searchUsers(opts: {
   }
   if (opts.role) conditions.push(eq(users.role, opts.role));
   if (opts.status) conditions.push(eq(users.status, opts.status));
+  if (!opts.status && !opts.includeDeleted) conditions.push(ne(users.status, 'deleted'));
   return getDb()
     .select()
     .from(users)

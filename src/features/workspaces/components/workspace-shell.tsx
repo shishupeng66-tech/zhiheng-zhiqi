@@ -21,7 +21,7 @@ export function WorkspaceShell({ workspace, role, modules, children }: Workspace
   return (
     <div className='flex min-h-full flex-col'>
       <div className='border-b bg-background'>
-        <div className='mx-auto w-full max-w-7xl px-5 py-5 md:px-8 lg:px-10'>
+        <div className='w-full px-5 py-5 md:px-8 lg:px-10'>
           <Link
             className={buttonVariants({ variant: 'ghost', size: 'sm', className: '-ml-2' })}
             href='/dashboard/workspaces'
@@ -41,7 +41,7 @@ export function WorkspaceShell({ workspace, role, modules, children }: Workspace
                   <Badge variant='secondary'>{roleLabel}</Badge>
                   <Badge variant='outline'>{statusLabel}</Badge>
                 </div>
-                <p className='max-w-3xl text-sm leading-6 text-muted-foreground'>
+                <p className='max-w-5xl text-sm leading-6 text-muted-foreground'>
                   {workspace.description}
                 </p>
               </div>
@@ -51,12 +51,12 @@ export function WorkspaceShell({ workspace, role, modules, children }: Workspace
             </Badge>
           </div>
         </div>
-        <div className='mx-auto w-full max-w-7xl px-5 md:px-8 lg:px-10'>
+        <div className='w-full px-5 md:px-8 lg:px-10'>
           <WorkspaceModuleNav workspaceSlug={workspace.slug} modules={modules} />
         </div>
       </div>
 
-      <div className='mx-auto w-full max-w-7xl flex-1 px-5 py-5 md:px-8 lg:px-10'>{children}</div>
+      <div className='w-full flex-1 px-5 py-5 md:px-8 lg:px-10'>{children}</div>
     </div>
   );
 }

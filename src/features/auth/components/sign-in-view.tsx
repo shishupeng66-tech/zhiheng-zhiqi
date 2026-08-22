@@ -3,13 +3,14 @@ import { buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import * as React from 'react';
 import Link from 'next/link';
 import { InteractiveGridPattern } from './interactive-grid';
 
 export default function SignInViewPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
@@ -46,11 +47,15 @@ export default function SignInViewPage() {
         }
         return;
       }
-      // 首次登录必须修改初始密码 → 进入个人资料页；否则进入工作台
+      const redirectUrl = searchParams.get('redirect_url');
+      const safeRedirect =
+        redirectUrl && redirectUrl.startsWith('/') && !redirectUrl.startsWith('//')
+          ? redirectUrl
+          : '/dashboard';
       if (data.mustChangePassword) {
-        router.push('/dashboard/profile');
+        router.push(`/dashboard/profile?redirect_url=${encodeURIComponent(safeRedirect)}`);
       } else {
-        router.push('/dashboard/overview');
+        router.push(safeRedirect);
       }
       router.refresh();
     } catch {
@@ -96,10 +101,10 @@ export default function SignInViewPage() {
         />
         <div className='text-sidebar-foreground relative z-20 mt-auto'>
           <blockquote className='space-y-2'>
-            <p className='text-lg'>
-              &ldquo;这套起始模板为我节省了无数小时的工作，并让我能够比以往更快地向客户交付项目。&rdquo;
+            <p className='text-lg font-medium'>让企业拥有自己的 AI 工作空间</p>
+            <p className='text-sidebar-foreground/75 text-sm leading-6'>
+              把素材、知识、流程与团队协作沉淀为企业可持续复用的数字资产。
             </p>
-            <footer className='text-sidebar-foreground/70 text-sm'>某用户</footer>
           </blockquote>
         </div>
       </div>

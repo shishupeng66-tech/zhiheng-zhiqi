@@ -1,4 +1,5 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, ne } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 import { getCurrentUser } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import {
@@ -217,12 +218,77 @@ export function listWorkspaceMembers(workspaceId: string) {
       userId: users.id,
       name: users.name,
       username: users.username,
+      avatar: users.avatar,
+      employeeNo: users.employeeNo,
+      companyRole: users.role,
       department: users.department,
       position: users.position,
       status: users.status
     })
     .from(workspaceMembers)
     .innerJoin(users, eq(workspaceMembers.userId, users.id))
+    .where(and(eq(workspaceMembers.workspaceId, workspaceId), ne(users.status, 'deleted')))
+    .all();
+}
+
+export function listWorkspaceMemberCandidates(workspaceId: string) {
+  const members = getDb()
+    .select({ userId: workspaceMembers.userId })
+    .from(workspaceMembers)
     .where(eq(workspaceMembers.workspaceId, workspaceId))
     .all();
+  const memberIds = new Set(members.map((member) => member.userId));
+
+  return getDb()
+    .select({
+      id: users.id,
+      name: users.name,
+      username: users.username,
+      avatar: users.avatar,
+      employeeNo: users.employeeNo,
+      department: users.department,
+      position: users.position,
+      role: users.role,
+      status: users.status
+    })
+    .from(users)
+    .where(eq(users.status, 'active'))
+    .all()
+    .filter((user) => !memberIds.has(user.id));
+}
+
+export function addWorkspaceMember(workspaceId: string, userId: string, role: WorkspaceMemberRole) {
+  const db = getDb();
+  const existing = getWorkspaceMembership(workspaceId, userId);
+  if (existing) return existing;
+
+  const now = new Date();
+  const row = db
+    .insert(workspaceMembers)
+    .values({
+      id: randomUUID(),
+      workspaceId,
+      userId,
+      role,
+      createdAt: now,
+      updatedAt: now
+    })
+    .returning()
+    .get();
+  return row;
+}
+
+export function updateWorkspaceMemberRole(memberId: string, role: WorkspaceMemberRole) {
+  return (
+    getDb()
+      .update(workspaceMembers)
+      .set({ role, updatedAt: new Date() })
+      .where(eq(workspaceMembers.id, memberId))
+      .returning()
+      .get() ?? null
+  );
+}
+
+export function removeWorkspaceMember(memberId: string) {
+  getDb().delete(workspaceMembers).where(eq(workspaceMembers.id, memberId)).run();
 }
