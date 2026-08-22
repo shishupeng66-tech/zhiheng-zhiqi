@@ -33,14 +33,12 @@ export type WorkspaceAccessResult =
 
 const enterpriseMediaWorkspaceModules = [
   'overview',
+  'review',
+  'analytics',
+  'projects',
   'assets',
   'scripts',
-  'ai-video',
-  'projects',
-  'review',
-  'publish',
-  'analytics',
-  'members'
+  'ai-video'
 ];
 
 const aiContentWorkspaceModules = [
@@ -73,9 +71,10 @@ const enterpriseAdminPermissions = [
 export const defaultWorkspaces = [
   {
     id: 'workspace-enterprise-media',
-    name: '企业媒体空间',
+    name: '自动化剪辑空间',
     slug: 'enterprise-media',
-    description: '用于企业实拍素材管理、自动剪辑、字幕配音、成片输出与历史视频沉淀。',
+    description:
+      '帮助制造企业通过 AI 持续生产企业宣传短视频，AI 默认完成内容生产，人可以选择干预。',
     icon: 'video',
     workspaceType: 'enterprise-media' as WorkspaceType,
     status: 'active' as const,
@@ -117,6 +116,19 @@ export function ensureDefaultWorkspacesSeed() {
           createdAt: timestamp,
           updatedAt: timestamp
         })
+        .run();
+    } else {
+      db.update(workspaces)
+        .set({
+          name: defaultWorkspace.name,
+          description: defaultWorkspace.description,
+          icon: defaultWorkspace.icon,
+          workspaceType: defaultWorkspace.workspaceType,
+          enabledModules: defaultWorkspace.enabledModules,
+          moduleConfig: defaultWorkspace.moduleConfig,
+          updatedAt: timestamp
+        })
+        .where(eq(workspaces.id, existingWorkspace.id))
         .run();
     }
   }

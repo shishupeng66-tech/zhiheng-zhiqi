@@ -33,65 +33,53 @@ export type WorkspaceTypeDefinition = {
 export const enterpriseMediaModules: WorkspaceModuleDefinition[] = [
   {
     key: 'overview',
-    label: '概览',
+    label: '视频生产',
     path: '',
-    description: '查看企业实拍视频生产任务、素材资产和成片进度。',
+    description: '从 AI 推荐到一键生成，承载自动化剪辑空间的主要生产入口。',
     requiredPermission: 'workspace:view'
   },
   {
-    key: 'assets',
-    label: '素材库',
-    path: 'assets',
-    description: '管理企业实拍视频、图片、品牌素材和素材分析状态。',
-    requiredPermission: 'assets:view'
-  },
-  {
-    key: 'scripts',
-    label: '脚本中心',
-    shortLabel: '脚本',
-    path: 'scripts',
-    description: '管理宣传视频脚本、拍摄说明和剪辑参考。',
-    requiredPermission: 'scripts:manage'
-  },
-  {
-    key: 'ai-video',
-    label: '剪辑流程',
-    shortLabel: '剪辑',
-    path: 'ai-video',
-    description: '承载从素材选择到自动剪辑、字幕、配音和导出的流程骨架。',
-    requiredPermission: 'video:generate'
-  },
-  {
-    key: 'projects',
-    label: '成片管理',
-    shortLabel: '成片',
-    path: 'projects',
-    description: '跟踪企业宣传视频项目、成片状态和历史视频。',
-    requiredPermission: 'projects:manage'
-  },
-  {
     key: 'review',
-    label: '审核中心',
-    shortLabel: '审核',
+    label: '任务审核',
     path: 'review',
-    description: '处理宣传视频的审核、修改和确认。',
+    description: '查看 AI 自动生成的视频任务，并进行查看、删除和重新生成。',
     requiredPermission: 'review:approve'
-  },
-  {
-    key: 'publish',
-    label: '发布中心',
-    shortLabel: '发布',
-    path: 'publish',
-    description: '管理待发布、已排期、已发布和发布失败状态。',
-    requiredPermission: 'publish:manage'
   },
   {
     key: 'analytics',
     label: '数据复盘',
     shortLabel: '复盘',
     path: 'analytics',
-    description: '查看宣传视频数量、播放、互动和线索表现。',
+    description: '复盘自动化生产的视频数量、效率和内容表现。',
     requiredPermission: 'analytics:view'
+  },
+  {
+    key: 'projects',
+    label: '风格库',
+    path: 'projects',
+    description: '管理企业宣传短视频的内容定位、脚本规则和镜头规则。',
+    requiredPermission: 'projects:manage'
+  },
+  {
+    key: 'assets',
+    label: '素材资产',
+    path: 'assets',
+    description: '管理企业实拍视频、图片、品牌素材和素材分析状态。',
+    requiredPermission: 'assets:view'
+  },
+  {
+    key: 'scripts',
+    label: '声音资产',
+    path: 'scripts',
+    description: '管理企业旁白、配音风格和声音资产。',
+    requiredPermission: 'scripts:manage'
+  },
+  {
+    key: 'ai-video',
+    label: '内容配置',
+    path: 'ai-video',
+    description: '配置 AI 生成视频时使用的主题、脚本、声音和素材规则。',
+    requiredPermission: 'video:generate'
   },
   {
     key: 'members',
@@ -261,9 +249,9 @@ export const videoProductionModules: WorkspaceModuleDefinition[] = [
 export const workspaceTypeRegistry: Record<WorkspaceType, WorkspaceTypeDefinition> = {
   'enterprise-media': {
     type: 'enterprise-media',
-    name: '企业媒体空间',
+    name: '自动化剪辑空间',
     icon: 'video',
-    description: '企业实拍素材、宣传视频生产与成片管理空间。',
+    description: '面向制造企业的 AI 宣传短视频自动化生产工作台。',
     modules: enterpriseMediaModules
   },
   'ai-content': {
