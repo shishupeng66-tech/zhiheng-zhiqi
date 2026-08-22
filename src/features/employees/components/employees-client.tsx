@@ -128,6 +128,11 @@ export default function EmployeesClient({ currentUserId }: { currentUserId: stri
     }
   }
 
+  function openEdit(user: PublicUser) {
+    setEditing(user);
+    setFormOpen(true);
+  }
+
   return (
     <PageContainer
       pageTitle='员工管理'
@@ -275,14 +280,9 @@ export default function EmployeesClient({ currentUserId }: { currentUserId: stri
                           }
                         />
                         <DropdownMenuContent align='end'>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setEditing(u);
-                              setFormOpen(true);
-                            }}
-                          >
+                          <DropdownMenuItem onClick={() => openEdit(u)}>
                             <Icons.edit />
-                            编辑
+                            编辑员工
                           </DropdownMenuItem>
                           <DropdownMenuItem disabled={isSelf} onClick={() => setResetTarget(u)}>
                             <Icons.lock />
@@ -295,12 +295,12 @@ export default function EmployeesClient({ currentUserId }: { currentUserId: stri
                             {u.status === 'active' ? (
                               <>
                                 <Icons.circleX />
-                                停用
+                                停用账号
                               </>
                             ) : (
                               <>
                                 <Icons.check />
-                                启用
+                                启用账号
                               </>
                             )}
                           </DropdownMenuItem>
@@ -319,6 +319,8 @@ export default function EmployeesClient({ currentUserId }: { currentUserId: stri
         open={formOpen}
         onOpenChange={setFormOpen}
         editing={editing}
+        currentUserId={currentUserId}
+        onRequestResetPassword={(user) => setResetTarget(user)}
         onSaved={() => void load()}
       />
       <ResetPasswordDialog

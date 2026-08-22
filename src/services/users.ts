@@ -249,6 +249,9 @@ export async function setUserStatus(id: string, status: Status, actor: Actor): P
 
   const updated = await updateUser(id, { status });
   if (!updated) throw new NotFoundError('员工不存在');
+  if (status === 'disabled') {
+    await deleteUserSessionsFromSession(id);
+  }
   return updated;
 }
 

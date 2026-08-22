@@ -80,11 +80,15 @@ export default function EmployeeFormDialog({
   open,
   onOpenChange,
   editing,
+  currentUserId,
+  onRequestResetPassword,
   onSaved
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editing: PublicUser | null;
+  currentUserId: string;
+  onRequestResetPassword: (user: PublicUser) => void;
   onSaved: () => void;
 }) {
   const isEdit = !!editing;
@@ -267,7 +271,7 @@ export default function EmployeeFormDialog({
           <DialogTitle>{isEdit ? '编辑员工' : '新建员工'}</DialogTitle>
           <DialogDescription>
             {isEdit
-              ? '修改员工资料与角色。'
+              ? '修改员工资料、角色与账号管理操作。'
               : '创建企业员工账号，初始密码将要求该员工首次登录时修改。'}
           </DialogDescription>
         </DialogHeader>
@@ -313,6 +317,37 @@ export default function EmployeeFormDialog({
               ) : null}
             </div>
           </div>
+
+          {isEdit && editing ? (
+            <div className='rounded-lg border bg-muted/30 p-3 sm:col-span-2'>
+              <div className='mb-3 flex items-center justify-between gap-3'>
+                <div>
+                  <div className='text-sm font-medium'>账号管理</div>
+                  <div className='text-xs text-muted-foreground'>登录账号不可直接修改。</div>
+                </div>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  disabled={editing.id === currentUserId}
+                  onClick={() => onRequestResetPassword(editing)}
+                >
+                  <Icons.lock />
+                  重置密码
+                </Button>
+              </div>
+              <div className='grid gap-3 sm:grid-cols-2'>
+                <div className='space-y-2'>
+                  <Label htmlFor='emp-username-readonly'>登录账号</Label>
+                  <Input id='emp-username-readonly' value={form.username} disabled />
+                </div>
+                <div className='space-y-2'>
+                  <Label htmlFor='emp-no-readonly'>工号</Label>
+                  <Input id='emp-no-readonly' value={form.employeeNo} disabled />
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           <div className='space-y-2 sm:col-span-1'>
             <Label htmlFor='emp-name'>
