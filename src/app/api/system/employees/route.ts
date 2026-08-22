@@ -7,7 +7,7 @@ import type { Role, Status } from '@/lib/db/schema';
 export const dynamic = 'force-dynamic';
 
 const ROLES: Role[] = ['super_admin', 'manager', 'employee'];
-const STATUSES: Status[] = ['active', 'disabled'];
+const STATUSES: Status[] = ['active', 'disabled', 'deleted'];
 
 /**
  * GET /api/system/employees

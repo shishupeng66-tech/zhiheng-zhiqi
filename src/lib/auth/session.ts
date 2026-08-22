@@ -62,7 +62,7 @@ export async function getUserBySessionToken(
     return null;
   }
   const user = await getDb().select().from(users).where(eq(users.id, session.userId)).get();
-  if (!user || user.status === 'disabled') return null;
+  if (!user || user.status !== 'active') return null;
   return user;
 }
 

@@ -8,7 +8,8 @@ export const ROLE_LABELS: Record<Role, string> = {
 
 export const STATUS_LABELS: Record<Status, string> = {
   active: '启用',
-  disabled: '停用'
+  disabled: '停用',
+  deleted: '已删除'
 };
 
 export function roleLabel(role: Role): string {

@@ -9,8 +9,8 @@ import { sqliteTable, text, integer, uniqueIndex } from 'drizzle-orm/sqlite-core
 export const roles = ['super_admin', 'manager', 'employee'] as const;
 export type Role = (typeof roles)[number];
 
-/** 账号状态：active 可用 / disabled 已禁用 */
-export const statuses = ['active', 'disabled'] as const;
+/** 账号状态：active 可用 / disabled 停用 / deleted 已删除（软删除） */
+export const statuses = ['active', 'disabled', 'deleted'] as const;
 export type Status = (typeof statuses)[number];
 
 export const workspaceStatuses = ['active', 'disabled', 'archived'] as const;

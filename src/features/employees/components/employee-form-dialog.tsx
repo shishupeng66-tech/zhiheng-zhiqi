@@ -80,15 +80,11 @@ export default function EmployeeFormDialog({
   open,
   onOpenChange,
   editing,
-  currentUserId,
-  onRequestResetPassword,
   onSaved
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editing: PublicUser | null;
-  currentUserId: string;
-  onRequestResetPassword: (user: PublicUser) => void;
   onSaved: () => void;
 }) {
   const isEdit = !!editing;
@@ -153,9 +149,8 @@ export default function EmployeeFormDialog({
     if (avatarPreview.startsWith('blob:')) {
       URL.revokeObjectURL(avatarPreview);
     }
-    const nextPreview = URL.createObjectURL(file);
     setAvatarFile(file);
-    setAvatarPreview(nextPreview);
+    setAvatarPreview(URL.createObjectURL(file));
   }
 
   function removeAvatar() {
@@ -189,11 +184,9 @@ export default function EmployeeFormDialog({
     e.preventDefault();
     const errs: Record<string, string> = {};
     if (!form.name.trim()) errs.name = '姓名不能为空';
-    if (!isEdit) {
-      if (!form.username.trim()) errs.username = '登录账号不能为空';
-      if (!form.employeeNo.trim()) errs.employeeNo = '工号不能为空';
-      if (form.password.length < 6) errs.password = '初始密码至少 6 位';
-    }
+    if (!form.username.trim()) errs.username = '登录账号不能为空';
+    if (!form.employeeNo.trim()) errs.employeeNo = '工号不能为空';
+    if (!isEdit && form.password.length < 6) errs.password = '初始密码至少 6 位';
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
@@ -206,14 +199,16 @@ export default function EmployeeFormDialog({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name: form.name.trim(),
+            username: form.username.trim(),
+            employeeNo: form.employeeNo.trim(),
             phone: form.phone.trim() || null,
             department: form.department.trim() || null,
             position: form.position.trim() || null,
             avatar
           })
         });
+        const d = await res.json().catch(() => ({}));
         if (!res.ok) {
-          const d = await res.json().catch(() => ({}));
           toast.error(d.message ?? '保存失败');
           return;
         }
@@ -271,7 +266,7 @@ export default function EmployeeFormDialog({
           <DialogTitle>{isEdit ? '编辑员工' : '新建员工'}</DialogTitle>
           <DialogDescription>
             {isEdit
-              ? '修改员工资料、角色与账号管理操作。'
+              ? '修改员工资料、账号、工号与角色。密码请通过列表操作菜单重置。'
               : '创建企业员工账号，初始密码将要求该员工首次登录时修改。'}
           </DialogDescription>
         </DialogHeader>
@@ -318,38 +313,7 @@ export default function EmployeeFormDialog({
             </div>
           </div>
 
-          {isEdit && editing ? (
-            <div className='rounded-lg border bg-muted/30 p-3 sm:col-span-2'>
-              <div className='mb-3 flex items-center justify-between gap-3'>
-                <div>
-                  <div className='text-sm font-medium'>账号管理</div>
-                  <div className='text-xs text-muted-foreground'>登录账号不可直接修改。</div>
-                </div>
-                <Button
-                  type='button'
-                  variant='outline'
-                  size='sm'
-                  disabled={editing.id === currentUserId}
-                  onClick={() => onRequestResetPassword(editing)}
-                >
-                  <Icons.lock />
-                  重置密码
-                </Button>
-              </div>
-              <div className='grid gap-3 sm:grid-cols-2'>
-                <div className='space-y-2'>
-                  <Label htmlFor='emp-username-readonly'>登录账号</Label>
-                  <Input id='emp-username-readonly' value={form.username} disabled />
-                </div>
-                <div className='space-y-2'>
-                  <Label htmlFor='emp-no-readonly'>工号</Label>
-                  <Input id='emp-no-readonly' value={form.employeeNo} disabled />
-                </div>
-              </div>
-            </div>
-          ) : null}
-
-          <div className='space-y-2 sm:col-span-1'>
+          <div className='space-y-2'>
             <Label htmlFor='emp-name'>
               姓名 <span className='text-destructive'>*</span>
             </Label>
@@ -362,50 +326,48 @@ export default function EmployeeFormDialog({
             {errors.name && <p className='text-xs text-destructive'>{errors.name}</p>}
           </div>
 
-          {!isEdit && (
-            <>
-              <div className='space-y-2'>
-                <Label htmlFor='emp-username'>
-                  登录账号 <span className='text-destructive'>*</span>
-                </Label>
-                <Input
-                  id='emp-username'
-                  value={form.username}
-                  onChange={(e) => update('username', e.target.value)}
-                  aria-invalid={!!errors.username}
-                />
-                {errors.username && <p className='text-xs text-destructive'>{errors.username}</p>}
-              </div>
-              <div className='space-y-2'>
-                <Label htmlFor='emp-no'>
-                  工号 <span className='text-destructive'>*</span>
-                </Label>
-                <Input
-                  id='emp-no'
-                  value={form.employeeNo}
-                  onChange={(e) => update('employeeNo', e.target.value)}
-                  aria-invalid={!!errors.employeeNo}
-                />
-                {errors.employeeNo && (
-                  <p className='text-xs text-destructive'>{errors.employeeNo}</p>
-                )}
-              </div>
-              <div className='space-y-2 sm:col-span-2'>
-                <Label htmlFor='emp-pwd'>
-                  初始密码 <span className='text-destructive'>*</span>
-                </Label>
-                <Input
-                  id='emp-pwd'
-                  type='password'
-                  value={form.password}
-                  onChange={(e) => update('password', e.target.value)}
-                  autoComplete='new-password'
-                  aria-invalid={!!errors.password}
-                />
-                {errors.password && <p className='text-xs text-destructive'>{errors.password}</p>}
-              </div>
-            </>
-          )}
+          <div className='space-y-2'>
+            <Label htmlFor='emp-username'>
+              登录账号 <span className='text-destructive'>*</span>
+            </Label>
+            <Input
+              id='emp-username'
+              value={form.username}
+              onChange={(e) => update('username', e.target.value)}
+              aria-invalid={!!errors.username}
+            />
+            {errors.username && <p className='text-xs text-destructive'>{errors.username}</p>}
+          </div>
+
+          <div className='space-y-2'>
+            <Label htmlFor='emp-no'>
+              工号 <span className='text-destructive'>*</span>
+            </Label>
+            <Input
+              id='emp-no'
+              value={form.employeeNo}
+              onChange={(e) => update('employeeNo', e.target.value)}
+              aria-invalid={!!errors.employeeNo}
+            />
+            {errors.employeeNo && <p className='text-xs text-destructive'>{errors.employeeNo}</p>}
+          </div>
+
+          {!isEdit ? (
+            <div className='space-y-2'>
+              <Label htmlFor='emp-pwd'>
+                初始密码 <span className='text-destructive'>*</span>
+              </Label>
+              <Input
+                id='emp-pwd'
+                type='password'
+                value={form.password}
+                onChange={(e) => update('password', e.target.value)}
+                autoComplete='new-password'
+                aria-invalid={!!errors.password}
+              />
+              {errors.password && <p className='text-xs text-destructive'>{errors.password}</p>}
+            </div>
+          ) : null}
 
           <div className='space-y-2'>
             <Label htmlFor='emp-role'>角色</Label>
