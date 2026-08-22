@@ -4,8 +4,7 @@
 
 import { faker } from '@faker-js/faker';
 import { matchSorter } from 'match-sorter';
-
-export const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+import { delay } from '@/lib/delay';
 
 export type User = {
   id: number;

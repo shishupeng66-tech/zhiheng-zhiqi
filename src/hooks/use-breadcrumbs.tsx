@@ -44,7 +44,6 @@ const segmentLabels: Record<string, string> = {
   'multi-step': '分步表单',
   'sheet-form': '抽屉与弹窗',
   advanced: '高级模式',
-  'react-query': 'React Query',
   elements: '组件',
   icons: '图标',
   exclusive: '专属',
