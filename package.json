@@ -1,11 +1,9 @@
 {
-  "name": "next-shadcn-dashboard-starter",
+  "name": "zhiheng-zhiqi",
   "version": "1.0.0",
   "private": true,
-  "author": {
-    "name": "Kiran",
-    "url": "https://github.com/Kiranism"
-  },
+  "description": "企业AI工作平台",
+  "author": "知衡智企",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
