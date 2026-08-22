@@ -111,6 +111,7 @@ export type CreateEmployeeInput = {
   phone?: string | null;
   department?: string | null;
   position?: string | null;
+  avatar?: string | null;
   status?: Status;
   /** 是否要求首次登录改密（默认 true） */
   mustChangePassword?: boolean;
@@ -200,6 +201,7 @@ export async function createEmployee(input: CreateEmployeeInput): Promise<User> 
     phone: input.phone ?? null,
     department: input.department ?? null,
     position: input.position ?? null,
+    avatar: input.avatar ?? null,
     status: input.status ?? 'active',
     mustChangePassword: input.mustChangePassword ?? true
   });
