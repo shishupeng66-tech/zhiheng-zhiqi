@@ -31,9 +31,33 @@ export type WorkspaceAccessResult =
   | { ok: true; context: WorkspaceAccessContext }
   | { ok: false; reason: 'unauthenticated' | 'not_found' | 'inactive' | 'forbidden' };
 
-const defaultWorkspaceModules = [
+const legacyVideoWorkspaceModules = [
   'overview',
   'assets',
+  'topics',
+  'scripts',
+  'ai-video',
+  'projects',
+  'review',
+  'publish',
+  'analytics',
+  'members'
+];
+
+const enterpriseMediaWorkspaceModules = [
+  'overview',
+  'assets',
+  'scripts',
+  'ai-video',
+  'projects',
+  'review',
+  'publish',
+  'analytics',
+  'members'
+];
+
+const aiContentWorkspaceModules = [
+  'overview',
   'topics',
   'scripts',
   'ai-video',
@@ -67,38 +91,73 @@ export const defaultVideoWorkspace = {
   icon: 'video',
   workspaceType: 'video-production' as WorkspaceType,
   status: 'active' as const,
-  enabledModules: defaultWorkspaceModules,
+  enabledModules: legacyVideoWorkspaceModules,
   moduleConfig: {}
 };
+
+export const defaultWorkspaces = [
+  {
+    id: 'workspace-enterprise-media',
+    name: '企业媒体空间',
+    slug: 'enterprise-media',
+    description: '用于企业实拍素材管理、自动剪辑、字幕配音、成片输出与历史视频沉淀。',
+    icon: 'video',
+    workspaceType: 'enterprise-media' as WorkspaceType,
+    status: 'active' as const,
+    enabledModules: enterpriseMediaWorkspaceModules,
+    moduleConfig: {}
+  },
+  {
+    id: 'workspace-ai-content',
+    name: 'AI内容创作空间',
+    slug: 'ai-content',
+    description: '用于AI选题、爆款分析、脚本分镜、提示词管理与AI视频生成流程管理。',
+    icon: 'sparkles',
+    workspaceType: 'ai-content' as WorkspaceType,
+    status: 'active' as const,
+    enabledModules: aiContentWorkspaceModules,
+    moduleConfig: {}
+  }
+];
 
 function now() {
   return new Date();
 }
 
-export function ensureDefaultWorkspaceSeed() {
+export function ensureDefaultWorkspacesSeed() {
   const db = getDb();
   const timestamp = now();
-  const existingWorkspace = db
-    .select()
-    .from(workspaces)
-    .where(eq(workspaces.slug, defaultVideoWorkspace.slug))
-    .get();
 
-  if (!existingWorkspace) {
-    db.insert(workspaces)
-      .values({
-        ...defaultVideoWorkspace,
-        createdAt: timestamp,
-        updatedAt: timestamp
-      })
-      .run();
+  for (const defaultWorkspace of defaultWorkspaces) {
+    const existingWorkspace = db
+      .select()
+      .from(workspaces)
+      .where(eq(workspaces.slug, defaultWorkspace.slug))
+      .get();
+
+    if (!existingWorkspace) {
+      db.insert(workspaces)
+        .values({
+          ...defaultWorkspace,
+          createdAt: timestamp,
+          updatedAt: timestamp
+        })
+        .run();
+    }
   }
 
-  return db.select().from(workspaces).where(eq(workspaces.slug, defaultVideoWorkspace.slug)).get()!;
+  return defaultWorkspaces.map(
+    (defaultWorkspace) =>
+      db.select().from(workspaces).where(eq(workspaces.slug, defaultWorkspace.slug)).get()!
+  );
+}
+
+export function ensureDefaultWorkspaceSeed() {
+  return ensureDefaultWorkspacesSeed()[0];
 }
 
 export async function getCurrentWorkspaceUser(): Promise<User | null> {
-  ensureDefaultWorkspaceSeed();
+  ensureDefaultWorkspacesSeed();
 
   const currentUser = await getCurrentUser();
   if (!currentUser) return null;
@@ -107,7 +166,7 @@ export async function getCurrentWorkspaceUser(): Promise<User | null> {
 }
 
 export function getWorkspaceBySlug(slug: string) {
-  ensureDefaultWorkspaceSeed();
+  ensureDefaultWorkspacesSeed();
   return getDb().select().from(workspaces).where(eq(workspaces.slug, slug)).get() ?? null;
 }
 

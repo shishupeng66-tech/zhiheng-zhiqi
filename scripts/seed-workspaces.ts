@@ -1,13 +1,13 @@
 import { loadEnvConfig } from '@next/env';
 import { runMigrations } from '../src/lib/db';
-import { ensureDefaultWorkspaceSeed } from '../src/lib/workspaces/service';
+import { ensureDefaultWorkspacesSeed } from '../src/lib/workspaces/service';
 
 loadEnvConfig(process.cwd());
 
 runMigrations();
-const workspace = ensureDefaultWorkspaceSeed();
+const workspaces = ensureDefaultWorkspacesSeed();
 
-console.log('[seed-workspaces] Default workspace is ready:');
-console.log(`  name: ${workspace.name}`);
-console.log(`  slug: ${workspace.slug}`);
-console.log(`  type: ${workspace.workspaceType}`);
+console.log('[seed-workspaces] Default workspaces are ready:');
+for (const workspace of workspaces) {
+  console.log(`  - ${workspace.name} (${workspace.slug}, ${workspace.workspaceType})`);
+}

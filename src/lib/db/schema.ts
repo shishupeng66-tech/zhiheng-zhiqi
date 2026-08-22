@@ -17,6 +17,8 @@ export const workspaceStatuses = ['active', 'disabled', 'archived'] as const;
 export type WorkspaceStatus = (typeof workspaceStatuses)[number];
 
 export const workspaceTypes = [
+  'enterprise-media',
+  'ai-content',
   'video-production',
   'sales',
   'customer-service',
