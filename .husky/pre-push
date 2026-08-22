@@ -1,1 +1,13 @@
-npm run build
+#!/usr/bin/env sh
+set -e
+
+if command -v npm >/dev/null 2>&1; then
+  npm run build
+elif command -v npm.cmd >/dev/null 2>&1; then
+  npm.cmd run build
+elif command -v cmd.exe >/dev/null 2>&1; then
+  cmd.exe /c "npm run build"
+else
+  echo "pre-push: npm was not found in PATH; install Node.js or add npm to PATH before pushing."
+  exit 127
+fi
