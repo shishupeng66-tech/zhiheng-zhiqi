@@ -38,7 +38,7 @@ const enterpriseMediaWorkspaceModules = [
   'projects',
   'assets',
   'scripts',
-  'ai-video'
+  'members'
 ];
 
 const aiContentWorkspaceModules = [

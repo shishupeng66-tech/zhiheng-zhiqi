@@ -75,18 +75,11 @@ export const enterpriseMediaModules: WorkspaceModuleDefinition[] = [
     requiredPermission: 'scripts:manage'
   },
   {
-    key: 'ai-video',
-    label: '内容配置',
-    path: 'ai-video',
-    description: '配置 AI 生成视频时使用的主题、脚本、声音和素材规则。',
-    requiredPermission: 'video:generate'
-  },
-  {
     key: 'members',
-    label: '成员与权限',
+    label: '成员',
     shortLabel: '成员',
     path: 'members',
-    description: '管理企业媒体空间成员、角色和权限。',
+    description: '管理自动化剪辑空间成员、角色和权限。',
     requiredPermission: 'members:manage'
   }
 ];
