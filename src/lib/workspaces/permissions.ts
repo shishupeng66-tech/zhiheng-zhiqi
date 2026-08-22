@@ -62,5 +62,5 @@ export function hasRolePermission(
 }
 
 export function hasEnterpriseAdminAccess(role: Role | null | undefined) {
-  return role === 'super_admin' || role === 'manager';
+  return role === 'super_admin';
 }

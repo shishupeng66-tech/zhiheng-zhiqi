@@ -103,6 +103,19 @@ export const navGroups: NavGroup[] = [
     ]
   },
   {
+    label: '系统管理',
+    items: [
+      {
+        title: '员工管理',
+        url: '/dashboard/system/employees',
+        icon: 'userPen',
+        isActive: false,
+        items: [],
+        access: { role: 'super_admin' }
+      }
+    ]
+  },
+  {
     label: '组件',
     items: [
       {

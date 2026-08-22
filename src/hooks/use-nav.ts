@@ -1,65 +1,43 @@
 'use client';
 
 /**
- * Fully client-side hook for filtering navigation items based on RBAC
+ * 纯客户端导航 RBAC 过滤 Hook（本地账号体系版，替换原 Clerk useUser / useOrganization）。
  *
- * This hook uses Clerk's client-side hooks to check permissions, roles, and organization
- * without any server calls. This is perfect for navigation visibility (UX only).
- *
- * Performance:
- * - All checks are synchronous (no server calls)
- * - Instant filtering
- * - No loading states
- * - No UI flashing
- *
- * Note: For actual security (API routes, server actions), always use server-side checks.
- * This is only for UI visibility.
+ * 说明：
+ * - 当前仅实现账号 / 会话，尚未建立本地「工作空间 / 多租户」，因此没有 organization 概念
+ *   （hasOrg=false）。任何 requireOrg 的导航项（如团队、账单）在本阶段默认隐藏。
+ * - 真实的权限 / 访问控制在服务端（页面 / 路由处理器）强制；此处仅为导航可见性（UX）。
+ * - 所有判断均为同步，无额外服务端请求，无加载闪烁。
  */
 
 import { useMemo } from 'react';
-import { useOrganization, useUser } from '@clerk/nextjs';
+import { useCurrentUser } from '@/components/auth/user-provider';
 import type { NavItem, NavGroup } from '@/types';
 
-/**
- * Hook to filter navigation items based on RBAC (fully client-side)
- *
- * @param items - Array of navigation items to filter
- * @returns Filtered items
- */
 export function useFilteredNavItems(items: NavItem[]) {
-  const { organization, membership } = useOrganization();
-  const { user } = useUser();
+  const user = useCurrentUser();
 
-  // Memoize context and permissions
   const accessContext = useMemo(() => {
-    const permissions = membership?.permissions || [];
-    const role = membership?.role;
-
     return {
-      organization: organization ?? undefined,
+      organization: undefined,
       user: user ?? undefined,
-      permissions: permissions as string[],
-      role: role ?? undefined,
-      hasOrg: !!organization
+      permissions: [] as string[],
+      role: user?.role,
+      hasOrg: false
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- using stable primitives to avoid infinite re-renders from unstable Clerk object refs
-  }, [organization?.id, user?.id, membership?.permissions, membership?.role]);
+  }, [user?.id, user?.role]);
 
-  // Filter items synchronously (all client-side)
   const filteredItems = useMemo(() => {
     return items
       .filter((item) => {
-        // No access restrictions
         if (!item.access) {
           return true;
         }
 
-        // Check requireOrg
         if (item.access.requireOrg && !accessContext.hasOrg) {
           return false;
         }
 
-        // Check permission
         if (item.access.permission) {
           if (!accessContext.hasOrg) {
             return false;
@@ -69,50 +47,31 @@ export function useFilteredNavItems(items: NavItem[]) {
           }
         }
 
-        // Check role
         if (item.access.role) {
-          if (!accessContext.hasOrg) {
-            return false;
-          }
+          // 角色可见性不依赖 organization（本地账号体系下始终生效）
           if (accessContext.role !== item.access.role) {
             return false;
           }
         }
 
-        // Note: Plans and features require server-side checks with Clerk's has() function
-        // For navigation visibility, you can either:
-        // 1. Store plan/feature info in organization metadata (client-accessible)
-        // 2. Use server actions (current approach)
-        // 3. Skip plan/feature checks for navigation (recommended for performance)
-
-        // For now, if plan/feature is specified, we'll need to handle it differently
-        // Most navigation items won't need plan/feature checks anyway
         if (item.access.plan || item.access.feature) {
-          // Option: Return true and let the page handle it, or use server action
-          // For now, we'll show it (page-level protection should handle it)
           console.warn(
-            `Plan/feature checks for navigation items require server-side verification. ` +
-              `Item "${item.title}" will be shown, but page-level protection should be implemented.`
+            `Plan/feature 导航权限校验需要服务端验证。导航项 "${item.title}" 将显示，` +
+              `但页面级保护应另行实现。`
           );
         }
 
         return true;
       })
       .map((item) => {
-        // Recursively filter child items
         if (item.items && item.items.length > 0) {
           const filteredChildren = item.items.filter((childItem) => {
-            // No access restrictions
             if (!childItem.access) {
               return true;
             }
-
-            // Check requireOrg
             if (childItem.access.requireOrg && !accessContext.hasOrg) {
               return false;
             }
-
-            // Check permission
             if (childItem.access.permission) {
               if (!accessContext.hasOrg) {
                 return false;
@@ -121,25 +80,17 @@ export function useFilteredNavItems(items: NavItem[]) {
                 return false;
               }
             }
-
-            // Check role
             if (childItem.access.role) {
-              if (!accessContext.hasOrg) {
-                return false;
-              }
               if (accessContext.role !== childItem.access.role) {
                 return false;
               }
             }
-
-            // Plan/feature checks (same warning as above)
             if (childItem.access.plan || childItem.access.feature) {
               console.warn(
-                `Plan/feature checks for navigation items require server-side verification. ` +
-                  `Item "${childItem.title}" will be shown, but page-level protection should be implemented.`
+                `Plan/feature 导航权限校验需要服务端验证。导航项 "${childItem.title}" 将显示，` +
+                  `但页面级保护应另行实现。`
               );
             }
-
             return true;
           });
 
@@ -156,12 +107,6 @@ export function useFilteredNavItems(items: NavItem[]) {
   return filteredItems;
 }
 
-/**
- * Hook to filter navigation groups based on RBAC (fully client-side)
- *
- * @param groups - Array of navigation groups to filter
- * @returns Filtered groups (empty groups are removed)
- */
 export function useFilteredNavGroups(groups: NavGroup[]) {
   const allItems = useMemo(() => groups.flatMap((g) => g.items), [groups]);
   const filteredItems = useFilteredNavItems(allItems);

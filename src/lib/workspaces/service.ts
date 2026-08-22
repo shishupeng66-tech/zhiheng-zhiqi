@@ -1,6 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import { auth } from '@clerk/nextjs/server';
-import { randomUUID } from 'node:crypto';
+import { getCurrentUser } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import {
   users,
@@ -44,6 +43,21 @@ const defaultWorkspaceModules = [
   'members'
 ];
 
+const enterpriseAdminPermissions = [
+  'workspace:view',
+  'workspace:manage',
+  'members:manage',
+  'assets:view',
+  'assets:manage',
+  'topics:manage',
+  'scripts:manage',
+  'video:generate',
+  'projects:manage',
+  'review:approve',
+  'publish:manage',
+  'analytics:view'
+] satisfies WorkspacePermission[];
+
 export const defaultVideoWorkspace = {
   id: 'workspace-video-production',
   name: '短视频生产',
@@ -60,43 +74,7 @@ function now() {
   return new Date();
 }
 
-function placeholderPasswordHash() {
-  return 'workspace-dev-auth-placeholder';
-}
-
-export async function ensureCurrentAppUser(): Promise<User | null> {
-  const { userId } = await auth();
-  if (!userId) return null;
-
-  const db = getDb();
-  const existing = db.select().from(users).where(eq(users.id, userId)).get();
-  if (existing) return existing;
-
-  const hasAnyUser = db.select({ id: users.id }).from(users).limit(1).get();
-  const timestamp = now();
-  db.insert(users)
-    .values({
-      id: userId,
-      username: `clerk-${userId}`,
-      name: '开发用户',
-      employeeNo: `CLERK-${userId.slice(-8)}`,
-      phone: null,
-      department: '系统',
-      position: '开发账号',
-      avatar: null,
-      passwordHash: placeholderPasswordHash(),
-      role: hasAnyUser ? 'employee' : 'super_admin',
-      status: 'active',
-      mustChangePassword: false,
-      createdAt: timestamp,
-      updatedAt: timestamp
-    })
-    .run();
-
-  return db.select().from(users).where(eq(users.id, userId)).get()!;
-}
-
-export function ensureDefaultWorkspaceSeed(userId?: string) {
+export function ensureDefaultWorkspaceSeed() {
   const db = getDb();
   const timestamp = now();
   const existingWorkspace = db
@@ -115,51 +93,16 @@ export function ensureDefaultWorkspaceSeed(userId?: string) {
       .run();
   }
 
-  const workspace = db
-    .select()
-    .from(workspaces)
-    .where(eq(workspaces.slug, defaultVideoWorkspace.slug))
-    .get()!;
-
-  if (!userId) return workspace;
-
-  const memberCount = db
-    .select({ id: workspaceMembers.id })
-    .from(workspaceMembers)
-    .where(eq(workspaceMembers.workspaceId, workspace.id))
-    .limit(1)
-    .get();
-
-  const existingMembership = db
-    .select()
-    .from(workspaceMembers)
-    .where(and(eq(workspaceMembers.workspaceId, workspace.id), eq(workspaceMembers.userId, userId)))
-    .get();
-
-  if (!existingMembership && !memberCount) {
-    db.insert(workspaceMembers)
-      .values({
-        id: randomUUID(),
-        workspaceId: workspace.id,
-        userId,
-        role: 'owner',
-        createdAt: timestamp,
-        updatedAt: timestamp
-      })
-      .run();
-  }
-
-  return workspace;
+  return db.select().from(workspaces).where(eq(workspaces.slug, defaultVideoWorkspace.slug)).get()!;
 }
 
-export async function getCurrentWorkspaceUser() {
-  const user = await ensureCurrentAppUser();
-  if (user) {
-    ensureDefaultWorkspaceSeed(user.id);
-  } else {
-    ensureDefaultWorkspaceSeed();
-  }
-  return user;
+export async function getCurrentWorkspaceUser(): Promise<User | null> {
+  ensureDefaultWorkspaceSeed();
+
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return null;
+
+  return getDb().select().from(users).where(eq(users.id, currentUser.id)).get() ?? null;
 }
 
 export function getWorkspaceBySlug(slug: string) {
@@ -191,29 +134,13 @@ export function hasWorkspacePermission(
 function buildAccessContext(user: User, workspace: Workspace): WorkspaceAccessContext {
   const membership = getWorkspaceMembership(workspace.id, user.id);
   const isEnterpriseAdmin = hasEnterpriseAdminAccess(user.role);
-  const permissions = isEnterpriseAdmin
-    ? ([
-        'workspace:view',
-        'workspace:manage',
-        'members:manage',
-        'assets:view',
-        'assets:manage',
-        'topics:manage',
-        'scripts:manage',
-        'video:generate',
-        'projects:manage',
-        'review:approve',
-        'publish:manage',
-        'analytics:view'
-      ] satisfies WorkspacePermission[])
-    : [];
 
   return {
     user,
     workspace,
     membership,
     effectiveRole: isEnterpriseAdmin ? 'enterprise_admin' : (membership?.role ?? 'viewer'),
-    permissions,
+    permissions: isEnterpriseAdmin ? enterpriseAdminPermissions : [],
     isEnterpriseAdmin
   };
 }
@@ -281,7 +208,7 @@ export async function listVisibleWorkspacesForCurrentUser() {
 }
 
 export function listWorkspaceMembers(workspaceId: string) {
-  const rows = getDb()
+  return getDb()
     .select({
       id: workspaceMembers.id,
       role: workspaceMembers.role,
@@ -298,6 +225,4 @@ export function listWorkspaceMembers(workspaceId: string) {
     .innerJoin(users, eq(workspaceMembers.userId, users.id))
     .where(eq(workspaceMembers.workspaceId, workspaceId))
     .all();
-
-  return rows;
 }

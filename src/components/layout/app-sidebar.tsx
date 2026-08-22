@@ -25,9 +25,9 @@ import {
   SidebarRail
 } from '@/components/ui/sidebar';
 import { UserAvatarProfile } from '@/components/user-avatar-profile';
+import { useCurrentUser } from '@/components/auth/user-provider';
 import { navGroups } from '@/config/nav-config';
 import { useMediaQuery } from '@/hooks/use-media-query';
-import { useClerk, useOrganization, useUser } from '@clerk/nextjs';
 import { useFilteredNavGroups } from '@/hooks/use-nav';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -38,11 +38,28 @@ import { OrgSwitcher } from '../org-switcher';
 export default function AppSidebar() {
   const pathname = usePathname();
   const { isOpen } = useMediaQuery();
-  const { user } = useUser();
-  const { organization } = useOrganization();
-  const { signOut } = useClerk();
+  const user = useCurrentUser();
   const router = useRouter();
   const filteredGroups = useFilteredNavGroups(navGroups);
+  const [loggingOut, setLoggingOut] = React.useState(false);
+
+  const currentUser = user
+    ? {
+        name: user.name,
+        avatar: user.avatar,
+        subtitle: [user.department, user.position].filter(Boolean).join(' · ')
+      }
+    : null;
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } finally {
+      router.push('/auth/sign-in');
+      router.refresh();
+    }
+  }
 
   React.useEffect(() => {
     // Side effects based on sidebar state changes
@@ -123,7 +140,9 @@ export default function AppSidebar() {
                   />
                 }
               >
-                {user && <UserAvatarProfile className='h-8 w-8 rounded-lg' showInfo user={user} />}
+                {currentUser && (
+                  <UserAvatarProfile className='h-8 w-8 rounded-lg' showInfo user={currentUser} />
+                )}
                 <Icons.chevronsDown className='ml-auto size-4' />
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -135,8 +154,12 @@ export default function AppSidebar() {
                 <DropdownMenuGroup>
                   <DropdownMenuLabel className='p-0 font-normal'>
                     <div className='px-1 py-1.5'>
-                      {user && (
-                        <UserAvatarProfile className='h-8 w-8 rounded-lg' showInfo user={user} />
+                      {currentUser && (
+                        <UserAvatarProfile
+                          className='h-8 w-8 rounded-lg'
+                          showInfo
+                          user={currentUser}
+                        />
                       )}
                     </div>
                   </DropdownMenuLabel>
@@ -148,12 +171,6 @@ export default function AppSidebar() {
                     <Icons.account className='mr-2 h-4 w-4' />
                     个人资料
                   </DropdownMenuItem>
-                  {organization && (
-                    <DropdownMenuItem onClick={() => router.push('/dashboard/billing')}>
-                      <Icons.creditCard className='mr-2 h-4 w-4' />
-                      账单
-                    </DropdownMenuItem>
-                  )}
                   <DropdownMenuItem onClick={() => router.push('/dashboard/notifications')}>
                     <Icons.notification className='mr-2 h-4 w-4' />
                     通知
@@ -161,9 +178,9 @@ export default function AppSidebar() {
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DropdownMenuItem onClick={() => signOut({ redirectUrl: '/auth/sign-in' })}>
+                  <DropdownMenuItem onClick={handleLogout} disabled={loggingOut}>
                     <Icons.logout aria-hidden className='mr-2 h-4 w-4' />
-                    退出登录
+                    {loggingOut ? '退出中…' : '退出登录'}
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
               </DropdownMenuContent>

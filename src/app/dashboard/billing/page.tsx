@@ -1,51 +1,37 @@
-'use client';
-
 import PageContainer from '@/components/layout/page-container';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useOrganization } from '@clerk/nextjs';
-import { PricingTable } from '@clerk/nextjs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Icons } from '@/components/icons';
 import { billingInfoContent } from '@/config/infoconfig';
 
+/**
+ * 账单与套餐页（本地版，替换原 Clerk <PricingTable> / useOrganization）。
+ * 本地企业部署不依赖第三方计费平台，订阅与额度由系统管理员在后台配置。
+ */
 export default function BillingPage() {
-  const { organization, isLoaded } = useOrganization();
-
   return (
     <PageContainer
-      isLoading={!isLoaded}
-      access={!!organization}
-      accessFallback={
-        <div className='flex min-h-[400px] items-center justify-center'>
-          <div className='space-y-2 text-center'>
-            <h2 className='text-2xl font-semibold'>未选择组织</h2>
-            <p className='text-muted-foreground'>请选择或创建一个组织以查看账单信息。</p>
-          </div>
-        </div>
-      }
-      infoContent={billingInfoContent}
       pageTitle='账单与套餐'
-      pageDescription={`管理 ${organization?.name} 的订阅与使用额度`}
+      pageDescription='管理企业订阅与使用额度'
+      infoContent={billingInfoContent}
     >
       <div className='space-y-6'>
-        {/* Info Alert */}
         <Alert>
           <Icons.info className='h-4 w-4' />
           <AlertDescription>
-            套餐与订阅通过 Clerk Billing 管理。订阅套餐以解锁更多功能与更高的额度限制。
+            本地企业部署版不依赖第三方计费平台，套餐与额度由系统管理员在后台统一配置。
           </AlertDescription>
         </Alert>
 
-        {/* Clerk Pricing Table */}
         <Card>
           <CardHeader>
-            <CardTitle>可用套餐</CardTitle>
-            <CardDescription>选择适合你组织需求的套餐</CardDescription>
+            <CardTitle>套餐与额度</CardTitle>
+            <CardDescription>功能建设中</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className='mx-auto max-w-4xl'>
-              <PricingTable for='organization' />
-            </div>
+            <p className='text-muted-foreground text-sm'>
+              计费与套餐管理将在后续版本开放。如需调整订阅或额度，请联系系统管理员。
+            </p>
           </CardContent>
         </Card>
       </div>
