@@ -47,14 +47,12 @@ class DoubaoVoiceProvider:
         request_id = str(uuid.uuid4())
         payload = {
             "user": {"uid": os.getenv("DOUBAO_SPEECH_APP_ID", "zhiheng-zhiqi")},
-            "req_params": {
-                "text": text,
-                "speaker": provider_voice_id,
-                "audio_params": {
-                    "format": "mp3",
-                    "sample_rate": 24000,
-                    "speech_rate": self._speech_rate(speed),
-                },
+            "text": text,
+            "speaker": provider_voice_id,
+            "audio_params": {
+                "format": "mp3",
+                "sample_rate": 24000,
+                "speech_rate": self._speech_rate(speed),
             },
         }
 
