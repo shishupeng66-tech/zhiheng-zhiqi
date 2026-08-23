@@ -10,6 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Icons } from '@/components/icons';
+import { automationVoiceOptions } from './voice-options';
 import { toast } from 'sonner';
 
 type UploadedAsset = {
@@ -118,11 +119,6 @@ const initialForm: FormState = {
 };
 
 const keywordSuggestions = ['企业实力', '生产能力', '质量控制', '交付稳定', '客户信任'];
-
-const voiceOptions = [
-  { value: 'auto', label: 'AI 自动选择音色' },
-  { value: 'voice-xiaohe', label: '小荷' }
-];
 
 const defaultSystemPrompt = `# Role: Video Script Generator
 
@@ -727,7 +723,7 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
               <SelectField
                 label='配音音色'
                 value={form.voiceName}
-                options={voiceOptions}
+                options={automationVoiceOptions}
                 onChange={(value) => update('voiceName', value)}
               />
               <div className='grid grid-cols-2 gap-2'>

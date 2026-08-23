@@ -13,7 +13,7 @@ from .base import VoiceSynthesisResult
 
 DEFAULT_ENDPOINT = "https://openspeech.bytedance.com/api/v3/tts/unidirectional"
 DEFAULT_RESOURCE_ID = "seed-tts-2.0"
-DEFAULT_VOICE_ID = "zh_female_xiaohe_uranus_bigtts"
+DEFAULT_VOICE_ID = "zh_male_guanggaojieshuo_uranus_bigtts"
 
 
 class DoubaoVoiceProvider:
@@ -63,6 +63,7 @@ class DoubaoVoiceProvider:
             method="POST",
             headers={
                 "content-type": "application/json",
+                "X-Api-App-Id": os.getenv("DOUBAO_SPEECH_APP_ID", "").strip(),
                 "X-Api-Key": api_key,
                 "X-Api-Resource-Id": resource_id,
                 "X-Api-Request-Id": request_id,

@@ -11,6 +11,7 @@ import {
   type AutomationVideoTaskStatus
 } from '@/lib/db/schema';
 import { generateVoiceAudio } from '@/lib/voice-service/client';
+import { resolveSpeechVoiceId } from '@/lib/voice-service/speech-voice-catalog';
 
 type EngineRunResult = {
   task_id?: string;
@@ -392,13 +393,7 @@ function shouldUseVoiceService(task: AutomationVideoTask, assets: AutomationVide
 }
 
 function mapVoiceId(task: AutomationVideoTask) {
-  const selected = task.voiceName.trim();
-  const defaultVoice = process.env.DOUBAO_SPEECH_DEFAULT_VOICE || 'zh_female_xiaohe_uranus_bigtts';
-  const voiceMap: Record<string, string> = {
-    auto: defaultVoice,
-    'voice-xiaohe': defaultVoice
-  };
-  return voiceMap[selected] || defaultVoice;
+  return resolveSpeechVoiceId(task.voiceName.trim() || 'auto');
 }
 
 function appendLog(logPath: string, text: string) {

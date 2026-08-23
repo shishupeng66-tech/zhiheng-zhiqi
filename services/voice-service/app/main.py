@@ -58,23 +58,18 @@ def health():
 
 @app.get("/v1/voices")
 def voices():
-    default_voice = os.getenv("DOUBAO_SPEECH_DEFAULT_VOICE", "zh_female_xiaohe_uranus_bigtts")
     return {
         "voices": [
-            {
-                "id": "auto",
-                "name": "AI 自动选择音色",
-                "type": "preset_voice",
-                "provider": "doubao",
-                "provider_voice_id": default_voice,
-            },
-            {
-                "id": "voice-xiaohe",
-                "name": "小荷",
-                "type": "preset_voice",
-                "provider": "doubao",
-                "provider_voice_id": default_voice,
-            },
+            {"id": "auto", "name": "AI 自动选择音色", "type": "preset_voice"},
+            {"id": "voice-guanggao", "name": "广告解说", "type": "preset_voice"},
+            {"id": "voice-jieshuo-xiaoming", "name": "解说小明", "type": "preset_voice"},
+            {"id": "voice-vivi", "name": "Vivi", "type": "preset_voice"},
+            {"id": "voice-xiaohe", "name": "小何", "type": "preset_voice"},
+            {"id": "voice-wennuan-ahu", "name": "温暖阿虎", "type": "preset_voice"},
+            {"id": "voice-wenrou-mama", "name": "温柔妈妈", "type": "preset_voice"},
+            {"id": "voice-qingshuang-nansheng", "name": "清爽男声", "type": "preset_voice"},
+            {"id": "voice-kefu-wanjun", "name": "客服婉君", "type": "preset_voice"},
+            {"id": "voice-shaonian-zixin", "name": "少年梓辛", "type": "preset_voice"},
         ]
     }
 
