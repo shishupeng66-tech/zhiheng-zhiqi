@@ -107,14 +107,14 @@ const initialForm: FormState = {
   customMusicFileName: '',
   musicVolume: 30,
   subtitleEnabled: true,
-  subtitleFont: 'STHeitiMedium.ttc',
-  subtitlePosition: '底部',
+  subtitleFont: 'BeVietnamPro-Bold.ttf',
+  subtitlePosition: '底部（推荐）',
   customSubtitlePosition: '70',
   subtitleSize: '30',
-  subtitleColor: '#FFFFFF',
+  subtitleColor: '#F3EDED',
   strokeColor: '#000000',
-  strokeWidth: '1.5',
-  subtitleBackground: true,
+  strokeWidth: '1.50',
+  subtitleBackground: false,
   subtitleBackgroundColor: '#000000',
   roundedSubtitleBackground: false,
   titleEnabled: true,
@@ -189,6 +189,80 @@ function ToolButton({ children, onClick }: { children: React.ReactNode; onClick?
 
 function MiniPanel({ children }: { children: React.ReactNode }) {
   return <div className='rounded-md border bg-muted/20 p-2'>{children}</div>;
+}
+
+function ColorPickerField({
+  label,
+  value,
+  onChange
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className='grid gap-1.5'>
+      <div className='text-xs font-medium'>{label}</div>
+      <div className='flex items-center gap-2'>
+        <label
+          className='relative size-10 shrink-0 cursor-pointer overflow-hidden rounded-md border'
+          style={{ backgroundColor: value }}
+          aria-label={label}
+        >
+          <input
+            type='color'
+            className='absolute inset-0 size-full cursor-pointer opacity-0'
+            value={value}
+            onChange={(event) => onChange(event.target.value.toUpperCase())}
+          />
+        </label>
+        <Input
+          className='h-8 text-xs uppercase'
+          value={value}
+          onChange={(event) => onChange(event.target.value.toUpperCase())}
+        />
+      </div>
+    </div>
+  );
+}
+
+function SliderField({
+  label,
+  value,
+  min,
+  max,
+  step,
+  onChange
+}: {
+  label: string;
+  value: string;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (value: string) => void;
+}) {
+  const parsed = Number(value);
+  const safeValue = Number.isFinite(parsed) ? parsed : min;
+
+  return (
+    <div className='grid gap-1.5'>
+      <div className='flex items-center justify-between text-xs font-medium'>
+        <span>{label}</span>
+        <span className='text-primary'>{value}</span>
+      </div>
+      <Slider
+        value={[safeValue]}
+        min={min}
+        max={max}
+        step={step}
+        aria-label={label}
+        onValueChange={(next) => {
+          const raw = Array.isArray(next) ? (next[0] ?? safeValue) : safeValue;
+          onChange(step < 1 ? raw.toFixed(2).replace(/\.00$/, '') : String(raw));
+        }}
+      />
+    </div>
+  );
 }
 
 function StepCard({
@@ -724,112 +798,97 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
         <StepCard
           number='04'
           icon={Icons.palette}
-          title='字幕与包装'
-          description='对应字幕开关、字体、位置、颜色、描边、背景、圆角和发布文案生成。'
+          title='字幕样式'
+          description='控制字幕开关、字体、位置、颜色、描边和背景效果。'
         >
           <CompactSwitch
             label='启用字幕'
             checked={form.subtitleEnabled}
             onChange={(checked) => update('subtitleEnabled', checked)}
           />
-          <div className='grid grid-cols-2 gap-2'>
-            <SelectField
-              label='字幕字体'
-              value={form.subtitleFont}
-              options={['STHeitiMedium.ttc', 'Microsoft YaHei', 'SimHei', 'KaiTi']}
-              onChange={(value) => update('subtitleFont', value)}
-            />
-            <SelectField
-              label='字幕位置'
-              value={form.subtitlePosition}
-              options={['顶部', '中间', '底部', '自定义']}
-              onChange={(value) => update('subtitlePosition', value)}
-            />
+
+          <SelectField
+            label='字幕字体'
+            value={form.subtitleFont}
+            options={['BeVietnamPro-Bold.ttf', 'STHeitiMedium.ttc', 'Microsoft YaHei', 'SimHei']}
+            onChange={(value) => update('subtitleFont', value)}
+          />
+
+          <SelectField
+            label='字幕位置'
+            value={form.subtitlePosition}
+            options={['底部（推荐）', '顶部', '中间', '自定义']}
+            onChange={(value) => update('subtitlePosition', value)}
+          />
+
+          {form.subtitlePosition === '自定义' ? (
             <Input
               className='h-8 text-xs'
               placeholder='自定义位置 0-100'
               value={form.customSubtitlePosition}
               onChange={(event) => update('customSubtitlePosition', event.target.value)}
             />
-            <SelectField
+          ) : null}
+
+          <div className='grid grid-cols-2 gap-4'>
+            <ColorPickerField
+              label='字幕颜色'
+              value={form.subtitleColor}
+              onChange={(value) => update('subtitleColor', value)}
+            />
+            <SliderField
               label='字幕大小'
               value={form.subtitleSize}
-              options={['24', '30', '36', '42', '60']}
+              min={12}
+              max={90}
+              step={1}
               onChange={(value) => update('subtitleSize', value)}
             />
-            <Input
-              className='h-8 text-xs'
-              placeholder='文字颜色 #FFFFFF'
-              value={form.subtitleColor}
-              onChange={(event) => update('subtitleColor', event.target.value)}
-            />
-            <Input
-              className='h-8 text-xs'
-              placeholder='描边颜色 #000000'
+          </div>
+
+          <div className='grid grid-cols-2 gap-4'>
+            <ColorPickerField
+              label='描边颜色'
               value={form.strokeColor}
-              onChange={(event) => update('strokeColor', event.target.value)}
+              onChange={(value) => update('strokeColor', value)}
             />
-            <SelectField
-              label='描边宽度'
+            <SliderField
+              label='描边粗细'
               value={form.strokeWidth}
-              options={['0', '1', '1.5', '2', '3']}
+              min={0}
+              max={6}
+              step={0.25}
               onChange={(value) => update('strokeWidth', value)}
             />
-            <Input
-              className='h-8 text-xs'
-              placeholder='背景颜色 #000000'
+          </div>
+
+          <div className='grid grid-cols-2 gap-4'>
+            <CompactSwitch
+              label='启用字幕背景'
+              checked={form.subtitleBackground}
+              onChange={(checked) => update('subtitleBackground', checked)}
+            />
+            <ColorPickerField
+              label='字幕背景颜色'
               value={form.subtitleBackgroundColor}
-              onChange={(event) => update('subtitleBackgroundColor', event.target.value)}
+              onChange={(value) => update('subtitleBackgroundColor', value)}
             />
           </div>
+
           <CompactSwitch
-            label='字幕背景'
-            checked={form.subtitleBackground}
-            onChange={(checked) => update('subtitleBackground', checked)}
-          />
-          <CompactSwitch
-            label='圆角透明字幕背景'
+            label='启用圆角半透明字幕背景'
             checked={form.roundedSubtitleBackground}
             onChange={(checked) => update('roundedSubtitleBackground', checked)}
           />
-          <div className='grid grid-cols-4 gap-1.5'>
-            {(
-              [
-                ['标题', 'titleEnabled'],
-                ['简介', 'descriptionEnabled'],
-                ['标签', 'tagsEnabled'],
-                ['封面', 'coverEnabled']
-              ] as const
-            ).map(([label, key]) => (
-              <button
-                key={key}
-                type='button'
-                className='rounded-md border p-2 text-center text-xs hover:bg-muted'
-                onClick={() => update(key, !form[key])}
-              >
-                <div className='font-medium'>{label}</div>
-                <Badge variant={form[key] ? 'default' : 'secondary'}>AI</Badge>
-              </button>
-            ))}
-          </div>
-          <div className='grid grid-cols-2 gap-2'>
-            <ToolButton onClick={() => setForm(initialForm)}>
-              <Icons.palette className='size-4' />
-              恢复默认
-            </ToolButton>
-            <ToolButton onClick={() => toast.success('当前配置已作为本次任务模板保留。')}>
-              <Icons.edit className='size-4' />
-              保存模板
-            </ToolButton>
-          </div>
+
           <Button
+            variant='outline'
             className='mt-auto w-full'
             size='sm'
-            disabled={saving}
-            onClick={() => void createTask()}
+            onClick={() => setForm(initialForm)}
           >
-            <Icons.video className='size-4' />
-            {saving ? '生成中...' : '一键生成视频'}
+            <Icons.palette className='size-4' />
+            恢复默认字幕设置
           </Button>
         </StepCard>
       </section>
