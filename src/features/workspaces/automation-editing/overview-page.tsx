@@ -83,14 +83,14 @@ const initialForm: FormState = {
   scriptText: '',
   scriptPrompt: '',
   customSystemPrompt: '',
-  materialSource: '企业素材库',
-  stitchMode: '按顺序拼接',
+  materialSource: '本地文件',
+  stitchMode: '顺序拼接',
   transitionMode: '无转场',
-  videoRatio: '竖屏 9:16',
-  clipDuration: '3 秒',
-  videoCount: '1 条',
+  videoRatio: '竖屏 9:16（抖音视频）',
+  clipDuration: '3',
+  videoCount: '1',
   clipSpeed: '1.0x',
-  videoEncoder: '默认编码器',
+  videoEncoder: '默认（推荐）',
   stopAt: '完整视频',
   workerThreads: '2',
   matchByScript: true,
@@ -597,110 +597,97 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
           number='02'
           icon={Icons.media}
           title='素材与画面'
-          description='对应素材来源、本地素材、拼接、转场、比例、片段时长、数量和执行阶段。'
+          description='优先选择本地文件，按脚本参数设置素材来源、比例、转场与片段节奏。'
         >
-          <div className='grid grid-cols-3 gap-1.5'>
-            {[
-              ['126', '可用素材'],
-              [String(assets.length), '本次选择'],
-              ['12', '待补充']
-            ].map(([value, label]) => (
-              <div key={label} className='rounded-md border p-2'>
-                <div className='text-base font-semibold'>{value}</div>
-                <div className='text-xs text-muted-foreground'>{label}</div>
-              </div>
-            ))}
+          <div className='border-t pt-3'>
+            <SelectField
+              label='视频来源'
+              value={form.materialSource}
+              options={['本地文件', 'Pexels', 'Pixabay', 'Coverr']}
+              onChange={(value) => update('materialSource', value)}
+            />
           </div>
-          <SelectField
-            label='视频来源'
-            value={form.materialSource}
-            options={['企业素材库', '本地文件', 'Pexels', 'Pixabay', 'Coverr']}
-            onChange={(value) => update('materialSource', value)}
-          />
-          <MiniPanel>
-            <div className='flex items-center justify-between gap-2'>
-              <div>
-                <div className='text-sm font-medium'>上传本地素材</div>
-                <div className='text-xs text-muted-foreground'>
-                  支持图片、视频文件；选择本地模式时会直接交给内置引擎。
+
+          {form.materialSource === '本地文件' ? (
+            <div className='grid gap-2'>
+              <div className='text-xs font-medium'>上传本地文件</div>
+              <div className='rounded-md bg-muted/60 p-3'>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  disabled={uploading}
+                  onClick={() => chooseFile('material')}
+                >
+                  <Icons.upload className='size-4' />
+                  Upload
+                </Button>
+                <div className='mt-3 text-xs text-muted-foreground'>
+                  200MB per file • AVI, FLV, JPG, MKV, MOV, MP4, PNG
                 </div>
               </div>
-              <Button
-                variant='outline'
-                size='sm'
-                disabled={uploading}
-                onClick={() => chooseFile('material')}
-              >
-                <Icons.upload className='size-4' />
-                {uploading ? '上传中' : '选择'}
-              </Button>
-            </div>
-          </MiniPanel>
-          {assets.length > 0 ? (
-            <div className='rounded-md border px-2 py-1.5 text-xs text-muted-foreground'>
-              已选：{assets.map((asset) => asset.name).join('、')}
+              {assets.length > 0 ? (
+                <div className='rounded-md border px-2 py-1.5 text-xs text-muted-foreground'>
+                  已选：{assets.map((asset) => asset.name).join('、')}
+                </div>
+              ) : null}
             </div>
           ) : null}
-          <div className='grid grid-cols-2 gap-2'>
-            <SelectField
-              label='拼接模式'
-              value={form.stitchMode}
-              options={['按顺序拼接', '随机混剪']}
-              onChange={(value) => update('stitchMode', value)}
-            />
-            <SelectField
-              label='转场模式'
-              value={form.transitionMode}
-              options={['无转场', '随机转场', '淡入', '淡出', '滑入', '滑出']}
-              onChange={(value) => update('transitionMode', value)}
-            />
-            <SelectField
-              label='视频比例'
-              value={form.videoRatio}
-              options={['竖屏 9:16', '横屏 16:9', '方屏 1:1']}
-              onChange={(value) => update('videoRatio', value)}
-            />
-            <SelectField
-              label='片段时长'
-              value={form.clipDuration}
-              options={['2 秒', '3 秒', '5 秒', '8 秒']}
-              onChange={(value) => update('clipDuration', value)}
-            />
-            <SelectField
-              label='生成数量'
-              value={form.videoCount}
-              options={['1 条', '2 条', '3 条', '5 条']}
-              onChange={(value) => update('videoCount', value)}
-            />
-            <SelectField
-              label='播放速度'
-              value={form.clipSpeed}
-              options={['0.8x', '1.0x', '1.2x', '1.5x']}
-              onChange={(value) => update('clipSpeed', value)}
-            />
-            <SelectField
-              label='视频编码器'
-              value={form.videoEncoder}
-              options={['默认编码器', 'libx264', 'h264_nvenc']}
-              onChange={(value) => update('videoEncoder', value)}
-            />
-            <SelectField
-              label='停止阶段'
-              value={form.stopAt}
-              options={['脚本', '关键词', '音频', '字幕', '素材', '完整视频']}
-              onChange={(value) => update('stopAt', value)}
-            />
-          </div>
+
+          <SelectField
+            label='视频拼接模式'
+            value={form.stitchMode}
+            options={['顺序拼接', '随机拼接']}
+            onChange={(value) => update('stitchMode', value)}
+          />
+
           <CompactSwitch
-            label='按文案匹配画面'
+            label='按文案顺序匹配画面'
             checked={form.matchByScript}
             onChange={(checked) => update('matchByScript', checked)}
           />
+
           <SelectField
-            label='并行线程'
-            value={form.workerThreads}
-            options={['1', '2', '4', '8']}
-            onChange={(value) => update('workerThreads', value)}
+            label='视频转场模式'
+            value={form.transitionMode}
+            options={['无转场', '随机转场', '淡入', '淡出', '滑入', '滑出']}
+            onChange={(value) => update('transitionMode', value)}
+          />
+
+          <SelectField
+            label='视频比例'
+            value={form.videoRatio}
+            options={['竖屏 9:16（抖音视频）', '横屏 16:9', '方屏 1:1']}
+            onChange={(value) => update('videoRatio', value)}
+          />
+
+          <SelectField
+            label='单个片段最大时长（秒）'
+            value={form.clipDuration}
+            options={['2', '3', '5', '8', '10']}
+            onChange={(value) => update('clipDuration', value)}
+          />
+
+          <SliderField
+            label='片段播放速度'
+            value={form.clipSpeed.replace('x', '')}
+            min={0.5}
+            max={2}
+            step={0.05}
+            onChange={(value) => update('clipSpeed', `${value}x`)}
+          />
+
+          <SelectField
+            label='同时生成视频数量'
+            value={form.videoCount}
+            options={['1', '2', '3', '5']}
+            onChange={(value) => update('videoCount', value)}
+          />
+
+          <SelectField
+            label='视频编码器'
+            value={form.videoEncoder}
+            options={['默认（推荐）', 'libx264', 'h264_nvenc']}
+            onChange={(value) => update('videoEncoder', value)}
           />
         </StepCard>
 
