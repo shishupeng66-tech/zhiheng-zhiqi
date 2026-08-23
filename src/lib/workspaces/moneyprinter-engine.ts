@@ -103,18 +103,23 @@ function mapConcatMode(value: string) {
 }
 
 function mapTransition(value: string) {
-  if (value.includes('淡入') || value.includes('淡出')) return 'fade-in';
-  if (value.includes('AI') || value.includes('随机')) return 'shuffle';
+  if (value.includes('随机') || value.includes('AI')) return 'shuffle';
+  if (value.includes('淡入')) return 'fade-in';
+  if (value.includes('淡出')) return 'fade-out';
+  if (value.includes('滑入')) return 'slide-in';
+  if (value.includes('滑出')) return 'slide-out';
   return 'none';
 }
 
 function mapSubtitlePosition(value: string) {
   if (value.includes('顶部')) return 'top';
-  if (value.includes('中')) return 'center';
+  if (value.includes('中间')) return 'center';
+  if (value.includes('自定义')) return 'custom';
   return 'bottom';
 }
 
 function mapTextColor(value: string) {
+  if (/^#[0-9a-fA-F]{6}$/.test(value)) return value;
   if (value.includes('品牌')) return '#14B8A6';
   if (value.includes('深')) return '#111827';
   return '#FFFFFF';
@@ -133,13 +138,14 @@ function mapVoiceName(task: AutomationVideoTask) {
   ) {
     return 'no-voice';
   }
+  if (task.voiceName.includes(':')) return task.voiceName;
+  if (task.voiceName.includes('Yunxi')) return 'zh-CN-YunxiNeural-Male';
   return 'zh-CN-XiaoxiaoNeural-Female';
 }
 
 function mapLanguage(value: string) {
-  if (value.includes('中文')) return 'zh-CN';
   if (value.includes('英文')) return 'en-US';
-  if (value.includes('中英')) return 'zh-CN';
+  if (value.includes('中文') || value.includes('中英')) return 'zh-CN';
   return '';
 }
 
@@ -153,17 +159,96 @@ function mapVoiceVolume(value: string) {
   return Number.isFinite(parsed) ? Math.max(0, parsed / 100) : 1;
 }
 
-function resolveAssetPaths(assets: AutomationVideoAsset[]) {
-  return assets
-    .map((asset) => {
-      if (!asset.fileUrl.startsWith('/uploads/')) return null;
-      return path.join(repoRoot, 'public', asset.fileUrl.replace(/^\//, ''));
-    })
-    .filter((filePath): filePath is string => Boolean(filePath && fs.existsSync(filePath)));
+function readTaskOption(task: AutomationVideoTask, key: string) {
+  const prefix = `${key}:`;
+  return task.packagingOptions.find((option) => option.startsWith(prefix))?.slice(prefix.length);
 }
 
-function buildCliArgs(task: AutomationVideoTask, assets: AutomationVideoAsset[]) {
-  const assetPaths = resolveAssetPaths(assets);
+function readNumberOption(task: AutomationVideoTask, key: string, fallback: number) {
+  const parsed = Number(readTaskOption(task, key));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function readAssetByOption(task: AutomationVideoTask, assets: AutomationVideoAsset[], key: string) {
+  const assetId = readTaskOption(task, key);
+  return assetId ? (assets.find((asset) => asset.id === assetId) ?? null) : null;
+}
+
+function resolveAssetPath(asset: AutomationVideoAsset | null) {
+  if (!asset || !asset.fileUrl.startsWith('/uploads/')) return null;
+  const filePath = path.join(repoRoot, 'public', asset.fileUrl.replace(/^\//, ''));
+  return fs.existsSync(filePath) ? filePath : null;
+}
+
+function resolveAssetPaths(assets: AutomationVideoAsset[]) {
+  return assets
+    .map((asset) => resolveAssetPath(asset))
+    .filter((filePath): filePath is string => Boolean(filePath));
+}
+
+function resolveMaterialAssetPaths(
+  assets: AutomationVideoAsset[],
+  customAudio: AutomationVideoAsset | null,
+  customBgm: AutomationVideoAsset | null
+) {
+  const ignored = new Set([customAudio?.id, customBgm?.id].filter(Boolean));
+  return resolveAssetPaths(assets.filter((asset) => !ignored.has(asset.id)));
+}
+
+function normalizeHexColor(value: string | undefined, fallback: string) {
+  return value && /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback;
+}
+
+function mapStopAt(value: string | undefined) {
+  if (!value) return 'video';
+  if (value.includes('脚本')) return 'script';
+  if (value.includes('关键词')) return 'terms';
+  if (value.includes('音频')) return 'audio';
+  if (value.includes('字幕')) return 'subtitle';
+  if (value.includes('素材')) return 'materials';
+  return 'video';
+}
+
+function mapVideoSource(value: string, hasLocalAssets: boolean) {
+  const lowered = value.toLowerCase();
+  if (hasLocalAssets || value.includes('本地')) return 'local';
+  if (lowered.includes('pixabay')) return 'pixabay';
+  if (lowered.includes('coverr')) return 'coverr';
+  return 'pexels';
+}
+
+function mapBgmType(value: string, hasCustomFile: boolean) {
+  const lowered = value.toLowerCase();
+  if (hasCustomFile || value.includes('自定义') || value.includes('上传')) return 'custom';
+  if (lowered.includes('sonilo')) return 'sonilo';
+  if (value.includes('无') || lowered.includes('none')) return 'none';
+  return 'random';
+}
+
+function ensureManagedBgmFile(engineDir: string, sourcePath: string | null, taskId: string) {
+  if (!sourcePath) return null;
+  const bgmDir = path.join(engineDir, 'storage', 'bgm');
+  fs.mkdirSync(bgmDir, { recursive: true });
+  const ext = path.extname(sourcePath) || '.mp3';
+  const targetPath = path.join(bgmDir, `zhiheng-${taskId}${ext}`);
+  if (!fs.existsSync(targetPath)) {
+    fs.copyFileSync(sourcePath, targetPath);
+  }
+  return targetPath;
+}
+
+function buildCliArgs(
+  task: AutomationVideoTask,
+  assets: AutomationVideoAsset[],
+  engineDir: string
+) {
+  const customAudioAsset = readAssetByOption(task, assets, 'customAudio');
+  const customBgmAsset = readAssetByOption(task, assets, 'customBgm');
+  const customAudioPath = resolveAssetPath(customAudioAsset);
+  const customBgmPath = ensureManagedBgmFile(engineDir, resolveAssetPath(customBgmAsset), task.id);
+  const assetPaths = resolveMaterialAssetPaths(assets, customAudioAsset, customBgmAsset);
+  const videoSource = mapVideoSource(task.materialSource, assetPaths.length > 0);
+  const bgmType = mapBgmType(task.musicSource, Boolean(customBgmPath));
   const args = [
     'cli.py',
     '--task-id',
@@ -171,15 +256,7 @@ function buildCliArgs(task: AutomationVideoTask, assets: AutomationVideoAsset[])
     '--video-subject',
     task.prompt,
     '--video-count',
-    parseCount(
-      task.packagingOptions.includes('count:2')
-        ? '2'
-        : task.packagingOptions.includes('count:3')
-          ? '3'
-          : task.packagingOptions.includes('count:5')
-            ? '5'
-            : '1'
-    ).toString(),
+    parseCount(String(readNumberOption(task, 'count', 1))).toString(),
     '--video-aspect',
     mapAspect(task.videoRatio),
     '--video-concat-mode',
@@ -188,34 +265,69 @@ function buildCliArgs(task: AutomationVideoTask, assets: AutomationVideoAsset[])
     mapTransition(task.transitionMode),
     '--video-clip-duration',
     String(parseSeconds(task.clipDuration)),
+    '--video-clip-speed',
+    String(readNumberOption(task, 'clipSpeed', 1)),
     '--n-threads',
-    '2',
-    '--voice-name',
-    mapVoiceName(task),
+    String(Math.max(1, Math.min(16, Math.floor(readNumberOption(task, 'workerThreads', 2))))),
+    '--stop-at',
+    mapStopAt(readTaskOption(task, 'stopAt')),
+    '--paragraph-number',
+    String(Math.max(1, Math.min(10, Math.floor(readNumberOption(task, 'paragraph', 1))))),
     '--voice-volume',
     String(mapVoiceVolume(task.voiceVolume)),
     '--voice-rate',
     String(mapVoiceRate(task.voiceSpeed)),
     '--bgm-type',
-    task.musicSource.includes('不使用') || task.musicSource.toLowerCase().includes('no')
-      ? 'none'
-      : 'random',
+    bgmType,
     '--bgm-volume',
     String(Math.max(0, Math.min(1, task.musicVolume / 100))),
     '--font-name',
-    'STHeitiMedium.ttc',
+    task.subtitleFont || 'STHeitiMedium.ttc',
     '--subtitle-position',
     mapSubtitlePosition(task.subtitlePosition),
     '--font-size',
     task.subtitleSize || '30',
     '--text-fore-color',
-    mapTextColor(task.subtitleColor),
+    normalizeHexColor(task.subtitleColor, mapTextColor(task.subtitleColor)),
     '--stroke-color',
-    '#000000',
+    normalizeHexColor(readTaskOption(task, 'strokeColor'), '#000000'),
     '--stroke-width',
-    task.subtitleBackground ? '1.5' : '0',
+    readTaskOption(task, 'strokeWidth') ?? (task.subtitleBackground ? '1.5' : '0'),
     task.subtitleEnabled ? '--subtitle-enabled' : '--no-subtitle-enabled'
   ];
+
+  if (customAudioPath) {
+    args.push('--custom-audio-file', customAudioPath);
+  } else {
+    args.push('--voice-name', mapVoiceName(task));
+  }
+
+  if (customBgmPath) {
+    args.push('--bgm-file', customBgmPath);
+  }
+
+  const bgmPrompt = readTaskOption(task, 'bgmPrompt');
+  if (bgmPrompt && bgmType === 'sonilo') {
+    args.push('--sonilo-bgm-prompt', bgmPrompt);
+  }
+
+  const customPosition = readTaskOption(task, 'customPosition');
+  if (task.subtitlePosition.includes('自定义')) {
+    args.push('--custom-position', customPosition || '70');
+  }
+
+  if (task.subtitleBackground) {
+    args.push(
+      '--subtitle-background-enabled',
+      '--subtitle-background-color',
+      normalizeHexColor(readTaskOption(task, 'subtitleBgColor'), '#000000')
+    );
+    if (readTaskOption(task, 'roundedSubtitleBackground') === 'true') {
+      args.push('--rounded-subtitle-background');
+    }
+  } else {
+    args.push('--no-subtitle-background-enabled');
+  }
 
   const language = mapLanguage(task.scriptLanguage);
   if (language) {
@@ -226,7 +338,17 @@ function buildCliArgs(task: AutomationVideoTask, assets: AutomationVideoAsset[])
     args.push('--video-script', task.scriptText.trim());
   }
 
-  if (Array.isArray(task.keywords) && task.keywords.length > 0 && assetPaths.length === 0) {
+  const scriptPrompt = readTaskOption(task, 'scriptPrompt');
+  if (scriptPrompt) {
+    args.push('--video-script-prompt', scriptPrompt);
+  }
+
+  const customSystemPrompt = readTaskOption(task, 'customSystemPrompt');
+  if (customSystemPrompt) {
+    args.push('--custom-system-prompt', customSystemPrompt);
+  }
+
+  if (Array.isArray(task.keywords) && task.keywords.length > 0 && videoSource !== 'local') {
     args.push('--video-terms', task.keywords.join(','));
   }
 
@@ -234,10 +356,10 @@ function buildCliArgs(task: AutomationVideoTask, assets: AutomationVideoAsset[])
     args.push('--match-materials-to-script');
   }
 
-  if (assetPaths.length > 0) {
+  if (videoSource === 'local') {
     args.push('--video-source', 'local', '--video-materials', assetPaths.join(','));
   } else {
-    args.push('--video-source', 'pexels');
+    args.push('--video-source', videoSource);
   }
 
   return args;
@@ -346,7 +468,7 @@ export async function runMoneyPrinterTask(taskId: string) {
   const logPath = path.join(logsDir, `${taskId}.log`);
   const assets = getTaskAssets(task);
   const python = getPythonCommand();
-  const cliArgs = buildCliArgs(task, assets);
+  const cliArgs = buildCliArgs(task, assets, status.engineDir);
   const args = [...python.argsPrefix, ...cliArgs];
 
   updateTask(taskId, {
@@ -405,7 +527,7 @@ export async function runMoneyPrinterTask(taskId: string) {
           outputVideos: videos.length > 0 ? videos : parsedVideos,
           errorMessage: null,
           resultSummary: [
-            `内置自动化剪辑引擎已生成 ${videos.length} 个视频。`,
+            `内置自动化剪辑引擎已生成 ${videos.length || parsedVideos.length} 个视频。`,
             termsText ? `关键词：${termsText}` : '',
             script ? `脚本：${script.slice(0, 120)}${script.length > 120 ? '...' : ''}` : ''
           ]

@@ -267,6 +267,12 @@ Output and exit status:
         ),
     )
     video_group.add_argument(
+        "--video-clip-speed",
+        type=_positive_float,
+        default=None,
+        help="source clip playback speed multiplier, a finite number > 0 (default: 1.0)",
+    )
+    video_group.add_argument(
         "--match-materials-to-script",
         default=None,
         action=argparse.BooleanOptionalAction,
@@ -538,6 +544,7 @@ def build_video_params(args: argparse.Namespace) -> VideoParams:
         "video_concat_mode",
         "video_transition_mode",
         "video_clip_duration",
+        "video_clip_speed",
         "match_materials_to_script",
         "n_threads",
         "voice_volume",
