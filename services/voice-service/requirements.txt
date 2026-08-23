@@ -1,0 +1,7 @@
+fastapi==0.141.1
+uvicorn==0.52.4
+pydantic==2.13.4
+pyttsx3==2.99
+soundfile==0.14.0
+voxcpm==2.0.3
+piper-tts==1.7.0

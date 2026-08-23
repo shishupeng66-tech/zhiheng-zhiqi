@@ -10,6 +10,7 @@ import {
   type AutomationVideoTask,
   type AutomationVideoTaskStatus
 } from '@/lib/db/schema';
+import { generateVoiceAudio } from '@/lib/voice-service/client';
 
 type EngineRunResult = {
   task_id?: string;
@@ -18,9 +19,25 @@ type EngineRunResult = {
     combined_videos?: string[];
     script?: string;
     terms?: string[] | string;
+    audio_file?: string;
     state?: number | string;
     error?: string;
   };
+};
+
+type PythonCommand = ReturnType<typeof getPythonCommand>;
+
+type CliRunResult = {
+  code: number | null;
+  stdout: string;
+  stderr: string;
+};
+
+type BuildCliArgsOptions = {
+  stopAt?: string;
+  videoScript?: string;
+  customAudioPath?: string;
+  forceNoVoice?: boolean;
 };
 
 const repoRoot = /* turbopackIgnore: true */ process.cwd();
@@ -240,11 +257,12 @@ function ensureManagedBgmFile(engineDir: string, sourcePath: string | null, task
 function buildCliArgs(
   task: AutomationVideoTask,
   assets: AutomationVideoAsset[],
-  engineDir: string
+  engineDir: string,
+  options: BuildCliArgsOptions = {}
 ) {
   const customAudioAsset = readAssetByOption(task, assets, 'customAudio');
   const customBgmAsset = readAssetByOption(task, assets, 'customBgm');
-  const customAudioPath = resolveAssetPath(customAudioAsset);
+  const customAudioPath = options.customAudioPath ?? resolveAssetPath(customAudioAsset);
   const customBgmPath = ensureManagedBgmFile(engineDir, resolveAssetPath(customBgmAsset), task.id);
   const assetPaths = resolveMaterialAssetPaths(assets, customAudioAsset, customBgmAsset);
   const videoSource = mapVideoSource(task.materialSource, assetPaths.length > 0);
@@ -270,7 +288,7 @@ function buildCliArgs(
     '--n-threads',
     String(Math.max(1, Math.min(16, Math.floor(readNumberOption(task, 'workerThreads', 2))))),
     '--stop-at',
-    mapStopAt(readTaskOption(task, 'stopAt')),
+    options.stopAt ?? mapStopAt(readTaskOption(task, 'stopAt')),
     '--paragraph-number',
     String(Math.max(1, Math.min(10, Math.floor(readNumberOption(task, 'paragraph', 1))))),
     '--voice-volume',
@@ -298,6 +316,8 @@ function buildCliArgs(
 
   if (customAudioPath) {
     args.push('--custom-audio-file', customAudioPath);
+  } else if (options.forceNoVoice) {
+    args.push('--voice-name', 'no-voice');
   } else {
     args.push('--voice-name', mapVoiceName(task));
   }
@@ -334,8 +354,9 @@ function buildCliArgs(
     args.push('--video-language', language);
   }
 
-  if (task.scriptText?.trim()) {
-    args.push('--video-script', task.scriptText.trim());
+  const videoScript = options.videoScript ?? task.scriptText?.trim();
+  if (videoScript) {
+    args.push('--video-script', videoScript);
   }
 
   const scriptPrompt = readTaskOption(task, 'scriptPrompt');
@@ -363,6 +384,121 @@ function buildCliArgs(
   }
 
   return args;
+}
+
+function shouldUseVoiceService(task: AutomationVideoTask, assets: AutomationVideoAsset[]) {
+  const customAudioAsset = readAssetByOption(task, assets, 'customAudio');
+  const customAudioPath = resolveAssetPath(customAudioAsset);
+  if (customAudioPath) return false;
+  return mapVoiceName(task) !== 'no-voice';
+}
+
+function mapVoiceId(task: AutomationVideoTask) {
+  const value = `${task.voiceService} ${task.voiceName}`.toLowerCase();
+  return value.includes('male') || value.includes('男') ? 'business_male' : 'business_female';
+}
+
+function appendLog(logPath: string, text: string) {
+  fs.mkdirSync(path.dirname(logPath), { recursive: true });
+  fs.appendFileSync(logPath, text);
+}
+
+function runCliProcess(input: {
+  python: PythonCommand;
+  args: string[];
+  engineDir: string;
+  logPath: string;
+  label: string;
+}) {
+  return new Promise<CliRunResult>((resolve) => {
+    const startedAt = new Date();
+    const fullArgs = [...input.python.argsPrefix, ...input.args];
+    const child = spawn(input.python.command, fullArgs, {
+      cwd: input.engineDir,
+      env: process.env,
+      windowsHide: true
+    });
+    const output: string[] = [];
+    const errorOutput: string[] = [];
+    const logStream = fs.createWriteStream(input.logPath, { flags: 'a' });
+    logStream.write(
+      `[${startedAt.toISOString()}] ${input.label}: ${input.python.command} ${fullArgs.join(' ')}\n`
+    );
+
+    child.stdout.on('data', (chunk: Buffer) => {
+      const text = chunk.toString('utf8');
+      output.push(text);
+      logStream.write(text);
+    });
+    child.stderr.on('data', (chunk: Buffer) => {
+      const text = chunk.toString('utf8');
+      errorOutput.push(text);
+      logStream.write(text);
+    });
+    child.on('error', (error) => {
+      logStream.write(`\n[worker-error] ${error.message}\n`);
+      logStream.end();
+      resolve({ code: -1, stdout: output.join(''), stderr: error.message });
+    });
+    child.on('close', (code) => {
+      logStream.write(`\n[${new Date().toISOString()}] ${input.label} exit=${code}\n`);
+      logStream.end();
+      resolve({ code, stdout: output.join(''), stderr: errorOutput.join('') });
+    });
+  });
+}
+
+async function prepareVoiceServiceAudio(input: {
+  task: AutomationVideoTask;
+  assets: AutomationVideoAsset[];
+  engineDir: string;
+  python: PythonCommand;
+  logPath: string;
+}) {
+  const stopAt = mapStopAt(readTaskOption(input.task, 'stopAt'));
+  if (stopAt === 'script' || stopAt === 'terms') {
+    return { audioPath: null, script: input.task.scriptText?.trim() || '' };
+  }
+  if (!shouldUseVoiceService(input.task, input.assets)) {
+    return { audioPath: null, script: input.task.scriptText?.trim() || '' };
+  }
+
+  let script = input.task.scriptText?.trim() || '';
+  if (!script) {
+    const scriptArgs = buildCliArgs(input.task, input.assets, input.engineDir, {
+      stopAt: 'script',
+      forceNoVoice: true
+    });
+    const scriptRun = await runCliProcess({
+      python: input.python,
+      args: scriptArgs,
+      engineDir: input.engineDir,
+      logPath: input.logPath,
+      label: 'script-pass'
+    });
+    const parsed = extractJsonFromStdout(scriptRun.stdout);
+    script = parsed?.result?.script?.trim() || '';
+    if (scriptRun.code !== 0 || !script) {
+      const message =
+        parsed?.result?.error ||
+        scriptRun.stderr.split(/\r?\n/).filter(Boolean).slice(-6).join('\n') ||
+        'MoneyPrinterTurbo script generation failed before Voice Service synthesis.';
+      throw new Error(message);
+    }
+  }
+
+  appendLog(input.logPath, `[${new Date().toISOString()}] voice-service request started\n`);
+  const voiceAudio = await generateVoiceAudio({
+    text: script,
+    voiceId: mapVoiceId(input.task),
+    speed: mapVoiceRate(input.task.voiceSpeed),
+    style: 'business'
+  });
+  appendLog(
+    input.logPath,
+    `[${new Date().toISOString()}] voice-service audio=${voiceAudio.audio_path} duration=${voiceAudio.duration}s\n`
+  );
+  return { audioPath: voiceAudio.audio_path, script };
 }
 
 function getTaskAssets(task: AutomationVideoTask) {
@@ -451,6 +587,7 @@ export async function runMoneyPrinterTask(taskId: string) {
   if (!task) {
     throw new Error(`automation video task not found: ${taskId}`);
   }
+  const currentTask = task;
 
   const status = getMoneyPrinterEngineStatus();
   if (!status.enginePresent) {
@@ -478,6 +615,69 @@ export async function runMoneyPrinterTask(taskId: string) {
     errorMessage: null,
     resultSummary: '已进入知衡智企内置自动化剪辑引擎，正在生成视频。'
   });
+
+  try {
+    const voiceAudio = await prepareVoiceServiceAudio({
+      task,
+      assets,
+      engineDir: status.engineDir,
+      python,
+      logPath
+    });
+    const nextCliArgs = buildCliArgs(task, assets, status.engineDir, {
+      customAudioPath: voiceAudio.audioPath ?? undefined,
+      videoScript: voiceAudio.script || undefined
+    });
+    const run = await runCliProcess({
+      python,
+      args: nextCliArgs,
+      engineDir: status.engineDir,
+      logPath,
+      label: 'video-pass'
+    });
+    const parsed = extractJsonFromStdout(run.stdout);
+    const videos = findGeneratedVideos(status.engineDir, taskId);
+    const parsedVideos = parsed?.result?.videos ?? [];
+    const script = parsed?.result?.script || voiceAudio.script || task.scriptText || '';
+    const terms = parsed?.result?.terms;
+    const termsText = Array.isArray(terms) ? terms.join(', ') : terms || task.keywords.join(', ');
+
+    if (run.code === 0 && (videos.length > 0 || parsedVideos.length > 0)) {
+      updateTask(taskId, {
+        status: 'pending_review',
+        outputVideos: videos.length > 0 ? videos : parsedVideos,
+        errorMessage: null,
+        resultSummary: [
+          `Voice Service and automation engine generated ${videos.length || parsedVideos.length} video(s).`,
+          termsText ? `Keywords: ${termsText}` : '',
+          script ? `Script: ${script.slice(0, 120)}${script.length > 120 ? '...' : ''}` : ''
+        ]
+          .filter(Boolean)
+          .join(' ')
+      });
+    } else {
+      const message =
+        parsed?.result?.error ||
+        run.stderr.split(/\r?\n/).filter(Boolean).slice(-6).join('\n') ||
+        `Video engine exit code: ${run.code}`;
+      updateTask(taskId, {
+        status: 'failed',
+        outputVideos: videos,
+        errorMessage: message,
+        resultSummary: 'Automation editing engine failed. Check the task log for details.'
+      });
+    }
+    return;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    appendLog(logPath, `\n[${new Date().toISOString()}] voice-pipeline-error ${message}\n`);
+    updateTask(taskId, {
+      status: 'failed',
+      errorMessage: message,
+      resultSummary: 'Local Voice Service failed to generate audio. The video task was stopped.'
+    });
+    return;
+  }
 
   await new Promise<void>((resolve) => {
     const startedAt = new Date();
@@ -517,9 +717,11 @@ export async function runMoneyPrinterTask(taskId: string) {
       const parsed = extractJsonFromStdout(stdout);
       const videos = findGeneratedVideos(status.engineDir, taskId);
       const parsedVideos = parsed?.result?.videos ?? [];
-      const script = parsed?.result?.script || task.scriptText || '';
+      const script = parsed?.result?.script || currentTask.scriptText || '';
       const terms = parsed?.result?.terms;
-      const termsText = Array.isArray(terms) ? terms.join('、') : terms || task.keywords.join('、');
+      const termsText = Array.isArray(terms)
+        ? terms.join('、')
+        : terms || currentTask.keywords.join('、');
 
       if (code === 0 && (videos.length > 0 || parsedVideos.length > 0)) {
         updateTask(taskId, {

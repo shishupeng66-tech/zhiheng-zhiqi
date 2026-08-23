@@ -65,6 +65,11 @@ next-env.d.ts
 /engines/moneyprinterturbo/storage/
 /engines/moneyprinterturbo/**/__pycache__/
 
+# local voice service runtime
+/services/voice-service/.venv/
+/storage/voice-service/
+/services/voice-service/**/__pycache__/
+
 # cursor 
 .cursorrules
 /memory-bank
