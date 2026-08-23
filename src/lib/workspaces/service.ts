@@ -74,7 +74,7 @@ export const defaultWorkspaces = [
     name: '自动化剪辑空间',
     slug: 'enterprise-media',
     description:
-      '帮助制造企业通过 AI 持续生产企业宣传短视频，AI 默认完成内容生产，人可以选择干预。',
+      '输入视频需求后，系统默认由 AI 完成脚本生成、素材匹配、配音、字幕包装、封面和发布文案准备。用户也可以手动干预风格、脚本、声音、素材和视频参数。',
     icon: 'video',
     workspaceType: 'enterprise-media' as WorkspaceType,
     status: 'active' as const,

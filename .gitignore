@@ -59,6 +59,11 @@ next-env.d.ts
 # local uploaded files
 /public/uploads/
 
+# local video engine runtime
+/engines/moneyprinterturbo/.venv/
+/engines/moneyprinterturbo/config.toml
+/engines/moneyprinterturbo/storage/
+/engines/moneyprinterturbo/**/__pycache__/
 
 # cursor 
 .cursorrules

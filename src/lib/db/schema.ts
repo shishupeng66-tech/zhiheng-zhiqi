@@ -30,6 +30,16 @@ export type WorkspaceType = (typeof workspaceTypes)[number];
 export const workspaceMemberRoles = ['owner', 'admin', 'editor', 'member', 'viewer'] as const;
 export type WorkspaceMemberRole = (typeof workspaceMemberRoles)[number];
 
+export const automationVideoTaskStatuses = [
+  'draft',
+  'generating',
+  'pending_review',
+  'approved',
+  'failed',
+  'deleted'
+] as const;
+export type AutomationVideoTaskStatus = (typeof automationVideoTaskStatuses)[number];
+
 /**
  * 系统账号表（users）
  * 企业员工账号体系的核心表，本地 SQLite 存储，绝不依赖公网。
@@ -111,6 +121,69 @@ export const workspaceMembers = sqliteTable(
  * 本轮不实现完整 Workspace 权限逻辑；仅建立与未来本地工作空间兼容的数据结构。
  * 当前 Workspace 仍依赖 Clerk Organization，不强行重写其数据模型。
  */
+export const automationVideoAssets = sqliteTable('automation_video_assets', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id')
+    .notNull()
+    .references(() => workspaces.id),
+  uploadedBy: text('uploaded_by')
+    .notNull()
+    .references(() => users.id),
+  name: text('name').notNull(),
+  fileUrl: text('file_url').notNull(),
+  fileType: text('file_type').notNull(),
+  mimeType: text('mime_type').notNull(),
+  size: integer('size').notNull(),
+  status: text('status').notNull().default('available'),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull()
+});
+
+export const automationVideoTasks = sqliteTable('automation_video_tasks', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id')
+    .notNull()
+    .references(() => workspaces.id),
+  createdBy: text('created_by')
+    .notNull()
+    .references(() => users.id),
+  title: text('title').notNull(),
+  prompt: text('prompt').notNull(),
+  scriptLanguage: text('script_language').notNull(),
+  keywords: text('keywords', { mode: 'json' }).$type<string[]>().notNull(),
+  scriptText: text('script_text'),
+  materialSource: text('material_source').notNull(),
+  materialAssetIds: text('material_asset_ids', { mode: 'json' }).$type<string[]>().notNull(),
+  stitchMode: text('stitch_mode').notNull(),
+  transitionMode: text('transition_mode').notNull(),
+  videoRatio: text('video_ratio').notNull(),
+  clipDuration: text('clip_duration').notNull(),
+  matchByScript: integer('match_by_script', { mode: 'boolean' }).notNull().default(true),
+  voiceMode: text('voice_mode').notNull(),
+  voiceService: text('voice_service').notNull(),
+  voiceName: text('voice_name').notNull(),
+  voiceVolume: text('voice_volume').notNull(),
+  voiceSpeed: text('voice_speed').notNull(),
+  musicSource: text('music_source').notNull(),
+  musicVolume: integer('music_volume').notNull(),
+  subtitleEnabled: integer('subtitle_enabled', { mode: 'boolean' }).notNull().default(true),
+  subtitleFont: text('subtitle_font').notNull(),
+  subtitlePosition: text('subtitle_position').notNull(),
+  subtitleStyle: text('subtitle_style').notNull(),
+  subtitleSize: text('subtitle_size').notNull(),
+  subtitleColor: text('subtitle_color').notNull(),
+  subtitleBackground: integer('subtitle_background', { mode: 'boolean' }).notNull().default(true),
+  packagingOptions: text('packaging_options', { mode: 'json' }).$type<string[]>().notNull(),
+  status: text('status', { enum: automationVideoTaskStatuses }).notNull().default('pending_review'),
+  resultSummary: text('result_summary'),
+  engineTaskId: text('engine_task_id'),
+  engineLogPath: text('engine_log_path'),
+  outputVideos: text('output_videos', { mode: 'json' }).$type<string[]>(),
+  errorMessage: text('error_message'),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull()
+});
+
 export const userWorkspaces = sqliteTable(
   'user_workspaces',
   {
@@ -138,6 +211,10 @@ export type Workspace = typeof workspaces.$inferSelect;
 export type NewWorkspace = typeof workspaces.$inferInsert;
 export type WorkspaceMember = typeof workspaceMembers.$inferSelect;
 export type NewWorkspaceMember = typeof workspaceMembers.$inferInsert;
+export type AutomationVideoAsset = typeof automationVideoAssets.$inferSelect;
+export type NewAutomationVideoAsset = typeof automationVideoAssets.$inferInsert;
+export type AutomationVideoTask = typeof automationVideoTasks.$inferSelect;
+export type NewAutomationVideoTask = typeof automationVideoTasks.$inferInsert;
 export type UserWorkspace = typeof userWorkspaces.$inferSelect;
 export type NewUserWorkspace = typeof userWorkspaces.$inferInsert;
 

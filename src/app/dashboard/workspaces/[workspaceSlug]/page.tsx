@@ -13,7 +13,7 @@ export default async function WorkspaceOverviewRoute({ params }: PageProps) {
 
   if (!result.ok) return <WorkspaceAccessDenied />;
   if (result.context.workspace.workspaceType === 'enterprise-media') {
-    return <AutomationEditingOverviewPage />;
+    return <AutomationEditingOverviewPage workspaceSlug={workspaceSlug} />;
   }
 
   return <VideoProductionOverviewPage workspaceSlug={workspaceSlug} />;

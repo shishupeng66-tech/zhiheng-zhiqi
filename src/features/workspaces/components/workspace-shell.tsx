@@ -21,7 +21,7 @@ export function WorkspaceShell({ workspace, role, modules, children }: Workspace
   return (
     <div className='flex min-h-full flex-col'>
       <div className='border-b bg-background'>
-        <div className='w-full px-5 py-5 md:px-8 lg:px-10'>
+        <div className='w-full px-5 py-3 md:px-8 lg:px-10'>
           <Link
             className={buttonVariants({ variant: 'ghost', size: 'sm', className: '-ml-2' })}
             href='/dashboard/workspaces'
@@ -30,18 +30,18 @@ export function WorkspaceShell({ workspace, role, modules, children }: Workspace
             返回工作空间
           </Link>
 
-          <div className='mt-4 flex flex-col gap-4 md:flex-row md:items-start md:justify-between'>
+          <div className='mt-2 flex flex-col gap-3 md:flex-row md:items-start md:justify-between'>
             <div className='flex items-start gap-4'>
-              <div className='flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15'>
-                <Icons.video className='size-6' />
+              <div className='flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15'>
+                <Icons.video className='size-5' />
               </div>
-              <div className='space-y-2'>
+              <div className='space-y-1.5'>
                 <div className='flex flex-wrap items-center gap-2'>
-                  <h1 className='text-2xl font-semibold tracking-tight'>{workspace.name}</h1>
+                  <h1 className='text-xl font-semibold tracking-tight'>{workspace.name}</h1>
                   <Badge variant='secondary'>{roleLabel}</Badge>
                   <Badge variant='outline'>{statusLabel}</Badge>
                 </div>
-                <p className='max-w-5xl text-sm leading-6 text-muted-foreground'>
+                <p className='max-w-5xl text-sm leading-5 text-muted-foreground'>
                   {workspace.description}
                 </p>
               </div>
@@ -56,7 +56,7 @@ export function WorkspaceShell({ workspace, role, modules, children }: Workspace
         </div>
       </div>
 
-      <div className='w-full flex-1 px-5 py-5 md:px-8 lg:px-10'>{children}</div>
+      <div className='w-full flex-1 px-5 py-4 md:px-8 lg:px-10'>{children}</div>
     </div>
   );
 }
