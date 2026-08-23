@@ -28,13 +28,17 @@ type UploadedAsset = {
 type FormState = {
   prompt: string;
   scriptLanguage: string;
+  paragraphNumber: string;
   keywords: string;
   scriptText: string;
+  scriptPrompt: string;
   materialSource: string;
   stitchMode: string;
   transitionMode: string;
   videoRatio: string;
   clipDuration: string;
+  videoCount: string;
+  clipSpeed: string;
   matchByScript: boolean;
   voiceMode: string;
   voiceService: string;
@@ -50,18 +54,26 @@ type FormState = {
   subtitleSize: string;
   subtitleColor: string;
   subtitleBackground: boolean;
+  titleEnabled: boolean;
+  descriptionEnabled: boolean;
+  tagsEnabled: boolean;
+  coverEnabled: boolean;
 };
 
 const initialForm: FormState = {
   prompt: '',
   scriptLanguage: '自动检测',
+  paragraphNumber: '1 段',
   keywords: '企业实力、生产能力、质量控制',
   scriptText: '',
+  scriptPrompt: '',
   materialSource: '企业素材库',
   stitchMode: '按顺序拼接',
   transitionMode: '无转场',
   videoRatio: '竖屏 9:16',
   clipDuration: '3 秒',
+  videoCount: '1 条',
+  clipSpeed: '1.0x',
   matchByScript: true,
   voiceMode: '自动配音',
   voiceService: '企业默认 TTS',
@@ -76,10 +88,14 @@ const initialForm: FormState = {
   subtitleStyle: '简洁商务字幕',
   subtitleSize: '30',
   subtitleColor: '白色',
-  subtitleBackground: true
+  subtitleBackground: true,
+  titleEnabled: true,
+  descriptionEnabled: true,
+  tagsEnabled: true,
+  coverEnabled: true
 };
 
-const keywordSuggestions = ['企业实力', '生产能力', '质量控制'];
+const keywordSuggestions = ['企业实力', '生产能力', '质量控制', '交付稳定', '客户信任'];
 
 function splitKeywords(value: string) {
   return value
@@ -103,7 +119,7 @@ function SelectField({
     <div className='grid gap-1.5'>
       <div className='text-xs font-medium text-muted-foreground'>{label}</div>
       <Select value={value} onValueChange={(next) => onChange(next ?? value)}>
-        <SelectTrigger className='h-7 w-full text-xs'>
+        <SelectTrigger className='h-8 w-full text-xs'>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -128,10 +144,18 @@ function CompactSwitch({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <div className='flex h-7 items-center justify-between rounded-md border px-2.5'>
+    <div className='flex h-8 items-center justify-between rounded-md border px-2.5'>
       <span className='text-xs font-medium'>{label}</span>
       <Switch checked={checked} onCheckedChange={onChange} aria-label={label} />
     </div>
+  );
+}
+
+function ToolButton({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) {
+  return (
+    <Button variant='outline' size='sm' className='h-8 text-xs' onClick={onClick}>
+      {children}
+    </Button>
   );
 }
 
@@ -149,18 +173,18 @@ function StepCard({
   children: React.ReactNode;
 }) {
   return (
-    <Card className='flex h-[calc(100vh-250px)] min-h-[460px] flex-col overflow-hidden'>
-      <CardHeader className='p-2.5 pb-1.5'>
+    <Card className='flex h-[calc(100vh-245px)] min-h-[540px] flex-col overflow-hidden'>
+      <CardHeader className='p-3 pb-2'>
         <div className='flex items-center gap-2'>
-          <div className='flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary'>
+          <div className='flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary'>
             <Icon className='size-4' />
           </div>
           <Badge variant='secondary'>{number}</Badge>
           <CardTitle className='text-base'>{title}</CardTitle>
         </div>
-        <p className='mt-1 line-clamp-1 text-xs leading-4 text-muted-foreground'>{description}</p>
+        <p className='mt-1 line-clamp-2 text-xs leading-4 text-muted-foreground'>{description}</p>
       </CardHeader>
-      <CardContent className='flex flex-1 flex-col gap-2 overflow-y-auto p-3 pt-0'>
+      <CardContent className='flex flex-1 flex-col gap-2.5 overflow-y-auto p-3 pt-0'>
         {children}
       </CardContent>
     </Card>
@@ -205,7 +229,7 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
         return;
       }
       setAssets((current) => [payload.asset, ...current]);
-      setForm((current) => ({ ...current, materialSource: '素材库+本地补充' }));
+      setForm((current) => ({ ...current, materialSource: '素材库 + 本地补充' }));
       toast.success('素材已上传并加入本次任务');
     } finally {
       setUploading(false);
@@ -228,7 +252,13 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
           ...form,
           keywords: splitKeywords(form.keywords),
           materialAssetIds: assets.map((asset) => asset.id),
-          packagingOptions: ['title', 'description', 'tags', 'cover']
+          packagingOptions: [
+            form.titleEnabled ? 'title' : '',
+            form.descriptionEnabled ? 'description' : '',
+            form.tagsEnabled ? 'tags' : '',
+            form.coverEnabled ? 'cover' : '',
+            `count:${form.videoCount.match(/\d+/)?.[0] ?? '1'}`
+          ].filter(Boolean)
         })
       });
       const payload = await res.json().catch(() => ({}));
@@ -236,7 +266,7 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
         toast.error(payload.message ?? '创建视频任务失败');
         return;
       }
-      toast.success('视频生产任务已创建，请到任务审核查看');
+      toast.success('已提交内置自动化剪辑引擎，请到任务审核查看结果');
     } finally {
       setSaving(false);
     }
@@ -247,7 +277,7 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
       <input
         ref={fileInputRef}
         type='file'
-        accept='image/png,image/jpeg,image/webp,video/mp4,video/quicktime,video/x-matroska,video/x-msvideo,video/x-flv'
+        accept='image/png,image/jpeg,image/webp,video/mp4,video/quicktime,video/x-matroska,video/x-msvideo,video/x-flv,audio/mpeg,audio/wav,audio/mp4,audio/aac,audio/ogg'
         className='hidden'
         onChange={(event) => {
           const file = event.target.files?.[0];
@@ -260,34 +290,39 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
           number='01'
           icon={Icons.post}
           title='视频内容'
-          description='输入主题，默认由 AI 生成脚本、关键词和文案。'
+          description='对应脚本、主题、关键词和生成语言。可直接给需求，也可粘贴完整脚本。'
         >
-          <div className='grid gap-1.5'>
-            <div className='text-xs font-medium text-muted-foreground'>视频主题 / 需求输入</div>
-            <Textarea
-              className='min-h-16 resize-none text-sm'
-              placeholder='例如：制作一条 60 秒企业宣传短视频。'
-              value={form.prompt}
-              onChange={(event) => update('prompt', event.target.value)}
+          <Textarea
+            className='min-h-16 resize-none text-sm'
+            placeholder='例如：制作一条 60 秒企业宣传短视频，突出核心能力、质量控制、服务流程和客户信任。'
+            value={form.prompt}
+            onChange={(event) => update('prompt', event.target.value)}
+          />
+          <div className='grid grid-cols-2 gap-2'>
+            <SelectField
+              label='脚本语言'
+              value={form.scriptLanguage}
+              options={['自动检测', '简体中文', '英文', '中英双语']}
+              onChange={(value) => update('scriptLanguage', value)}
+            />
+            <SelectField
+              label='脚本段落'
+              value={form.paragraphNumber}
+              options={['1 段', '2 段', '3 段', '5 段', '8 段']}
+              onChange={(value) => update('paragraphNumber', value)}
             />
           </div>
-          <SelectField
-            label='脚本语言'
-            value={form.scriptLanguage}
-            options={['自动检测', '简体中文', '英文', '中英双语']}
-            onChange={(value) => update('scriptLanguage', value)}
-          />
           <div className='grid grid-cols-[1fr_auto] gap-2'>
             <Input
-              className='h-7 text-xs'
+              className='h-8 text-xs'
               placeholder='视频关键词'
               value={form.keywords}
               onChange={(event) => update('keywords', event.target.value)}
             />
-            <Button variant='outline' size='sm' onClick={fillAiDraft}>
+            <ToolButton onClick={fillAiDraft}>
               <Icons.sparkles className='size-4' />
               AI生成
-            </Button>
+            </ToolButton>
           </div>
           <div className='flex flex-wrap gap-1.5'>
             {keywordSuggestions.map((keyword) => (
@@ -296,39 +331,43 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
               </Badge>
             ))}
           </div>
-          <div className='grid flex-1 gap-1.5'>
-            <div className='flex items-center justify-between'>
-              <div className='text-xs font-medium text-muted-foreground'>视频文案（可选）</div>
-              <Badge variant='secondary' className='text-xs'>
-                可AI生成
-              </Badge>
-            </div>
-            <Textarea
-              className='min-h-14 flex-1 resize-none text-sm'
-              placeholder='可粘贴脚本，也可以留空。'
-              value={form.scriptText}
-              onChange={(event) => update('scriptText', event.target.value)}
-            />
+          <Textarea
+            className='min-h-20 flex-1 resize-none text-sm'
+            placeholder='视频文案/脚本，可粘贴完整脚本；留空时由 AI 生成。'
+            value={form.scriptText}
+            onChange={(event) => update('scriptText', event.target.value)}
+          />
+          <Textarea
+            className='min-h-12 resize-none text-xs'
+            placeholder='高级脚本要求：语气、受众、时长、禁用词、结构等。'
+            value={form.scriptPrompt}
+            onChange={(event) => update('scriptPrompt', event.target.value)}
+          />
+          <div className='grid grid-cols-2 gap-2'>
+            <ToolButton onClick={fillAiDraft}>
+              <Icons.sparkles className='size-4' />
+              生成脚本
+            </ToolButton>
+            <ToolButton onClick={fillAiDraft}>
+              <Icons.sparkles className='size-4' />
+              生成关键词
+            </ToolButton>
           </div>
-          <Button variant='outline' size='sm' className='mt-auto w-full'>
-            <Icons.adjustments className='size-4' />
-            高级脚本设置
-          </Button>
         </StepCard>
 
         <StepCard
           number='02'
           icon={Icons.media}
           title='素材与画面'
-          description='从企业素材库、本地文件或 AI 匹配中组织画面。'
+          description='对应素材来源、上传文件、画面比例、拼接、转场、片段时长和生成数量。'
         >
           <div className='grid grid-cols-3 gap-1.5'>
             {[
-              ['126', '素材'],
-              [String(assets.length), '本次'],
-              ['12', '待补']
+              ['126', '可用素材'],
+              [String(assets.length), '本次选择'],
+              ['12', '待补充']
             ].map(([value, label]) => (
-              <div key={label} className='rounded-md border p-1.5'>
+              <div key={label} className='rounded-md border p-2'>
                 <div className='text-base font-semibold'>{value}</div>
                 <div className='text-xs text-muted-foreground'>{label}</div>
               </div>
@@ -337,12 +376,17 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
           <SelectField
             label='视频来源'
             value={form.materialSource}
-            options={['企业素材库', '本地文件', 'AI 自动匹配', '素材库+本地补充']}
+            options={['企业素材库', '本地文件', 'AI 自动匹配', '素材库 + 本地补充']}
             onChange={(value) => update('materialSource', value)}
           />
           <div className='rounded-md border bg-muted/20 p-2'>
             <div className='flex items-center justify-between gap-2'>
-              <div className='text-sm font-medium'>上传本地文件</div>
+              <div>
+                <div className='text-sm font-medium'>上传本地素材</div>
+                <div className='text-xs text-muted-foreground'>
+                  支持图片、视频、音频；当前接入本地存储。
+                </div>
+              </div>
               <Button
                 variant='outline'
                 size='sm'
@@ -355,15 +399,15 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
             </div>
           </div>
           {assets.length > 0 ? (
-            <div className='truncate rounded-md border px-2 py-1.5 text-xs text-muted-foreground'>
-              已选：{assets[0].name}
+            <div className='rounded-md border px-2 py-1.5 text-xs text-muted-foreground'>
+              已选：{assets.map((asset) => asset.name).join('、')}
             </div>
           ) : null}
           <div className='grid grid-cols-2 gap-2'>
             <SelectField
               label='拼接模式'
               value={form.stitchMode}
-              options={['按顺序拼接', 'AI 自动排序', '按脚本段落拼接']}
+              options={['按顺序拼接', 'AI 自动排序', '按脚本段落拼接', '随机混剪']}
               onChange={(value) => update('stitchMode', value)}
             />
             <SelectField
@@ -384,19 +428,41 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
               options={['2 秒', '3 秒', '5 秒', '8 秒']}
               onChange={(value) => update('clipDuration', value)}
             />
+            <SelectField
+              label='生成数量'
+              value={form.videoCount}
+              options={['1 条', '2 条', '3 条', '5 条']}
+              onChange={(value) => update('videoCount', value)}
+            />
+            <SelectField
+              label='播放速度'
+              value={form.clipSpeed}
+              options={['0.8x', '1.0x', '1.2x', '1.5x']}
+              onChange={(value) => update('clipSpeed', value)}
+            />
           </div>
           <CompactSwitch
             label='按文案匹配画面'
             checked={form.matchByScript}
             onChange={(checked) => update('matchByScript', checked)}
           />
+          <div className='grid grid-cols-2 gap-2'>
+            <ToolButton>
+              <Icons.media className='size-4' />
+              素材库
+            </ToolButton>
+            <ToolButton>
+              <Icons.sparkles className='size-4' />
+              AI匹配
+            </ToolButton>
+          </div>
         </StepCard>
 
         <StepCard
           number='03'
           icon={Icons.music}
           title='配音与音乐'
-          description='配置自动配音、企业声音、本地音频和背景音乐。'
+          description='对应自动配音、上传音频、无配音、声音资产、语速音量和背景音乐。'
         >
           <div className='grid grid-cols-3 overflow-hidden rounded-md border'>
             {['自动配音', '上传音频', '无配音'].map((item) => (
@@ -404,7 +470,7 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
                 key={item}
                 variant={form.voiceMode === item ? 'default' : 'ghost'}
                 size='sm'
-                className='rounded-none'
+                className='h-8 rounded-none text-xs'
                 onClick={() => update('voiceMode', item)}
               >
                 {item}
@@ -414,7 +480,7 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
           <SelectField
             label='配音服务'
             value={form.voiceService}
-            options={['企业默认 TTS', '火山引擎豆包语音', '本地语音服务']}
+            options={['企业默认 TTS', 'Edge TTS', '火山引擎豆包语音', '本地语音服务']}
             onChange={(value) => update('voiceService', value)}
           />
           <SelectField
@@ -423,7 +489,7 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
             options={['AI 自动选择音色', '企业宣传旁白', '老板 IP 声音', '通用讲解声音']}
             onChange={(value) => update('voiceName', value)}
           />
-          <div className='grid grid-cols-2 gap-2.5'>
+          <div className='grid grid-cols-2 gap-2'>
             <SelectField
               label='音量'
               value={form.voiceVolume}
@@ -437,15 +503,15 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
               onChange={(value) => update('voiceSpeed', value)}
             />
           </div>
-          <div className='grid grid-cols-2 gap-1.5'>
-            <Button variant='outline' size='sm' onClick={() => toast.info('当前使用模拟试听')}>
+          <div className='grid grid-cols-2 gap-2'>
+            <ToolButton onClick={() => toast.info('试听需要已配置语音服务后启用')}>
               <Icons.music className='size-4' />
-              试听
-            </Button>
-            <Button variant='outline' size='sm' onClick={() => fileInputRef.current?.click()}>
+              试听音色
+            </ToolButton>
+            <ToolButton onClick={() => fileInputRef.current?.click()}>
               <Icons.upload className='size-4' />
-              上传
-            </Button>
+              上传音频
+            </ToolButton>
           </div>
           <SelectField
             label='背景音乐'
@@ -453,7 +519,7 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
             options={['AI 自动匹配音乐', '企业音乐库', '上传背景音乐', '不使用音乐']}
             onChange={(value) => update('musicSource', value)}
           />
-          <div className='mt-auto rounded-md border p-2'>
+          <div className='rounded-md border p-2'>
             <div className='mb-1.5 flex items-center justify-between text-xs'>
               <span>背景音乐音量</span>
               <Badge variant='secondary'>{form.musicVolume}%</Badge>
@@ -468,13 +534,23 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
               }
             />
           </div>
+          <div className='grid grid-cols-2 gap-2'>
+            <ToolButton>
+              <Icons.workspace className='size-4' />
+              声音资产
+            </ToolButton>
+            <ToolButton>
+              <Icons.settings className='size-4' />
+              语音参数
+            </ToolButton>
+          </div>
         </StepCard>
 
         <StepCard
           number='04'
           icon={Icons.palette}
           title='字幕与包装'
-          description='控制字幕、封面、标题、简介和标签关键词。'
+          description='对应字幕开关、字体位置、颜色描边、标题简介、标签关键词和封面。'
         >
           <CompactSwitch
             label='启用字幕'
@@ -485,13 +561,13 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
             <SelectField
               label='字幕字体'
               value={form.subtitleFont}
-              options={['企业默认字体', '清晰黑体', '稳重宋体']}
+              options={['企业默认字体', '微软雅黑', '黑体', '清晰商务字体']}
               onChange={(value) => update('subtitleFont', value)}
             />
             <SelectField
               label='字幕位置'
               value={form.subtitlePosition}
-              options={['底部（推荐）', '中下方', '顶部']}
+              options={['底部（推荐）', '中下方', '顶部', '自定义']}
               onChange={(value) => update('subtitlePosition', value)}
             />
             <SelectField
@@ -501,16 +577,22 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
               onChange={(value) => update('subtitleStyle', value)}
             />
             <SelectField
-              label='大小'
+              label='字幕大小'
               value={form.subtitleSize}
-              options={['24', '30', '36', '42']}
+              options={['24', '30', '36', '42', '60']}
               onChange={(value) => update('subtitleSize', value)}
             />
             <SelectField
-              label='颜色'
+              label='字幕颜色'
               value={form.subtitleColor}
               options={['白色', '品牌主色', '深色']}
               onChange={(value) => update('subtitleColor', value)}
+            />
+            <SelectField
+              label='描边粗细'
+              value={form.subtitleBackground ? '1.5' : '0'}
+              options={['0', '1.5', '2', '3']}
+              onChange={(value) => update('subtitleBackground', value !== '0')}
             />
           </div>
           <CompactSwitch
@@ -518,16 +600,37 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
             checked={form.subtitleBackground}
             onChange={(checked) => update('subtitleBackground', checked)}
           />
-          <div className='grid grid-cols-4 gap-1.5'>
-            {['标题', '简介', '标签', '封面'].map((item) => (
-              <div
-                key={item}
-                className='flex flex-col items-center justify-center gap-1 rounded-md border px-1.5 py-1.5'
-              >
-                <span className='text-xs leading-none'>{item}</span>
-                <Badge variant='outline'>AI</Badge>
-              </div>
-            ))}
+          <div className='grid grid-cols-2 gap-2'>
+            <CompactSwitch
+              label='生成标题'
+              checked={form.titleEnabled}
+              onChange={(checked) => update('titleEnabled', checked)}
+            />
+            <CompactSwitch
+              label='生成简介'
+              checked={form.descriptionEnabled}
+              onChange={(checked) => update('descriptionEnabled', checked)}
+            />
+            <CompactSwitch
+              label='生成标签'
+              checked={form.tagsEnabled}
+              onChange={(checked) => update('tagsEnabled', checked)}
+            />
+            <CompactSwitch
+              label='生成封面'
+              checked={form.coverEnabled}
+              onChange={(checked) => update('coverEnabled', checked)}
+            />
+          </div>
+          <div className='grid grid-cols-2 gap-2'>
+            <ToolButton>
+              <Icons.palette className='size-4' />
+              恢复默认
+            </ToolButton>
+            <ToolButton>
+              <Icons.edit className='size-4' />
+              保存模板
+            </ToolButton>
           </div>
           <Button
             className='mt-auto w-full'

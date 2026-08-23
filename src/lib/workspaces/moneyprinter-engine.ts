@@ -85,6 +85,11 @@ function parseSeconds(value: string) {
   return match ? Math.max(1, Number(match[0])) : 3;
 }
 
+function parseCount(value: string) {
+  const match = value.match(/\d+/);
+  return match ? Math.max(1, Math.min(5, Number(match[0]))) : 1;
+}
+
 function mapAspect(value: string) {
   if (value.includes('16:9')) return '16:9';
   if (value.includes('1:1')) return '1:1';
@@ -117,10 +122,25 @@ function mapTextColor(value: string) {
 
 function mapVoiceName(task: AutomationVideoTask) {
   const voiceMode = task.voiceMode.toLowerCase();
-  if (task.voiceMode.includes('无') || voiceMode.includes('no') || voiceMode.includes('silent')) {
+  const voiceName = task.voiceName.toLowerCase();
+  if (
+    task.voiceMode.includes('无') ||
+    task.voiceName.includes('无') ||
+    voiceMode.includes('no') ||
+    voiceMode.includes('silent') ||
+    voiceName.includes('no') ||
+    voiceName.includes('silent')
+  ) {
     return 'no-voice';
   }
   return 'zh-CN-XiaoxiaoNeural-Female';
+}
+
+function mapLanguage(value: string) {
+  if (value.includes('中文')) return 'zh-CN';
+  if (value.includes('英文')) return 'en-US';
+  if (value.includes('中英')) return 'zh-CN';
+  return '';
 }
 
 function mapVoiceRate(value: string) {
@@ -151,7 +171,15 @@ function buildCliArgs(task: AutomationVideoTask, assets: AutomationVideoAsset[])
     '--video-subject',
     task.prompt,
     '--video-count',
-    '1',
+    parseCount(
+      task.packagingOptions.includes('count:2')
+        ? '2'
+        : task.packagingOptions.includes('count:3')
+          ? '3'
+          : task.packagingOptions.includes('count:5')
+            ? '5'
+            : '1'
+    ).toString(),
     '--video-aspect',
     mapAspect(task.videoRatio),
     '--video-concat-mode',
@@ -188,6 +216,11 @@ function buildCliArgs(task: AutomationVideoTask, assets: AutomationVideoAsset[])
     task.subtitleBackground ? '1.5' : '0',
     task.subtitleEnabled ? '--subtitle-enabled' : '--no-subtitle-enabled'
   ];
+
+  const language = mapLanguage(task.scriptLanguage);
+  if (language) {
+    args.push('--video-language', language);
+  }
 
   if (task.scriptText?.trim()) {
     args.push('--video-script', task.scriptText.trim());
