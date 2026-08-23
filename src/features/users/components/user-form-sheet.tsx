@@ -19,13 +19,7 @@ import { createUserMutation, updateUserMutation } from '../api/mutations';
 import type { User } from '../api/types';
 import { toast } from 'sonner';
 import { userSchema, type UserFormValues } from '../schemas/user';
-import { ROLE_OPTIONS } from './users-table/options';
-
-const STATUS_OPTIONS = [
-  { value: 'Active', label: '启用' },
-  { value: 'Inactive', label: '停用' },
-  { value: 'Invited', label: '已邀请' }
-];
+import { INDUSTRY_OPTIONS, SOURCE_OPTIONS, CUSTOMER_STATUS_OPTIONS } from './users-table/options';
 
 interface UserFormSheetProps {
   user?: User;
@@ -39,30 +33,34 @@ export function UserFormSheet({ user, open, onOpenChange }: UserFormSheetProps) 
   const createMutation = useMutation({
     ...createUserMutation,
     onSuccess: () => {
-      toast.success('用户已创建');
+      toast.success('客户已创建');
       onOpenChange(false);
       form.reset();
     },
-    onError: () => toast.error('无法创建用户，请重试。')
+    onError: () => toast.error('无法创建客户，请重试。')
   });
 
   const updateMutation = useMutation({
     ...updateUserMutation,
     onSuccess: () => {
-      toast.success('用户已更新');
+      toast.success('客户已更新');
       onOpenChange(false);
     },
-    onError: () => toast.error('无法更新用户，请重试。')
+    onError: () => toast.error('无法更新客户，请重试。')
   });
 
   const form = useAppForm({
     defaultValues: {
-      first_name: user?.first_name ?? '',
-      last_name: user?.last_name ?? '',
+      customer_name: user?.customer_name ?? '',
+      contact: user?.contact ?? '',
+      contact_phone: user?.contact_phone ?? '',
       email: user?.email ?? '',
-      phone: user?.phone ?? '',
-      role: user?.role ?? '',
-      status: user?.status ?? 'Active'
+      company_address: user?.company_address ?? '',
+      industry: user?.industry ?? '',
+      source: user?.source ?? '',
+      owner: user?.owner ?? '',
+      status: user?.status ?? '',
+      remark: user?.remark ?? ''
     } as UserFormValues,
     validators: {
       onSubmit: userSchema
@@ -82,80 +80,128 @@ export function UserFormSheet({ user, open, onOpenChange }: UserFormSheetProps) 
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className='flex flex-col'>
         <SheetHeader>
-          <SheetTitle>{isEdit ? '编辑用户' : '新建用户'}</SheetTitle>
+          <SheetTitle>{isEdit ? '编辑客户' : '新建客户'}</SheetTitle>
           <SheetDescription>
-            {isEdit ? '在下方更新用户详情。' : '填写详细信息以创建新用户。'}
+            {isEdit ? '在下方更新客户详情。' : '填写详细信息以创建新客户。'}
           </SheetDescription>
         </SheetHeader>
 
         <div className='flex-1 overflow-auto'>
           <form
             id='user-form-sheet'
-            className='space-y-4 p-4 md:p-4'
+            className='space-y-6 p-4 md:p-4'
             onSubmit={(e) => {
               e.preventDefault();
               form.handleSubmit();
             }}
           >
-            <FieldGroup>
-              <div className='grid grid-cols-2 gap-4'>
+            <div className='space-y-4'>
+              <div className='text-sm font-semibold text-muted-foreground'>基础信息</div>
+              <FieldGroup>
+                <div className='grid grid-cols-2 gap-4'>
+                  <form.AppField
+                    name='customer_name'
+                    children={(field) => (
+                      <field.TextField label='客户名称' required placeholder='请输入客户名称' />
+                    )}
+                  />
+                  <form.AppField
+                    name='contact'
+                    children={(field) => (
+                      <field.TextField label='联系人' required placeholder='请输入联系人' />
+                    )}
+                  />
+                </div>
+
+                <div className='grid grid-cols-2 gap-4'>
+                  <form.AppField
+                    name='contact_phone'
+                    children={(field) => (
+                      <field.TextField
+                        label='联系电话'
+                        required
+                        type='tel'
+                        placeholder='请输入联系电话'
+                      />
+                    )}
+                  />
+                  <form.AppField
+                    name='email'
+                    children={(field) => (
+                      <field.TextField
+                        label='邮箱'
+                        required
+                        type='email'
+                        placeholder='zhangsan@example.com'
+                      />
+                    )}
+                  />
+                </div>
+
                 <form.AppField
-                  name='first_name'
+                  name='company_address'
                   children={(field) => (
-                    <field.TextField label='名' required placeholder='请输入名' />
+                    <field.TextField label='公司地址' placeholder='请输入公司地址' />
                   )}
                 />
+
                 <form.AppField
-                  name='last_name'
+                  name='industry'
                   children={(field) => (
-                    <field.TextField label='姓' required placeholder='请输入姓' />
+                    <field.SelectField
+                      label='行业'
+                      required
+                      options={INDUSTRY_OPTIONS}
+                      placeholder='请选择行业'
+                    />
                   )}
                 />
-              </div>
+              </FieldGroup>
+            </div>
 
-              <form.AppField
-                name='email'
-                children={(field) => (
-                  <field.TextField
-                    label='邮箱'
-                    required
-                    type='email'
-                    placeholder='zhangsan@example.com'
+            <div className='space-y-4'>
+              <div className='text-sm font-semibold text-muted-foreground'>业务信息</div>
+              <FieldGroup>
+                <div className='grid grid-cols-2 gap-4'>
+                  <form.AppField
+                    name='source'
+                    children={(field) => (
+                      <field.SelectField
+                        label='客户来源'
+                        required
+                        options={SOURCE_OPTIONS}
+                        placeholder='请选择客户来源'
+                      />
+                    )}
                   />
-                )}
-              />
-
-              <form.AppField
-                name='phone'
-                children={(field) => (
-                  <field.TextField label='电话' required type='tel' placeholder='请输入电话号码' />
-                )}
-              />
-
-              <form.AppField
-                name='role'
-                children={(field) => (
-                  <field.SelectField
-                    label='角色'
-                    required
-                    options={ROLE_OPTIONS}
-                    placeholder='请选择角色'
+                  <form.AppField
+                    name='owner'
+                    children={(field) => (
+                      <field.TextField label='负责人' required placeholder='请输入负责人' />
+                    )}
                   />
-                )}
-              />
+                </div>
 
-              <form.AppField
-                name='status'
-                children={(field) => (
-                  <field.SelectField
-                    label='状态'
-                    required
-                    options={STATUS_OPTIONS}
-                    placeholder='请选择状态'
-                  />
-                )}
-              />
-            </FieldGroup>
+                <form.AppField
+                  name='status'
+                  children={(field) => (
+                    <field.SelectField
+                      label='客户状态'
+                      required
+                      options={CUSTOMER_STATUS_OPTIONS}
+                      placeholder='请选择客户状态'
+                    />
+                  )}
+                />
+
+                <form.AppField
+                  name='remark'
+                  children={(field) => (
+                    <field.TextareaField label='备注' placeholder='请输入备注' rows={3} />
+                  )}
+                />
+              </FieldGroup>
+            </div>
           </form>
         </div>
 
@@ -164,7 +210,7 @@ export function UserFormSheet({ user, open, onOpenChange }: UserFormSheetProps) 
             取消
           </Button>
           <LoadingButton loading={isPending} type='submit' form='user-form-sheet'>
-            {isEdit ? '更新用户' : '创建用户'}
+            {isEdit ? '更新客户' : '创建客户'}
           </LoadingButton>
         </SheetFooter>
       </SheetContent>
@@ -178,7 +224,7 @@ export function UserFormSheetTrigger() {
   return (
     <>
       <Button onClick={() => setOpen(true)}>
-        <Icons.add className='mr-2 h-4 w-4' /> 添加用户
+        <Icons.add className='mr-2 h-4 w-4' /> 添加客户
       </Button>
       <UserFormSheet open={open} onOpenChange={setOpen} />
     </>

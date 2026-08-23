@@ -8,28 +8,39 @@ import { delay } from '@/lib/delay';
 
 export type User = {
   id: number;
-  first_name: string;
-  last_name: string;
+  customer_name: string;
+  contact: string;
+  contact_phone: string;
   email: string;
-  phone: string;
+  company_address: string;
+  industry: string;
+  source: string;
+  owner: string;
   status: string;
-  role: string;
+  remark: string;
   created_at: string;
   updated_at: string;
 };
 
 function generateRandomUserData(id: number): User {
-  const roles = ['开发工程师', '设计师', '经理', '测试工程师', '运维工程师', '产品经理'];
-  const statuses = ['启用', '停用', '已邀请'];
+  const industries = ['互联网', '制造业', '金融', '教育', '医疗健康', '零售电商', '其他'];
+  const sources = ['官网', '转介绍', '展会', '广告投放', '电话营销', '其他'];
+  const statuses = ['潜在', '跟进中', '已成交', '已流失'];
+  const owners = ['张伟', '李娜', '王强', '刘洋', '陈静'];
 
   return {
     id,
-    first_name: faker.person.firstName(),
-    last_name: faker.person.lastName(),
+    customer_name: faker.company.name(),
+    contact: faker.person.fullName(),
+    contact_phone: faker.phone.number({ style: 'national' }),
     email: faker.internet.email(),
-    phone: faker.phone.number({ style: 'national' }),
+    company_address: `${faker.location.city()}市${faker.location.street()}`,
+    industry: faker.helpers.arrayElement(industries),
+    source: faker.helpers.arrayElement(sources),
+    owner: faker.helpers.arrayElement(owners),
     status: faker.helpers.arrayElement(statuses),
-    role: faker.helpers.arrayElement(roles),
+    remark: (faker.helpers.maybe(() => faker.lorem.sentence(), { probability: 0.4 }) ??
+      '') as string,
     created_at: faker.date.between({ from: '2022-01-01', to: '2023-12-31' }).toISOString(),
     updated_at: faker.date.recent().toISOString()
   };
@@ -48,16 +59,17 @@ export const fakeUsers = {
     this.records = sampleUsers;
   },
 
-  async getAll({ roles = [], search }: { roles?: string[]; search?: string }) {
+  async getAll({ status, search }: { status?: string; search?: string }) {
     let users = [...this.records];
 
-    if (roles.length > 0) {
-      users = users.filter((user) => roles.includes(user.role));
+    if (status) {
+      const statusList = String(status).split(/[.,]/);
+      users = users.filter((user) => statusList.includes(user.status));
     }
 
     if (search) {
       users = matchSorter(users, search, {
-        keys: ['first_name', 'last_name', 'email']
+        keys: ['customer_name', 'contact', 'email']
       });
     }
 
@@ -78,7 +90,7 @@ export const fakeUsers = {
 
     return {
       success: true,
-      message: '用户创建成功',
+      message: '客户创建成功',
       user: newUser
     };
   },
@@ -100,7 +112,7 @@ export const fakeUsers = {
 
     return {
       success: true,
-      message: '用户更新成功',
+      message: '客户更新成功',
       user: this.records[index]
     };
   },
@@ -118,27 +130,27 @@ export const fakeUsers = {
 
     return {
       success: true,
-      message: '用户删除成功'
+      message: '客户删除成功'
     };
   },
 
   async getUsers({
     page = 1,
     limit = 10,
-    roles,
+    status,
     search,
     sort
   }: {
     page?: number;
     limit?: number;
-    roles?: string | string[];
+    status?: string;
     search?: string;
     sort?: string;
   }) {
     await delay(800);
-    const rolesArray = roles ? (Array.isArray(roles) ? roles : String(roles).split(/[.,]/)) : [];
+
     const allUsers = await this.getAll({
-      roles: rolesArray,
+      status,
       search
     });
 
@@ -153,10 +165,8 @@ export const fakeUsers = {
           const { id, desc } = sortItems[0];
           allUsers.sort((a, b) => {
             // Handle computed 'name' column
-            const aVal =
-              id === 'name' ? `${a.first_name} ${a.last_name}` : (a as Record<string, unknown>)[id];
-            const bVal =
-              id === 'name' ? `${b.first_name} ${b.last_name}` : (b as Record<string, unknown>)[id];
+            const aVal = id === 'name' ? a.customer_name : (a as Record<string, unknown>)[id];
+            const bVal = id === 'name' ? b.customer_name : (b as Record<string, unknown>)[id];
             if (typeof aVal === 'number' && typeof bVal === 'number') {
               return desc ? bVal - aVal : aVal - bVal;
             }

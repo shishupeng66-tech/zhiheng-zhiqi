@@ -8,14 +8,14 @@ export default function UserListingPage() {
   const page = searchParamsCache.get('page');
   const search = searchParamsCache.get('name');
   const pageLimit = searchParamsCache.get('perPage');
-  const roles = searchParamsCache.get('role');
+  const status = searchParamsCache.get('status');
   const sort = searchParamsCache.get('sort');
 
   const filters = {
     page,
     limit: pageLimit,
     ...(search && { search }),
-    ...(roles && { roles }),
+    ...(status && { status }),
     ...(sort && { sort })
   };
 

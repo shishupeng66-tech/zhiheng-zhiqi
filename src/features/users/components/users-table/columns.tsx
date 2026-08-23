@@ -5,77 +5,83 @@ import type { User } from '../../api/types';
 import { Column, ColumnDef } from '@tanstack/react-table';
 import { Icons } from '@/components/icons';
 import { CellAction } from './cell-action';
-import { ROLE_OPTIONS } from './options';
 
 const STATUS_LABELS: Record<string, string> = {
-  Active: '启用',
-  Inactive: '停用',
-  Invited: '已邀请'
+  潜在: '潜在',
+  跟进中: '跟进中',
+  已成交: '已成交',
+  已流失: '已流失'
+};
+
+const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'outline'> = {
+  已成交: 'default',
+  跟进中: 'secondary',
+  潜在: 'outline',
+  已流失: 'outline'
 };
 
 export const columns: ColumnDef<User>[] = [
   {
     id: 'name',
-    accessorFn: (row) => `${row.first_name} ${row.last_name}`,
+    accessorFn: (row) => row.customer_name,
     header: ({ column }: { column: Column<User, unknown> }) => (
-      <DataTableColumnHeader column={column} title='姓名' />
+      <DataTableColumnHeader column={column} title='客户名称' />
     ),
     cell: ({ row }) => (
       <div className='flex flex-col'>
-        <span className='font-medium'>
-          {row.original.first_name} {row.original.last_name}
-        </span>
-        <span className='text-muted-foreground text-xs'>{row.original.email}</span>
+        <span className='font-medium'>{row.original.customer_name}</span>
+        <span className='text-muted-foreground text-xs'>{row.original.contact}</span>
       </div>
     ),
     meta: {
-      label: '姓名',
-      placeholder: '搜索用户',
+      label: '客户名称',
+      placeholder: '搜索客户',
       variant: 'text' as const,
       icon: Icons.text
     },
     enableColumnFilter: true
   },
   {
-    accessorKey: 'phone',
-    header: '电话'
+    accessorKey: 'contact',
+    header: '联系人',
+    enableColumnFilter: false
   },
   {
-    id: 'role',
-    accessorKey: 'role',
-    enableSorting: false,
-    header: ({ column }: { column: Column<User, unknown> }) => (
-      <DataTableColumnHeader column={column} title='角色' />
-    ),
-    cell: ({ cell }) => {
-      const roleValue = cell.getValue<User['role']>();
-      const roleLabel =
-        ROLE_OPTIONS.find((option) => option.value === roleValue)?.label ?? roleValue;
-      return (
-        <Badge variant='outline' className='capitalize'>
-          {roleLabel}
-        </Badge>
-      );
-    },
-    enableColumnFilter: true,
-    meta: {
-      label: '角色',
-      variant: 'multiSelect' as const,
-      options: ROLE_OPTIONS
-    }
+    accessorKey: 'industry',
+    header: '行业',
+    enableColumnFilter: false
   },
   {
     accessorKey: 'status',
     header: '状态',
     cell: ({ cell }) => {
-      const status = cell.getValue<User['status']>();
-      const variant =
-        status === 'Active' ? 'default' : status === 'Inactive' ? 'secondary' : 'outline';
-      return <Badge variant={variant}>{STATUS_LABELS[status] ?? status}</Badge>;
-    }
+      const status = cell.getValue<string>();
+      return (
+        <Badge variant={STATUS_VARIANT[status] ?? 'outline'}>
+          {STATUS_LABELS[status] ?? status}
+        </Badge>
+      );
+    },
+    enableColumnFilter: false
+  },
+  {
+    accessorKey: 'owner',
+    header: '负责人',
+    enableColumnFilter: false
+  },
+  {
+    accessorKey: 'updated_at',
+    header: '更新时间',
+    enableColumnFilter: false,
+    cell: ({ cell }) => (
+      <span className='text-muted-foreground text-sm'>
+        {new Date(cell.getValue<string>()).toLocaleDateString('zh-CN')}
+      </span>
+    )
   },
   {
     id: 'actions',
+    header: '操作',
     cell: ({ row }) => <CellAction data={row.original} />
   }
 ];

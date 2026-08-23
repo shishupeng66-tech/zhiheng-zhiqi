@@ -3,7 +3,7 @@ export type { User } from '@/constants/mock-api-users';
 export type UserFilters = {
   page?: number;
   limit?: number;
-  roles?: string;
+  status?: string;
   search?: string;
   sort?: string;
 };
@@ -19,10 +19,14 @@ export type UsersResponse = {
 };
 
 export type UserMutationPayload = {
-  first_name: string;
-  last_name: string;
+  customer_name: string;
+  contact: string;
+  contact_phone: string;
   email: string;
-  phone: string;
-  role: string;
+  company_address: string;
+  industry: string;
+  source: string;
+  owner: string;
   status: string;
+  remark: string;
 };

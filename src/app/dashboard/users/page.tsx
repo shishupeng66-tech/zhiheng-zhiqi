@@ -6,7 +6,7 @@ import { usersInfoContent } from '@/features/users/info-content';
 import { UserFormSheetTrigger } from '@/features/users/components/user-form-sheet';
 
 export const metadata = {
-  title: '仪表盘：用户'
+  title: '仪表盘：客户管理'
 };
 
 type PageProps = {
@@ -19,8 +19,8 @@ export default async function UsersPage(props: PageProps) {
 
   return (
     <PageContainer
-      pageTitle='用户'
-      pageDescription='管理用户（React Query + nuqs 表格模式）'
+      pageTitle='客户管理'
+      pageDescription='管理客户（React Query + nuqs 表格模式）'
       infoContent={usersInfoContent}
       pageHeaderAction={<UserFormSheetTrigger />}
     >

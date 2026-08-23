@@ -28,11 +28,11 @@ export function CellAction({ data }: CellActionProps) {
   const deleteMutation = useMutation({
     ...deleteUserMutation,
     onSuccess: () => {
-      toast.success('用户已删除');
+      toast.success('客户已删除');
       setDeleteOpen(false);
     },
     onError: () => {
-      toast.error('删除用户失败');
+      toast.error('删除客户失败');
     }
   });
 

@@ -35,7 +35,7 @@ const segmentLabels: Record<string, string> = {
   team: '团队',
   product: '产品',
   products: '产品',
-  users: '用户',
+  users: '客户管理',
   kanban: '看板',
   chat: '聊天',
   'ai-chat': 'AI 聊天',

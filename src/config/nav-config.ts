@@ -69,7 +69,7 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
-        title: '用户',
+        title: '客户管理',
         url: '/dashboard/users',
         icon: 'teams',
         shortcut: ['u', 'u'],

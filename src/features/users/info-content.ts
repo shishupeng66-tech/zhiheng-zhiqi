@@ -1,7 +1,7 @@
 import type { InfobarContent } from '@/components/ui/infobar';
 
 export const usersInfoContent: InfobarContent = {
-  title: '用户 — React Query + nuqs 模式',
+  title: '客户管理 — React Query + nuqs 模式',
   sections: [
     {
       title: '概述',
@@ -23,7 +23,7 @@ export const usersInfoContent: InfobarContent = {
     {
       title: '使用 nuqs 管理 URL 状态',
       description:
-        '分页、搜索与角色筛选通过 nuqs 同步到 URL。useDataTable Hook 管理 TanStack Table 的状态，并在更新 URL 前对筛选变更进行防抖。当 URL 变化时，由于查询键包含筛选条件，React Query 会自动重新获取。',
+        '分页、搜索与状态筛选通过 nuqs 同步到 URL。useDataTable Hook 管理 TanStack Table 的状态，并在更新 URL 前对筛选变更进行防抖。当 URL 变化时，由于查询键包含筛选条件，React Query 会自动重新获取。',
       links: [
         {
           title: 'nuqs 文档',
@@ -32,9 +32,9 @@ export const usersInfoContent: InfobarContent = {
       ]
     },
     {
-      title: '产品页与用户页模式对比',
+      title: '产品页与客户页模式对比',
       description:
-        '产品页：searchParams → RSC 获取 → 作为 props 传给客户端表格。用户页：searchParams → 服务端预取 → HydrationBoundary → 客户端 useSuspenseQuery。用户页模式支持后台重新获取、跨组件缓存共享与乐观更新。',
+        '产品页：searchParams → RSC 获取 → 作为 props 传给客户端表格。客户页：searchParams → 服务端预取 → HydrationBoundary → 客户端 useSuspenseQuery。客户页模式支持后台重新获取、跨组件缓存共享与乐观更新。',
       links: []
     }
   ]
