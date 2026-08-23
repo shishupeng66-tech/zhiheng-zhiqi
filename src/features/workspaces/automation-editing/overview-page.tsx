@@ -322,6 +322,9 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
 
   function chooseFile(target: UploadTarget) {
     uploadTargetRef.current = target;
+    if (fileInputRef.current) {
+      fileInputRef.current.multiple = target === 'material';
+    }
     fileInputRef.current?.click();
   }
 
@@ -443,8 +446,10 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
         accept='image/png,image/jpeg,image/webp,video/mp4,video/quicktime,video/x-matroska,video/x-msvideo,video/x-flv,audio/mpeg,audio/wav,audio/mp4,audio/aac,audio/ogg,audio/flac'
         className='hidden'
         onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) void uploadAsset(file);
+          const files = Array.from(event.target.files ?? []);
+          if (files.length === 0) return;
+          const selectedFiles = uploadTargetRef.current === 'material' ? files : files.slice(0, 1);
+          void Promise.all(selectedFiles.map((file) => uploadAsset(file)));
         }}
       />
 

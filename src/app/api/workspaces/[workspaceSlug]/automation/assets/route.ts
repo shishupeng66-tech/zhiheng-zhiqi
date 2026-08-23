@@ -18,7 +18,15 @@ const ALLOWED_TYPES = new Map([
   ['video/quicktime', { ext: 'mov', fileType: 'video' }],
   ['video/x-matroska', { ext: 'mkv', fileType: 'video' }],
   ['video/x-msvideo', { ext: 'avi', fileType: 'video' }],
-  ['video/x-flv', { ext: 'flv', fileType: 'video' }]
+  ['video/x-flv', { ext: 'flv', fileType: 'video' }],
+  ['audio/aac', { ext: 'aac', fileType: 'audio' }],
+  ['audio/flac', { ext: 'flac', fileType: 'audio' }],
+  ['audio/m4a', { ext: 'm4a', fileType: 'audio' }],
+  ['audio/mp4', { ext: 'm4a', fileType: 'audio' }],
+  ['audio/mpeg', { ext: 'mp3', fileType: 'audio' }],
+  ['audio/ogg', { ext: 'ogg', fileType: 'audio' }],
+  ['audio/wav', { ext: 'wav', fileType: 'audio' }],
+  ['audio/x-wav', { ext: 'wav', fileType: 'audio' }]
 ]);
 
 export async function POST(request: NextRequest, { params }: Ctx) {
