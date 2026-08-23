@@ -113,7 +113,7 @@ export function parseAutomationVideoTaskInput(
     clipDuration: normalizeText(body.clipDuration, '3 秒'),
     matchByScript: body.matchByScript !== false,
     voiceMode: normalizeText(body.voiceMode, '自动配音'),
-    voiceService: normalizeText(body.voiceService, '企业默认 TTS'),
+    voiceService: normalizeText(body.voiceService, '豆包语音 TTS'),
     voiceName: normalizeText(body.voiceName, 'AI 自动选择音色'),
     voiceVolume: normalizeText(body.voiceVolume, '100%'),
     voiceSpeed: normalizeText(body.voiceSpeed, '1.0x'),

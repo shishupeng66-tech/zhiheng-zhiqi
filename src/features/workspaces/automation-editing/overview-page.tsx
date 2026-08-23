@@ -95,7 +95,7 @@ const initialForm: FormState = {
   workerThreads: '2',
   matchByScript: true,
   voiceMode: '自动配音',
-  voiceService: 'Edge TTS',
+  voiceService: '豆包语音 TTS',
   voiceName: 'AI 自动选择音色',
   voiceVolume: '100%',
   voiceSpeed: '1.0x',
@@ -724,30 +724,13 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
               <SelectField
                 label='配音服务'
                 value={form.voiceService}
-                options={[
-                  'Edge TTS',
-                  'Azure Speech',
-                  'SiliconFlow',
-                  'Volcengine',
-                  'Gemini',
-                  'MiMo',
-                  'ElevenLabs',
-                  'Chatterbox'
-                ]}
+                options={['豆包语音 TTS']}
                 onChange={(value) => update('voiceService', value)}
               />
               <SelectField
                 label='配音音色'
                 value={form.voiceName}
-                options={[
-                  'AI 自动选择音色',
-                  'zh-CN-XiaoxiaoNeural-Female',
-                  'zh-CN-YunxiNeural-Male',
-                  'gemini:default',
-                  'mimo:default',
-                  'elevenlabs:default',
-                  'chatterbox:default'
-                ]}
+                options={['AI 自动选择音色', 'zh_female_xiaohe_uranus_bigtts']}
                 onChange={(value) => update('voiceName', value)}
               />
               <div className='grid grid-cols-2 gap-2'>

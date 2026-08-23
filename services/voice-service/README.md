@@ -1,26 +1,29 @@
 # Zhiheng Voice Service
 
-Independent local TTS service for the automation editing workspace.
+Independent speech service for the automation editing workspace. Production TTS is Doubao Speech only; MoneyPrinterTurbo receives the generated local audio through `--custom-audio-file`.
 
 ## Runtime
 
 ```powershell
-uv pip install --python services\voice-service\.venv\Scripts\python.exe -r services\voice-service\requirements.txt
-.\services\voice-service\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 5015 --app-dir services\voice-service
+uv venv services\voice-service\.venv-doubao
+uv pip install --python services\voice-service\.venv-doubao\Scripts\python.exe -r services\voice-service\requirements.txt
+.\scripts\start-voice-service.ps1
 ```
 
 ## Environment
 
+The service loads process environment variables first, then project `.env.local` / `.env`.
+
 ```text
-VOICE_SERVICE_PROVIDER=piper
 VOICE_SERVICE_OUTPUT_DIR=storage/voice-service/outputs
-VOICE_SERVICE_MODEL_CACHE=storage/voice-service/models
-VOICE_SERVICE_DEVICE=auto
+DOUBAO_SPEECH_API_KEY=
+DOUBAO_SPEECH_RESOURCE_ID=seed-tts-2.0
+DOUBAO_SPEECH_ENDPOINT=https://openspeech.bytedance.com/api/v3/tts/unidirectional
+DOUBAO_SPEECH_DEFAULT_VOICE=zh_female_xiaohe_uranus_bigtts
+DOUBAO_SPEECH_APP_ID=zhiheng-zhiqi
 ```
 
-`piper` is the default local open-source runtime used for stable offline speech generation.
-`voxcpm` is the production target for higher quality local Chinese TTS and future voice cloning.
-`sapi` is a Windows-only local fallback for development when model weights are not available.
+Do not commit real API keys.
 
 ## API
 
@@ -29,8 +32,9 @@ VOICE_SERVICE_DEVICE=auto
 ```json
 {
   "text": "企业宣传视频旁白文本",
-  "voice_id": "business_female",
+  "voice_id": "auto",
   "speed": 1.0,
+  "volume": 1.0,
   "emotion": "neutral",
   "style": "business"
 }
@@ -40,8 +44,11 @@ Response:
 
 ```json
 {
-  "audio_path": "D:/.../storage/voice-service/outputs/xxx.wav",
+  "audio_path": "D:/.../storage/voice-service/outputs/doubao-xxx.mp3",
   "duration": 8.5,
-  "format": "wav"
+  "format": "mp3",
+  "mime_type": "audio/mpeg",
+  "provider": "doubao",
+  "provider_voice_id": "zh_female_xiaohe_uranus_bigtts"
 }
 ```

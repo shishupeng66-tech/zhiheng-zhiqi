@@ -10,10 +10,31 @@ from .providers import get_provider
 from .utils import audio_duration_seconds, ensure_output_dir
 
 
+def load_project_env() -> None:
+    repo_root = Path(__file__).resolve().parents[3]
+    for file_name in (".env.local", ".env"):
+        env_path = repo_root / file_name
+        if not env_path.exists():
+            continue
+        for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+
+
+load_project_env()
+
+
 class TtsRequest(BaseModel):
     text: str = Field(min_length=1, max_length=5000)
-    voice_id: str = Field(default="business_female")
+    voice_id: str = Field(default="auto")
     speed: float = Field(default=1.0, ge=0.5, le=2.0)
+    volume: float = Field(default=1.0, ge=0.0, le=2.0)
     emotion: str = Field(default="neutral")
     style: str = Field(default="business")
 
@@ -21,33 +42,38 @@ class TtsRequest(BaseModel):
 class TtsResponse(BaseModel):
     audio_path: str
     duration: float
-    format: str = "wav"
+    format: str
+    mime_type: str
+    provider: str
+    provider_voice_id: str
 
 
-app = FastAPI(title="Zhiheng Voice Service", version="0.1.0")
+app = FastAPI(title="Zhiheng Voice Service", version="0.2.0")
 
 
 @app.get("/health")
 def health():
-    provider = os.getenv("VOICE_SERVICE_PROVIDER", "piper")
-    return {"ok": True, "provider": provider}
+    return {"ok": True, "provider": "doubao"}
 
 
 @app.get("/v1/voices")
 def voices():
+    default_voice = os.getenv("DOUBAO_SPEECH_DEFAULT_VOICE", "zh_female_xiaohe_uranus_bigtts")
     return {
         "voices": [
             {
-                "id": "business_female",
-                "name": "商务女声",
+                "id": "auto",
+                "name": "豆包默认音色",
                 "type": "preset_voice",
-                "provider": os.getenv("VOICE_SERVICE_PROVIDER", "piper"),
+                "provider": "doubao",
+                "provider_voice_id": default_voice,
             },
             {
-                "id": "business_male",
-                "name": "商务男声",
+                "id": default_voice,
+                "name": "豆包配置音色",
                 "type": "preset_voice",
-                "provider": os.getenv("VOICE_SERVICE_PROVIDER", "piper"),
+                "provider": "doubao",
+                "provider_voice_id": default_voice,
             },
         ]
     }
@@ -58,17 +84,22 @@ def tts(request: TtsRequest):
     output_dir = ensure_output_dir()
     try:
         provider = get_provider()
-        audio_path = provider.synthesize(
+        result = provider.synthesize(
             text=request.text,
             voice_id=request.voice_id,
             speed=request.speed,
+            volume=request.volume,
             emotion=request.emotion,
             style=request.style,
             output_dir=output_dir,
         )
         return TtsResponse(
-            audio_path=str(Path(audio_path).resolve()),
-            duration=audio_duration_seconds(audio_path),
+            audio_path=str(Path(result.audio_path).resolve()),
+            duration=audio_duration_seconds(result.audio_path),
+            format=result.format,
+            mime_type=result.mime_type,
+            provider=result.provider,
+            provider_voice_id=result.provider_voice_id,
         )
     except Exception as exc:  # pragma: no cover - surfaced to Next.js worker logs.
         raise HTTPException(status_code=500, detail=str(exc)) from exc

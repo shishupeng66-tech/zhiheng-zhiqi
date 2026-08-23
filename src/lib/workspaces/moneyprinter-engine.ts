@@ -394,8 +394,11 @@ function shouldUseVoiceService(task: AutomationVideoTask, assets: AutomationVide
 }
 
 function mapVoiceId(task: AutomationVideoTask) {
-  const value = `${task.voiceService} ${task.voiceName}`.toLowerCase();
-  return value.includes('male') || value.includes('男') ? 'business_male' : 'business_female';
+  const selected = task.voiceName.trim();
+  if (selected && selected !== 'AI 自动选择音色') {
+    return selected;
+  }
+  return process.env.DOUBAO_SPEECH_DEFAULT_VOICE || 'zh_female_xiaohe_uranus_bigtts';
 }
 
 function appendLog(logPath: string, text: string) {
@@ -492,6 +495,7 @@ async function prepareVoiceServiceAudio(input: {
     text: script,
     voiceId: mapVoiceId(input.task),
     speed: mapVoiceRate(input.task.voiceSpeed),
+    volume: mapVoiceVolume(input.task.voiceVolume),
     style: 'business'
   });
   appendLog(

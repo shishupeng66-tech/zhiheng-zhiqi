@@ -2,6 +2,7 @@ type VoiceServiceRequest = {
   text: string;
   voiceId: string;
   speed: number;
+  volume?: number;
   emotion?: string;
   style?: string;
 };
@@ -10,6 +11,9 @@ type VoiceServiceResponse = {
   audio_path: string;
   duration: number;
   format: string;
+  mime_type: string;
+  provider: string;
+  provider_voice_id: string;
 };
 
 export function getVoiceServiceUrl() {
@@ -24,6 +28,7 @@ export async function generateVoiceAudio(input: VoiceServiceRequest) {
       text: input.text,
       voice_id: input.voiceId,
       speed: input.speed,
+      volume: input.volume ?? 1,
       emotion: input.emotion || 'neutral',
       style: input.style || 'business'
     })
