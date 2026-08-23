@@ -644,155 +644,198 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
           number='03'
           icon={Icons.music}
           title='配音与音乐'
-          description='对应自动配音、上传配音、无配音、各类 TTS、试听、背景音乐和 Sonilo。'
+          description='设置自动配音、上传配音或无配音，并选择背景音乐相关参数。'
         >
-          <div className='grid grid-cols-3 overflow-hidden rounded-md border'>
-            {['自动配音', '上传音频', '无配音'].map((item) => (
-              <Button
-                key={item}
-                variant={form.voiceMode === item ? 'default' : 'ghost'}
-                size='sm'
-                className='h-8 rounded-none text-xs'
-                onClick={() => update('voiceMode', item)}
-              >
-                {item}
-              </Button>
-            ))}
-          </div>
-          <SelectField
-            label='配音服务'
-            value={form.voiceService}
-            options={[
-              'Edge TTS',
-              'Azure Speech',
-              'SiliconFlow',
-              'Volcengine',
-              'Gemini',
-              'MiMo',
-              'ElevenLabs',
-              'Chatterbox'
-            ]}
-            onChange={(value) => update('voiceService', value)}
-          />
-          <SelectField
-            label='配音音色'
-            value={form.voiceName}
-            options={[
-              'AI 自动选择音色',
-              'zh-CN-XiaoxiaoNeural-Female',
-              'zh-CN-YunxiNeural-Male',
-              'gemini:default',
-              'mimo:default',
-              'elevenlabs:default',
-              'chatterbox:default'
-            ]}
-            onChange={(value) => update('voiceName', value)}
-          />
-          <div className='grid grid-cols-2 gap-2'>
-            <SelectField
-              label='音量'
-              value={form.voiceVolume}
-              options={['80%', '100%', '120%']}
-              onChange={(value) => update('voiceVolume', value)}
-            />
-            <SelectField
-              label='语速'
-              value={form.voiceSpeed}
-              options={['0.8x', '1.0x', '1.2x']}
-              onChange={(value) => update('voiceSpeed', value)}
-            />
-          </div>
-          <div className='grid grid-cols-2 gap-2'>
-            <ToolButton
-              onClick={() => toast.info('试听会使用当前选择的 TTS 服务；需要先配置服务密钥。')}
-            >
-              <Icons.music className='size-4' />
-              试听音色
-            </ToolButton>
-            <ToolButton onClick={() => chooseFile('voice')}>
-              <Icons.upload className='size-4' />
-              上传配音
-            </ToolButton>
-          </div>
-          {form.customAudioFileName ? (
-            <MiniPanel>
-              <div className='flex items-center justify-between gap-2 text-xs'>
-                <span className='truncate'>配音文件：{form.customAudioFileName}</span>
+          <div className='border-t pt-3'>
+            <div className='mb-2 text-xs font-medium'>配音方式</div>
+            <div className='grid grid-cols-3 overflow-hidden rounded-md border'>
+              {['自动配音', '上传音频', '无配音'].map((item) => (
                 <Button
-                  variant='ghost'
+                  key={item}
+                  variant={form.voiceMode === item ? 'default' : 'ghost'}
                   size='sm'
-                  className='h-7'
-                  onClick={() =>
-                    setForm((current) => ({
-                      ...current,
-                      customAudioAssetId: '',
-                      customAudioFileName: ''
-                    }))
-                  }
+                  className='h-8 rounded-none text-xs'
+                  onClick={() => update('voiceMode', item)}
                 >
-                  移除
+                  {item}
                 </Button>
+              ))}
+            </div>
+          </div>
+
+          {form.voiceMode === '自动配音' ? (
+            <>
+              <SelectField
+                label='配音服务'
+                value={form.voiceService}
+                options={[
+                  'Edge TTS',
+                  'Azure Speech',
+                  'SiliconFlow',
+                  'Volcengine',
+                  'Gemini',
+                  'MiMo',
+                  'ElevenLabs',
+                  'Chatterbox'
+                ]}
+                onChange={(value) => update('voiceService', value)}
+              />
+              <SelectField
+                label='配音音色'
+                value={form.voiceName}
+                options={[
+                  'AI 自动选择音色',
+                  'zh-CN-XiaoxiaoNeural-Female',
+                  'zh-CN-YunxiNeural-Male',
+                  'gemini:default',
+                  'mimo:default',
+                  'elevenlabs:default',
+                  'chatterbox:default'
+                ]}
+                onChange={(value) => update('voiceName', value)}
+              />
+              <div className='grid grid-cols-2 gap-2'>
+                <SelectField
+                  label='配音音量'
+                  value={form.voiceVolume}
+                  options={['80%', '100%', '120%']}
+                  onChange={(value) => update('voiceVolume', value)}
+                />
+                <SelectField
+                  label='配音语速'
+                  value={form.voiceSpeed}
+                  options={['0.8x', '1.0x', '1.2x']}
+                  onChange={(value) => update('voiceSpeed', value)}
+                />
               </div>
-            </MiniPanel>
+              <div className='grid grid-cols-2 gap-2'>
+                <ToolButton
+                  onClick={() => toast.info('试听会使用当前选择的 TTS 服务；需要先配置服务密钥。')}
+                >
+                  <Icons.music className='size-4' />
+                  试听音色
+                </ToolButton>
+                <ToolButton onClick={() => toast.info('完整试听会在生成音频/字幕阶段后提供。')}>
+                  <Icons.video className='size-4' />
+                  完整试听
+                </ToolButton>
+              </div>
+            </>
           ) : null}
+
+          {form.voiceMode === '上传音频' ? (
+            <>
+              <div className='grid gap-2'>
+                <div className='text-xs font-medium'>上传配音文件</div>
+                <div className='rounded-md bg-muted/60 p-3'>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    disabled={uploading}
+                    onClick={() => chooseFile('voice')}
+                  >
+                    <Icons.upload className='size-4' />
+                    Upload
+                  </Button>
+                  <div className='mt-3 text-xs text-muted-foreground'>
+                    200MB per file • AAC, FLAC, M4A, MP3, OGG, WAV
+                  </div>
+                </div>
+              </div>
+              {form.customAudioFileName ? (
+                <MiniPanel>
+                  <div className='flex items-center justify-between gap-2 text-xs'>
+                    <span className='truncate'>配音文件：{form.customAudioFileName}</span>
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      className='h-7'
+                      onClick={() =>
+                        setForm((current) => ({
+                          ...current,
+                          customAudioAssetId: '',
+                          customAudioFileName: ''
+                        }))
+                      }
+                    >
+                      移除
+                    </Button>
+                  </div>
+                </MiniPanel>
+              ) : null}
+              <SelectField
+                label='配音音量'
+                value={form.voiceVolume}
+                options={['80%', '100%', '120%']}
+                onChange={(value) => update('voiceVolume', value)}
+              />
+            </>
+          ) : null}
+
+          <div className='my-3 border-t' />
+
           <SelectField
-            label='背景音乐'
+            label='背景音乐来源'
             value={form.musicSource}
             options={['无背景音乐', '随机背景音乐', '自定义背景音乐', 'Sonilo AI 配乐']}
             onChange={(value) => update('musicSource', value)}
           />
-          <Input
-            className='h-8 text-xs'
-            placeholder='Sonilo 音乐风格提示词，可留空'
-            value={form.musicPrompt}
-            onChange={(event) => update('musicPrompt', event.target.value)}
-          />
-          <div className='grid grid-cols-2 gap-2'>
-            <ToolButton onClick={() => chooseFile('music')}>
-              <Icons.upload className='size-4' />
-              上传音乐
-            </ToolButton>
-            <ToolButton onClick={() => toast.info('完整试听会在生成音频/字幕阶段后提供。')}>
-              <Icons.video className='size-4' />
-              完整试听
-            </ToolButton>
-          </div>
-          {form.customMusicFileName ? (
-            <MiniPanel>
-              <div className='flex items-center justify-between gap-2 text-xs'>
-                <span className='truncate'>音乐文件：{form.customMusicFileName}</span>
-                <Button
-                  variant='ghost'
-                  size='sm'
-                  className='h-7'
-                  onClick={() =>
-                    setForm((current) => ({
-                      ...current,
-                      customMusicAssetId: '',
-                      customMusicFileName: ''
-                    }))
-                  }
-                >
-                  移除
-                </Button>
-              </div>
-            </MiniPanel>
-          ) : null}
-          <div className='rounded-md border p-2'>
-            <div className='mb-1.5 flex items-center justify-between text-xs'>
-              <span>背景音乐音量</span>
-              <Badge variant='secondary'>{form.musicVolume}%</Badge>
-            </div>
-            <Slider
-              value={[form.musicVolume]}
-              max={100}
-              step={1}
-              aria-label='背景音乐音量'
-              onValueChange={(value) =>
-                update('musicVolume', Array.isArray(value) ? (value[0] ?? 30) : value)
-              }
+
+          {form.musicSource === 'Sonilo AI 配乐' ? (
+            <Input
+              className='h-8 text-xs'
+              placeholder='Sonilo 音乐风格提示词，可留空'
+              value={form.musicPrompt}
+              onChange={(event) => update('musicPrompt', event.target.value)}
             />
-          </div>
+          ) : null}
+
+          {form.musicSource === '自定义背景音乐' ? (
+            <>
+              <div className='rounded-md bg-muted/60 p-3'>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  disabled={uploading}
+                  onClick={() => chooseFile('music')}
+                >
+                  <Icons.upload className='size-4' />
+                  Upload
+                </Button>
+                <div className='mt-3 text-xs text-muted-foreground'>
+                  200MB per file • AAC, FLAC, M4A, MP3, OGG, WAV
+                </div>
+              </div>
+              {form.customMusicFileName ? (
+                <MiniPanel>
+                  <div className='flex items-center justify-between gap-2 text-xs'>
+                    <span className='truncate'>音乐文件：{form.customMusicFileName}</span>
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      className='h-7'
+                      onClick={() =>
+                        setForm((current) => ({
+                          ...current,
+                          customMusicAssetId: '',
+                          customMusicFileName: ''
+                        }))
+                      }
+                    >
+                      移除
+                    </Button>
+                  </div>
+                </MiniPanel>
+              ) : null}
+            </>
+          ) : null}
+
+          <SelectField
+            label='背景音乐音量'
+            value={`${form.musicVolume}%`}
+            options={['0%', '10%', '20%', '30%', '50%', '80%', '100%']}
+            onChange={(value) => update('musicVolume', Number(value.replace('%', '')))}
+          />
         </StepCard>
 
         <StepCard
