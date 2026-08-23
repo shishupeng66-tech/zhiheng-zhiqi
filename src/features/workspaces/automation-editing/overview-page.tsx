@@ -79,7 +79,7 @@ const initialForm: FormState = {
   prompt: '',
   scriptLanguage: '自动检测',
   paragraphNumber: '1 段',
-  keywords: '企业实力、生产能力、质量控制',
+  keywords: '',
   scriptText: '',
   scriptPrompt: '',
   customSystemPrompt: '',
@@ -124,6 +124,16 @@ const initialForm: FormState = {
 };
 
 const keywordSuggestions = ['企业实力', '生产能力', '质量控制', '交付稳定', '客户信任'];
+
+const defaultSystemPrompt = `# Role: Video Script Generator
+
+## Goals:
+Generate a script for a video, depending on the subject of the video.
+
+## Constraints:
+1. The script is to be returned as a string with the specified number of paragraphs.
+2. Do not under any circumstance reference this prompt in your response.
+3. Keep the language natural, concise, and suitable for short video narration.`;
 
 function splitKeywords(value: string) {
   return value
@@ -304,6 +314,7 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
   const [assets, setAssets] = React.useState<UploadedAsset[]>([]);
   const [saving, setSaving] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
+  const [scriptSettingsOpen, setScriptSettingsOpen] = React.useState(false);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -468,65 +479,118 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
           number='01'
           icon={Icons.post}
           title='视频内容'
-          description='对应主题、脚本、关键词、语言、段落数、脚本提示词和系统提示词。'
+          description='粘贴知识库给出的脚本文案，也可以保留原有 AI 辅助生成入口。'
         >
-          <Textarea
-            className='min-h-16 resize-none text-sm'
-            placeholder='例如：制作一条 60 秒企业宣传短视频，突出核心能力、质量控制、服务流程和客户信任。'
-            value={form.prompt}
-            onChange={(event) => update('prompt', event.target.value)}
-          />
-          <div className='grid grid-cols-2 gap-2'>
-            <SelectField
-              label='脚本语言'
-              value={form.scriptLanguage}
-              options={['自动检测', '简体中文', '英文', '中英双语']}
-              onChange={(value) => update('scriptLanguage', value)}
-            />
-            <SelectField
-              label='脚本段落'
-              value={form.paragraphNumber}
-              options={['1 段', '2 段', '3 段', '5 段', '8 段']}
-              onChange={(value) => update('paragraphNumber', value)}
+          <div className='border-t pt-3'>
+            <div className='mb-2 text-xs font-medium'>视频主题（AI 将根据主题生成视频文案）</div>
+            <Textarea
+              className='min-h-16 resize-none text-sm'
+              placeholder='例如：人工智能如何改变日常生活'
+              value={form.prompt}
+              onChange={(event) => update('prompt', event.target.value)}
             />
           </div>
-          <div className='grid grid-cols-[1fr_auto] gap-2'>
-            <Input
-              className='h-8 text-xs'
-              placeholder='视频关键词'
+
+          <SelectField
+            label='生成视频脚本的语言'
+            value={form.scriptLanguage}
+            options={['自动检测', '简体中文', '英文', '中英双语']}
+            onChange={(value) => update('scriptLanguage', value)}
+          />
+
+          <button
+            type='button'
+            className='flex h-8 items-center gap-2 rounded-md px-1 text-left text-xs font-medium text-muted-foreground hover:text-foreground'
+            onClick={() => setScriptSettingsOpen((current) => !current)}
+          >
+            <span>{scriptSettingsOpen ? '⌄' : '›'}</span>
+            <span>高级脚本设置</span>
+          </button>
+
+          {scriptSettingsOpen ? (
+            <div className='space-y-3 rounded-md border bg-muted/20 p-3'>
+              <SliderField
+                label='文案段落数量'
+                value={form.paragraphNumber.match(/\d+/)?.[0] ?? '1'}
+                min={1}
+                max={10}
+                step={1}
+                onChange={(value) => update('paragraphNumber', `${value} 段`)}
+              />
+              <div className='grid gap-1.5'>
+                <div className='text-xs font-medium'>自定义文案要求</div>
+                <Textarea
+                  className='min-h-16 resize-none text-xs'
+                  placeholder='例如：语气更轻松，适合小红书风格，面向年轻用户，开头更有悬念'
+                  value={form.scriptPrompt}
+                  onChange={(event) => update('scriptPrompt', event.target.value)}
+                />
+              </div>
+              <div className='grid gap-1.5'>
+                <div className='text-xs font-medium'>系统提示词</div>
+                <Textarea
+                  className='min-h-24 resize-none font-mono text-xs'
+                  value={form.customSystemPrompt || defaultSystemPrompt}
+                  onChange={(event) => update('customSystemPrompt', event.target.value)}
+                />
+              </div>
+              <div className='grid grid-cols-2 gap-2'>
+                <ToolButton
+                  onClick={() =>
+                    setForm((current) => ({
+                      ...current,
+                      paragraphNumber: '1 段',
+                      scriptPrompt: '',
+                      customSystemPrompt: ''
+                    }))
+                  }
+                >
+                  <Icons.palette className='size-4' />
+                  恢复默认提示词
+                </ToolButton>
+                <ToolButton
+                  onClick={() => toast.info(form.customSystemPrompt || defaultSystemPrompt)}
+                >
+                  <Icons.post className='size-4' />
+                  预览最终提示词
+                </ToolButton>
+              </div>
+            </div>
+          ) : null}
+
+          <ToolButton onClick={fillAiDraft}>
+            <Icons.sparkles className='size-4' />
+            点击使用AI生成视频文案和关键词
+          </ToolButton>
+
+          <div className='grid gap-1.5'>
+            <div className='flex items-center gap-2 text-xs font-medium'>
+              <span>视频文案（可选）</span>
+              <span className='text-muted-foreground'>?</span>
+            </div>
+            <Textarea
+              className='min-h-24 flex-1 resize-none text-sm'
+              value={form.scriptText}
+              onChange={(event) => update('scriptText', event.target.value)}
+            />
+          </div>
+
+          <ToolButton onClick={fillAiDraft}>
+            <Icons.sparkles className='size-4' />
+            点击使用AI根据文案生成视频关键词
+          </ToolButton>
+
+          <div className='grid gap-1.5'>
+            <div className='flex items-center gap-2 text-xs font-medium'>
+              <span>视频关键词（英文，可选）</span>
+              <span className='text-muted-foreground'>?</span>
+            </div>
+            <Textarea
+              className='min-h-20 resize-none text-sm'
               value={form.keywords}
               onChange={(event) => update('keywords', event.target.value)}
             />
-            <ToolButton onClick={fillAiDraft}>
-              <Icons.sparkles className='size-4' />
-              AI 生成
-            </ToolButton>
           </div>
-          <div className='flex flex-wrap gap-1.5'>
-            {keywordSuggestions.map((keyword) => (
-              <Badge key={keyword} variant='outline' className='text-xs'>
-                {keyword}
-              </Badge>
-            ))}
-          </div>
-          <Textarea
-            className='min-h-20 flex-1 resize-none text-sm'
-            placeholder='视频文案/完整脚本，可粘贴知识库输出；留空时由 AI 生成。'
-            value={form.scriptText}
-            onChange={(event) => update('scriptText', event.target.value)}
-          />
-          <Textarea
-            className='min-h-12 resize-none text-xs'
-            placeholder='视频脚本提示词：语气、受众、结构、禁用词、风格要求。'
-            value={form.scriptPrompt}
-            onChange={(event) => update('scriptPrompt', event.target.value)}
-          />
-          <Textarea
-            className='min-h-12 resize-none text-xs'
-            placeholder='自定义系统提示词：覆盖默认脚本生成规则。'
-            value={form.customSystemPrompt}
-            onChange={(event) => update('customSystemPrompt', event.target.value)}
-          />
         </StepCard>
 
         <StepCard
