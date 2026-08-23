@@ -63,14 +63,14 @@ def voices():
         "voices": [
             {
                 "id": "auto",
-                "name": "豆包默认音色",
+                "name": "AI 自动选择音色",
                 "type": "preset_voice",
                 "provider": "doubao",
                 "provider_voice_id": default_voice,
             },
             {
-                "id": default_voice,
-                "name": "豆包配置音色",
+                "id": "voice-xiaohe",
+                "name": "小荷",
                 "type": "preset_voice",
                 "provider": "doubao",
                 "provider_voice_id": default_voice,

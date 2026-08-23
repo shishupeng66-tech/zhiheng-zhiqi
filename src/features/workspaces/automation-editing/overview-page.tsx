@@ -5,13 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
@@ -95,8 +89,8 @@ const initialForm: FormState = {
   workerThreads: '2',
   matchByScript: true,
   voiceMode: '自动配音',
-  voiceService: '豆包语音 TTS',
-  voiceName: 'AI 自动选择音色',
+  voiceService: 'enterprise-voice',
+  voiceName: 'auto',
   voiceVolume: '100%',
   voiceSpeed: '1.0x',
   customAudioAssetId: '',
@@ -125,6 +119,11 @@ const initialForm: FormState = {
 
 const keywordSuggestions = ['企业实力', '生产能力', '质量控制', '交付稳定', '客户信任'];
 
+const voiceOptions = [
+  { value: 'auto', label: 'AI 自动选择音色' },
+  { value: 'voice-xiaohe', label: '小荷' }
+];
+
 const defaultSystemPrompt = `# Role: Video Script Generator
 
 ## Goals:
@@ -150,20 +149,24 @@ function SelectField({
 }: {
   label: string;
   value: string;
-  options: string[];
+  options: Array<string | { value: string; label: string }>;
   onChange: (value: string) => void;
 }) {
+  const normalizedOptions = options.map((option) =>
+    typeof option === 'string' ? { value: option, label: option } : option
+  );
+  const currentLabel = normalizedOptions.find((option) => option.value === value)?.label ?? value;
   return (
     <div className='grid gap-1.5'>
       <div className='text-xs font-medium text-muted-foreground'>{label}</div>
       <Select value={value} onValueChange={(next) => onChange(next ?? value)}>
         <SelectTrigger className='h-8 w-full text-xs'>
-          <SelectValue />
+          <span>{currentLabel}</span>
         </SelectTrigger>
         <SelectContent>
-          {options.map((option) => (
-            <SelectItem key={option} value={option}>
-              {option}
+          {normalizedOptions.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
             </SelectItem>
           ))}
         </SelectContent>
@@ -722,15 +725,9 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
           {form.voiceMode === '自动配音' ? (
             <>
               <SelectField
-                label='配音服务'
-                value={form.voiceService}
-                options={['豆包语音 TTS']}
-                onChange={(value) => update('voiceService', value)}
-              />
-              <SelectField
                 label='配音音色'
                 value={form.voiceName}
-                options={['AI 自动选择音色', 'zh_female_xiaohe_uranus_bigtts']}
+                options={voiceOptions}
                 onChange={(value) => update('voiceName', value)}
               />
               <div className='grid grid-cols-2 gap-2'>
@@ -749,7 +746,7 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
               </div>
               <div className='grid grid-cols-2 gap-2'>
                 <ToolButton
-                  onClick={() => toast.info('试听会使用当前选择的 TTS 服务；需要先配置服务密钥。')}
+                  onClick={() => toast.info('试听会使用当前选择的音色；需要先配置语音服务。')}
                 >
                   <Icons.music className='size-4' />
                   试听音色

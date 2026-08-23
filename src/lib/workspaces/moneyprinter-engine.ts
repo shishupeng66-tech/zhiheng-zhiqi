@@ -155,9 +155,7 @@ function mapVoiceName(task: AutomationVideoTask) {
   ) {
     return 'no-voice';
   }
-  if (task.voiceName.includes(':')) return task.voiceName;
-  if (task.voiceName.includes('Yunxi')) return 'zh-CN-YunxiNeural-Male';
-  return 'zh-CN-XiaoxiaoNeural-Female';
+  return 'no-voice';
 }
 
 function mapLanguage(value: string) {
@@ -395,10 +393,12 @@ function shouldUseVoiceService(task: AutomationVideoTask, assets: AutomationVide
 
 function mapVoiceId(task: AutomationVideoTask) {
   const selected = task.voiceName.trim();
-  if (selected && selected !== 'AI 自动选择音色') {
-    return selected;
-  }
-  return process.env.DOUBAO_SPEECH_DEFAULT_VOICE || 'zh_female_xiaohe_uranus_bigtts';
+  const defaultVoice = process.env.DOUBAO_SPEECH_DEFAULT_VOICE || 'zh_female_xiaohe_uranus_bigtts';
+  const voiceMap: Record<string, string> = {
+    auto: defaultVoice,
+    'voice-xiaohe': defaultVoice
+  };
+  return voiceMap[selected] || defaultVoice;
 }
 
 function appendLog(logPath: string, text: string) {
