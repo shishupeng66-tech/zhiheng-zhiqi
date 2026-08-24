@@ -329,8 +329,19 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
   const [saving, setSaving] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
   const [aiGenerating, setAiGenerating] = React.useState(false);
+  const [previewing, setPreviewing] = React.useState<'voice' | 'full' | null>(null);
+  const [previewAudioUrl, setPreviewAudioUrl] = React.useState('');
   const [scriptSettingsOpen, setScriptSettingsOpen] = React.useState(false);
+  const previewCacheRef = React.useRef(new Map<string, string>());
   const user = useCurrentUser();
+
+  React.useEffect(() => {
+    return () => {
+      for (const url of previewCacheRef.current.values()) {
+        URL.revokeObjectURL(url);
+      }
+    };
+  }, []);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -407,47 +418,124 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
     }
   }
 
-  async function uploadAsset(file: File) {
+  async function uploadOneAsset(file: File, target: UploadTarget) {
+    const data = new FormData();
+    data.set('asset', file);
+    const res = await fetch(`/api/workspaces/${workspaceSlug}/automation/assets`, {
+      method: 'POST',
+      body: data
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(`${file.name}：${payload.message ?? '文件上传失败'}`);
+    }
+
+    const asset = payload.asset as UploadedAsset | undefined;
+    if (!asset?.id) {
+      throw new Error(`${file.name}：上传接口未返回素材信息`);
+    }
+
+    setAssets((current) => [asset, ...current]);
+    if (target === 'voice') {
+      setForm((current) => ({
+        ...current,
+        voiceMode: '上传音频',
+        customAudioAssetId: asset.id,
+        customAudioFileName: asset.name
+      }));
+    } else if (target === 'music') {
+      setForm((current) => ({
+        ...current,
+        musicSource: '自定义背景音乐',
+        customMusicAssetId: asset.id,
+        customMusicFileName: asset.name
+      }));
+    } else {
+      setForm((current) => ({ ...current, materialSource: '本地文件' }));
+    }
+  }
+
+  async function uploadAssets(files: File[], target: UploadTarget) {
     setUploading(true);
     try {
-      const data = new FormData();
-      data.set('asset', file);
-      const res = await fetch(`/api/workspaces/${workspaceSlug}/automation/assets`, {
-        method: 'POST',
-        body: data
-      });
-      const payload = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(payload.message ?? '文件上传失败');
-        return;
+      for (const file of files) {
+        await uploadOneAsset(file, target);
       }
 
-      const asset = payload.asset as UploadedAsset;
-      const target = uploadTargetRef.current;
-      setAssets((current) => [asset, ...current]);
       if (target === 'voice') {
-        setForm((current) => ({
-          ...current,
-          voiceMode: '上传音频',
-          customAudioAssetId: asset.id,
-          customAudioFileName: asset.name
-        }));
         toast.success('配音音频已接入本次任务');
       } else if (target === 'music') {
-        setForm((current) => ({
-          ...current,
-          musicSource: '自定义背景音乐',
-          customMusicAssetId: asset.id,
-          customMusicFileName: asset.name
-        }));
         toast.success('背景音乐已接入本次任务');
       } else {
-        setForm((current) => ({ ...current, materialSource: '本地文件' }));
-        toast.success('素材已上传并加入本次任务');
+        toast.success(`已上传 ${files.length} 个素材`);
       }
+    } catch (error) {
+      console.error('[automation-assets] upload failed', error);
+      toast.error(error instanceof Error ? error.message : '文件上传失败');
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }
+
+  function removeAsset(assetId: string) {
+    setAssets((current) => current.filter((asset) => asset.id !== assetId));
+  }
+
+  function currentVoiceSpeed() {
+    const value = Number.parseFloat(form.voiceSpeed.replace('x', ''));
+    return Number.isFinite(value) ? value : 1;
+  }
+
+  function currentVoiceVolume() {
+    const value = Number.parseInt(form.voiceVolume.replace('%', ''), 10);
+    return Number.isFinite(value) ? value / 100 : 1;
+  }
+
+  async function playVoicePreview(kind: 'voice' | 'full') {
+    const text = kind === 'voice' ? '你好，这是当前音色的试听效果。' : form.scriptText.trim();
+    if (!text) {
+      toast.error('请先输入或生成视频文案');
+      return;
+    }
+
+    const speed = currentVoiceSpeed();
+    const volume = currentVoiceVolume();
+    const cacheKey = JSON.stringify({ kind, text, voiceId: form.voiceName, speed, volume });
+    const cachedUrl = previewCacheRef.current.get(cacheKey);
+    if (cachedUrl) {
+      setPreviewAudioUrl(cachedUrl);
+      await new Audio(cachedUrl).play().catch(() => undefined);
+      return;
+    }
+
+    setPreviewing(kind);
+    try {
+      const res = await fetch(`/api/workspaces/${workspaceSlug}/automation/voice-preview`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text,
+          voiceId: form.voiceName,
+          speed,
+          volume
+        })
+      });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.message ?? '试听生成失败，请稍后重试。');
+      }
+
+      const audioUrl = URL.createObjectURL(await res.blob());
+      previewCacheRef.current.set(cacheKey, audioUrl);
+      setPreviewAudioUrl(audioUrl);
+      await new Audio(audioUrl).play().catch(() => undefined);
+      toast.success(kind === 'voice' ? '音色试听已生成' : '完整试听已生成');
+    } catch (error) {
+      console.error('[voice-preview] failed', error);
+      toast.error(error instanceof Error ? error.message : '试听生成失败，请稍后重试。');
+    } finally {
+      setPreviewing(null);
     }
   }
 
@@ -516,7 +604,7 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
           const files = Array.from(event.target.files ?? []);
           if (files.length === 0) return;
           const selectedFiles = uploadTargetRef.current === 'material' ? files : files.slice(0, 1);
-          void Promise.all(selectedFiles.map((file) => uploadAsset(file)));
+          void uploadAssets(selectedFiles, uploadTargetRef.current);
         }}
       />
 
@@ -700,8 +788,27 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
                 </div>
               </div>
               {assets.length > 0 ? (
-                <div className='rounded-md border px-2 py-1.5 text-xs text-muted-foreground'>
-                  已选：{assets.map((asset) => asset.name).join('、')}
+                <div className='space-y-1.5 rounded-md border p-2 text-xs'>
+                  <div className='font-medium text-foreground'>已选素材（{assets.length}）</div>
+                  <div className='space-y-1'>
+                    {assets.map((asset) => (
+                      <div
+                        key={asset.id}
+                        className='flex items-center justify-between gap-2 rounded border bg-background px-2 py-1'
+                      >
+                        <span className='truncate text-muted-foreground'>{asset.name}</span>
+                        <Button
+                          type='button'
+                          variant='ghost'
+                          size='sm'
+                          className='h-6 px-2 text-xs'
+                          onClick={() => removeAsset(asset.id)}
+                        >
+                          删除
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : null}
             </div>
@@ -812,16 +919,23 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
               </div>
               <div className='grid grid-cols-2 gap-2'>
                 <ToolButton
-                  onClick={() => toast.info('试听会使用当前选择的音色；需要先配置语音服务。')}
+                  onClick={() => void playVoicePreview('voice')}
+                  disabled={previewing !== null}
                 >
                   <Icons.music className='size-4' />
-                  试听音色
+                  {previewing === 'voice' ? '生成试听中...' : '试听音色'}
                 </ToolButton>
-                <ToolButton onClick={() => toast.info('完整试听会在生成音频/字幕阶段后提供。')}>
+                <ToolButton
+                  onClick={() => void playVoicePreview('full')}
+                  disabled={previewing !== null}
+                >
                   <Icons.video className='size-4' />
-                  完整试听
+                  {previewing === 'full' ? '生成试听中...' : '完整试听'}
                 </ToolButton>
               </div>
+              {previewAudioUrl ? (
+                <audio className='h-8 w-full' src={previewAudioUrl} controls />
+              ) : null}
             </>
           ) : null}
 
@@ -1037,33 +1151,6 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
           </Button>
         </StepCard>
       </section>
-
-      <div className='fixed right-6 bottom-4 z-50 w-[min(680px,calc(100vw-2rem))] rounded-lg border bg-background/95 p-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80'>
-        <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
-          <div>
-            <div className='text-sm font-medium'>准备开始自动化视频生产</div>
-            <div className='text-xs text-muted-foreground'>
-              系统会先生成配音音频，再交给内置视频引擎使用 custom-audio-file 合成视频。
-            </div>
-          </div>
-          <div className='flex flex-col gap-2 sm:flex-row'>
-            <Button
-              type='button'
-              variant='outline'
-              onClick={() =>
-                (window.location.href = `/dashboard/workspaces/${workspaceSlug}/review`)
-              }
-            >
-              <Icons.post className='size-4' />
-              查看任务
-            </Button>
-            <Button type='button' disabled={saving} onClick={createTask}>
-              <Icons.video className='size-4' />
-              {saving ? '正在提交...' : '一键生成视频'}
-            </Button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
