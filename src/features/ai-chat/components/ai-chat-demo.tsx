@@ -1,9 +1,9 @@
 'use client';
 
-import { useChat } from '@ai-sdk/react';
+import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { LoadingButton } from '@/components/ui/loading-button';
+import { Textarea } from '@/components/ui/textarea';
 import { Icons } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import {
@@ -16,82 +16,115 @@ import {
 } from '@/components/ui/message-scroller';
 import { Message, MessageAvatar, MessageContent } from '@/components/ui/message';
 import { Bubble, BubbleContent } from '@/components/ui/bubble';
-import { Marker, MarkerContent, MarkerIcon } from '@/components/ui/marker';
-import { chatTransport, demoChat, initialMessages, type DemoUIMessage } from '../chat';
+import { Marker, MarkerContent } from '@/components/ui/marker';
 
-type ToolPart = {
-  type: string;
-  toolName?: string;
-  state: 'input-streaming' | 'input-available' | 'output-available' | 'output-error';
-  input?: unknown;
-  output?: unknown;
-  errorText?: string;
+type ChatRole = 'user' | 'assistant';
+
+type ChatMessage = {
+  id: string;
+  role: ChatRole;
+  content: string;
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  submitted: '提交中',
-  streaming: '生成中',
+const initialMessages: ChatMessage[] = [
+  {
+    id: 'welcome',
+    role: 'assistant',
+    content:
+      '你好，我是知衡智企 AI 助手。你可以问我工作空间、自动化剪辑、企业知识资产或业务流程相关问题。'
+  }
+];
+
+const STATUS_LABELS = {
   ready: '就绪',
+  streaming: '生成中',
   error: '错误'
 };
 
-function ToolMarker({ part }: { part: ToolPart }) {
-  const name = part.toolName ?? part.type.replace(/^tool-/, '');
-  const running = part.state === 'input-streaming' || part.state === 'input-available';
-  const done = part.state === 'output-available';
-  const errored = part.state === 'output-error';
-
-  return (
-    <div className='flex flex-col gap-1.5'>
-      <Marker>
-        <MarkerIcon>
-          <Icons.code />
-        </MarkerIcon>
-        {running ? (
-          <MarkerContent className='shimmer'>正在运行 {name}…</MarkerContent>
-        ) : (
-          <MarkerContent>
-            {errored ? '失败' : '已调用'}{' '}
-            <span className='text-foreground font-medium'>{name}</span>
-          </MarkerContent>
-        )}
-      </Marker>
-      {done && part.output != null && (
-        <Bubble variant='outline'>
-          <BubbleContent>
-            <pre className='overflow-x-auto font-mono text-xs'>
-              {JSON.stringify(part.output, null, 2)}
-            </pre>
-          </BubbleContent>
-        </Bubble>
-      )}
-      {errored && part.errorText && <p className='text-destructive text-sm'>{part.errorText}</p>}
-    </div>
-  );
+function toApiMessages(messages: ChatMessage[]) {
+  return messages
+    .filter((message) => message.id !== 'welcome')
+    .map((message) => ({ role: message.role, content: message.content }));
 }
 
 export function AiChatDemo() {
-  const { messages, sendMessage, status, setMessages } = useChat<DemoUIMessage>({
-    messages: initialMessages,
-    transport: chatTransport
-  });
+  const [messages, setMessages] = React.useState<ChatMessage[]>(initialMessages);
+  const [input, setInput] = React.useState('');
+  const [status, setStatus] = React.useState<keyof typeof STATUS_LABELS>('ready');
+  const isBusy = status === 'streaming';
 
-  const nextMessage = demoChat.next(messages);
-  const isBusy = status === 'submitted' || status === 'streaming';
+  async function send() {
+    const text = input.trim();
+    if (!text || isBusy) return;
+
+    const userMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: text
+    };
+    const assistantId = crypto.randomUUID();
+    const assistantMessage: ChatMessage = {
+      id: assistantId,
+      role: 'assistant',
+      content: ''
+    };
+    const nextMessages = [...messages, userMessage, assistantMessage];
+    setMessages(nextMessages);
+    setInput('');
+    setStatus('streaming');
+
+    try {
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: toApiMessages([...messages, userMessage])
+        })
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error('AI service unavailable');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        fullText += decoder.decode(value, { stream: true });
+        setMessages((current) =>
+          current.map((message) =>
+            message.id === assistantId ? { ...message, content: fullText } : message
+          )
+        );
+      }
+      setStatus('ready');
+    } catch {
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === assistantId
+            ? { ...message, content: 'AI服务暂时不可用，请稍后重试。' }
+            : message
+        )
+      );
+      setStatus('error');
+    }
+  }
 
   return (
     <div className='relative flex flex-1'>
-      <div className='bg-card absolute inset-0 mx-auto flex w-full max-w-2xl flex-col overflow-hidden rounded-xl border'>
+      <div className='bg-card absolute inset-0 mx-auto flex w-full max-w-3xl flex-col overflow-hidden rounded-xl border'>
         <div className='flex shrink-0 items-center gap-2 border-b px-4 py-3'>
           <div className='bg-primary/10 text-primary flex size-8 items-center justify-center rounded-lg'>
             <Icons.sparkles className='size-4' />
           </div>
           <div className='min-w-0'>
-            <p className='text-sm font-medium'>发布助手</p>
-            <p className='text-muted-foreground text-xs'>脚本化演示 · 通过 useChat 流式输出</p>
+            <p className='text-sm font-medium'>AI助手</p>
+            <p className='text-muted-foreground text-xs'>连接统一模型中枢的企业智能对话</p>
           </div>
           <Badge variant='outline' className='ml-auto'>
-            {STATUS_LABELS[status] ?? status}
+            {STATUS_LABELS[status]}
           </Badge>
         </div>
 
@@ -99,121 +132,83 @@ export function AiChatDemo() {
           <MessageScroller className='min-h-0 flex-1'>
             <MessageScrollerViewport>
               <MessageScrollerContent className='px-4 py-4'>
-                {messages.length === 0 ? (
-                  <div className='text-muted-foreground flex flex-1 flex-col items-center justify-center gap-2 text-center text-sm'>
-                    <Icons.sparkles className='size-8' />
-                    <p>
-                      点击 <span className='text-foreground font-medium'>发送</span> 开始流式对话。
-                    </p>
-                  </div>
-                ) : (
-                  messages.map((message) => {
-                    const isUser = message.role === 'user';
-                    return (
-                      <MessageScrollerItem
-                        key={message.id}
-                        messageId={message.id}
-                        scrollAnchor={isUser}
-                      >
-                        <Message align={isUser ? 'end' : 'start'}>
-                          <MessageAvatar
-                            className={cn(
-                              'size-8 self-start',
-                              isUser
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-primary/10 text-primary'
-                            )}
+                {messages.map((message) => {
+                  const isUser = message.role === 'user';
+                  return (
+                    <MessageScrollerItem
+                      key={message.id}
+                      messageId={message.id}
+                      scrollAnchor={isUser}
+                    >
+                      <Message align={isUser ? 'end' : 'start'}>
+                        <MessageAvatar
+                          className={cn(
+                            'size-8 self-start',
+                            isUser
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-primary/10 text-primary'
+                          )}
+                        >
+                          {isUser ? (
+                            <Icons.user className='size-4' />
+                          ) : (
+                            <Icons.sparkles className='size-4' />
+                          )}
+                        </MessageAvatar>
+                        <MessageContent>
+                          <Bubble
+                            variant={isUser ? 'default' : 'muted'}
+                            align={isUser ? 'end' : 'start'}
                           >
-                            {isUser ? (
-                              <Icons.user className='size-4' />
-                            ) : (
-                              <Icons.sparkles className='size-4' />
-                            )}
-                          </MessageAvatar>
-                          <MessageContent>
-                            {message.parts.map((part, i) => {
-                              const key = `${message.id}-${i}`;
-                              if (part.type === 'text') {
-                                return (
-                                  <Bubble
-                                    key={key}
-                                    variant={isUser ? 'default' : 'muted'}
-                                    align={isUser ? 'end' : 'start'}
-                                  >
-                                    <BubbleContent className='whitespace-pre-wrap'>
-                                      {part.text}
-                                    </BubbleContent>
-                                  </Bubble>
-                                );
-                              }
-                              if (part.type === 'reasoning') {
-                                return (
-                                  <Marker key={key}>
-                                    <MarkerIcon>
-                                      <Icons.sparkles />
-                                    </MarkerIcon>
-                                    <MarkerContent className='italic'>{part.text}</MarkerContent>
-                                  </Marker>
-                                );
-                              }
-                              if (part.type === 'dynamic-tool' || part.type.startsWith('tool-')) {
-                                return <ToolMarker key={key} part={part as unknown as ToolPart} />;
-                              }
-                              return null;
-                            })}
-                          </MessageContent>
-                        </Message>
-                      </MessageScrollerItem>
-                    );
-                  })
-                )}
-
-                {status === 'submitted' && (
-                  <MessageScrollerItem messageId='pending'>
-                    <Message align='start'>
-                      <MessageAvatar className='bg-primary/10 text-primary size-8 self-start'>
-                        <Icons.sparkles className='size-4' />
-                      </MessageAvatar>
-                      <MessageContent>
-                        <Marker>
-                          <MarkerContent className='shimmer'>思考中…</MarkerContent>
-                        </Marker>
-                      </MessageContent>
-                    </Message>
-                  </MessageScrollerItem>
-                )}
+                            <BubbleContent className='whitespace-pre-wrap'>
+                              {message.content || (
+                                <Marker>
+                                  <MarkerContent className='shimmer'>思考中...</MarkerContent>
+                                </Marker>
+                              )}
+                            </BubbleContent>
+                          </Bubble>
+                        </MessageContent>
+                      </Message>
+                    </MessageScrollerItem>
+                  );
+                })}
               </MessageScrollerContent>
             </MessageScrollerViewport>
             <MessageScrollerButton />
           </MessageScroller>
         </MessageScrollerProvider>
 
-        <div className='flex shrink-0 items-center gap-2 border-t px-4 py-3'>
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={() => setMessages(demoChat.get(0))}
-            disabled={isBusy || messages.length === 0}
-          >
-            重新开始
-          </Button>
-          <LoadingButton
-            className='ml-auto'
-            loading={isBusy}
-            loadingLabel='正在生成回复'
-            disabled={!nextMessage}
-            onClick={() => {
-              if (nextMessage) void sendMessage(nextMessage);
+        <div className='grid shrink-0 gap-2 border-t p-3'>
+          <Textarea
+            className='min-h-20 resize-none'
+            placeholder='输入你的问题...'
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                void send();
+              }
             }}
-          >
-            {nextMessage ? (
-              <>
-                <Icons.send className='size-4' /> 发送下一条消息
-              </>
-            ) : (
-              '演示结束'
-            )}
-          </LoadingButton>
+          />
+          <div className='flex items-center justify-between gap-2'>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => {
+                setMessages(initialMessages);
+                setStatus('ready');
+              }}
+              disabled={isBusy}
+            >
+              重新开始
+            </Button>
+            <Button disabled={isBusy || !input.trim()} onClick={() => void send()}>
+              <Icons.send className='size-4' />
+              {isBusy ? '正在生成' : '发送'}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

@@ -189,9 +189,23 @@ function CompactSwitch({
   );
 }
 
-function ToolButton({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) {
+function ToolButton({
+  children,
+  onClick,
+  disabled
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
   return (
-    <Button variant='outline' size='sm' className='h-8 justify-center text-xs' onClick={onClick}>
+    <Button
+      variant='outline'
+      size='sm'
+      className='h-8 justify-center text-xs'
+      onClick={onClick}
+      disabled={disabled}
+    >
       {children}
     </Button>
   );
@@ -314,6 +328,7 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
   const [assets, setAssets] = React.useState<UploadedAsset[]>([]);
   const [saving, setSaving] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
+  const [aiGenerating, setAiGenerating] = React.useState(false);
   const [scriptSettingsOpen, setScriptSettingsOpen] = React.useState(false);
   const user = useCurrentUser();
 
@@ -329,16 +344,67 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
     fileInputRef.current?.click();
   }
 
-  function fillAiDraft() {
-    const prompt = form.prompt.trim() || '制作一条 60 秒企业宣传短视频';
-    setForm((current) => ({
-      ...current,
-      prompt,
-      keywords: '企业实力、生产能力、质量控制、交付稳定、客户信任',
-      scriptText:
-        '开场突出企业核心能力，随后展示生产流程、质量控制和服务响应，结尾引导客户了解更多解决方案。'
-    }));
-    toast.success('已生成可编辑的脚本草稿和关键词');
+  async function generateAiDraft() {
+    const prompt = form.prompt.trim();
+    if (!prompt) {
+      toast.error('请先输入视频主题或需求');
+      return;
+    }
+    setAiGenerating(true);
+    try {
+      const res = await fetch(`/api/workspaces/${workspaceSlug}/automation/ai`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'video_copy',
+          topic: prompt,
+          language: form.scriptLanguage,
+          existingScript: form.scriptText,
+          style: form.scriptPrompt
+        })
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(payload.message ?? 'AI服务暂时不可用，请稍后重试。');
+        return;
+      }
+      setForm((current) => ({
+        ...current,
+        scriptText: String(payload.script ?? ''),
+        keywords: Array.isArray(payload.keywords) ? payload.keywords.join('、') : current.keywords
+      }));
+      toast.success('已生成可编辑的视频文案和关键词');
+    } finally {
+      setAiGenerating(false);
+    }
+  }
+
+  async function generateAiKeywords() {
+    const script = form.scriptText.trim();
+    if (!script) {
+      toast.error('请先输入或生成视频文案');
+      return;
+    }
+    setAiGenerating(true);
+    try {
+      const res = await fetch(`/api/workspaces/${workspaceSlug}/automation/ai`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'keywords', script })
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(payload.message ?? 'AI服务暂时不可用，请稍后重试。');
+        return;
+      }
+      setForm((current) => ({
+        ...current,
+        keywords: Array.isArray(payload.keywords) ? payload.keywords.join('、') : current.keywords
+      }));
+      toast.success('已根据文案生成视频关键词');
+    } finally {
+      setAiGenerating(false);
+    }
   }
 
   async function uploadAsset(file: File) {
@@ -566,9 +632,9 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
             </div>
           ) : null}
 
-          <ToolButton onClick={fillAiDraft}>
+          <ToolButton onClick={generateAiDraft} disabled={aiGenerating}>
             <Icons.sparkles className='size-4' />
-            点击使用AI生成视频文案和关键词
+            {aiGenerating ? 'AI生成中...' : '点击使用AI生成视频文案和关键词'}
           </ToolButton>
 
           <div className='grid gap-1.5'>
@@ -583,9 +649,9 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
             />
           </div>
 
-          <ToolButton onClick={fillAiDraft}>
+          <ToolButton onClick={generateAiKeywords} disabled={aiGenerating}>
             <Icons.sparkles className='size-4' />
-            点击使用AI根据文案生成视频关键词
+            {aiGenerating ? 'AI生成中...' : '点击使用AI根据文案生成视频关键词'}
           </ToolButton>
 
           <div className='grid gap-1.5'>
