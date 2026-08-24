@@ -18,9 +18,8 @@ The service loads process environment variables first, then project `.env.local`
 VOICE_SERVICE_OUTPUT_DIR=storage/voice-service/outputs
 DOUBAO_SPEECH_API_KEY=
 DOUBAO_SPEECH_RESOURCE_ID=seed-tts-2.0
-DOUBAO_SPEECH_ENDPOINT=https://openspeech.bytedance.com/api/v3/tts/unidirectional
+DOUBAO_SPEECH_WS_ENDPOINT=wss://openspeech.bytedance.com/api/v3/tts/bidirection
 DOUBAO_SPEECH_DEFAULT_VOICE=zh_male_guanggaojieshuo_uranus_bigtts
-DOUBAO_SPEECH_APP_ID=zhiheng-zhiqi
 ```
 
 Do not commit real API keys.

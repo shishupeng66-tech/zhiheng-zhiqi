@@ -156,7 +156,7 @@ function mapVoiceName(task: AutomationVideoTask) {
   ) {
     return 'no-voice';
   }
-  return 'no-voice';
+  return task.voiceName.trim() || 'auto';
 }
 
 function mapLanguage(value: string) {
