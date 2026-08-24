@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, notInArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '@/lib/db';
 import {
@@ -147,6 +147,18 @@ export async function applyModuleConfig(
           updatedAt: now()
         });
       }
+    }
+
+    const activeKeys = input.fields.map((field) => field.key);
+    if (activeKeys.length > 0) {
+      await db
+        .delete(providerSettings)
+        .where(
+          and(
+            eq(providerSettings.profileId, profileId),
+            notInArray(providerSettings.key, activeKeys)
+          )
+        );
     }
   }
 }

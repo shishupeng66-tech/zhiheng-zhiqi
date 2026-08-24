@@ -476,6 +476,10 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
           <Icons.workspace className='size-4' />
           运行日志
         </ToolButton>
+        <Button type='button' size='sm' disabled={saving} onClick={createTask}>
+          <Icons.video className='size-4' />
+          {saving ? '正在提交...' : '一键生成视频'}
+        </Button>
       </div>
 
       <section className='grid items-stretch gap-3 xl:grid-cols-4'>
@@ -967,6 +971,33 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
           </Button>
         </StepCard>
       </section>
+
+      <div className='fixed right-6 bottom-4 z-50 w-[min(680px,calc(100vw-2rem))] rounded-lg border bg-background/95 p-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80'>
+        <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+          <div>
+            <div className='text-sm font-medium'>准备开始自动化视频生产</div>
+            <div className='text-xs text-muted-foreground'>
+              系统会先生成配音音频，再交给内置视频引擎使用 custom-audio-file 合成视频。
+            </div>
+          </div>
+          <div className='flex flex-col gap-2 sm:flex-row'>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() =>
+                (window.location.href = `/dashboard/workspaces/${workspaceSlug}/review`)
+              }
+            >
+              <Icons.post className='size-4' />
+              查看任务
+            </Button>
+            <Button type='button' disabled={saving} onClick={createTask}>
+              <Icons.video className='size-4' />
+              {saving ? '正在提交...' : '一键生成视频'}
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

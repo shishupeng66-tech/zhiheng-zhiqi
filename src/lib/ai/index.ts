@@ -35,7 +35,7 @@ function assertConfigReady(cfg: LlmProviderConfig): void {
   }
 }
 
-/** 业务调用入口：非流式对话。生产环境由各业务模块调用，而非直接耦合具体厂商 SDK。 */
+/** 业务调用入口：非流式对话。业务代码不直接耦合具体厂商 SDK。 */
 export async function chat(messages: ChatMessage[]): Promise<string> {
   const cfg = await getResolvedLlmConfig();
   assertConfigReady(cfg!);
@@ -59,12 +59,19 @@ export async function testLlm(
     if (!config.baseUrl || !config.apiKey || !config.model) {
       throw new Error('配置不完整（缺少 Base URL / API Key / Model）');
     }
-    const r = await openaiCompatibleChat(config, [{ role: 'user', content: 'ping' }], {
-      timeoutMs: 20000
-    });
+    const r = await openaiCompatibleChat(
+      config,
+      [
+        {
+          role: 'user',
+          content: '请用一句话说明你现在已经成功连接到知衡智企。'
+        }
+      ],
+      { timeoutMs: 30000 }
+    );
     return {
       ok: true,
-      message: `连通成功，模型返回 ${r.text.length} 字`,
+      message: `连接成功，模型回复：${r.text.slice(0, 120)}`,
       latencyMs: r.latencyMs
     };
   } catch (e) {

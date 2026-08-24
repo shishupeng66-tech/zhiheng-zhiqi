@@ -12,23 +12,59 @@ export async function testLlmConnection(config: LlmProviderConfig): Promise<Test
   return testLlm(config);
 }
 
-/** 语音服务：探测本地 Voice Service /health 可达性（不校验密钥本身）。 */
+/** 语音服务：真实调用 Voice Service /v1/tts，验证密钥、WebSocket V3 与 MP3 生成。 */
 export async function testVoiceConnection(): Promise<TestResult> {
   const started = Date.now();
   const base = process.env.VOICE_SERVICE_URL || 'http://127.0.0.1:5015';
   try {
-    const res = await fetch(`${base}/health`, { signal: AbortSignal.timeout(8000) });
-    if (!res.ok) {
+    const health = await fetch(`${base}/health`, { signal: AbortSignal.timeout(8000) });
+    if (!health.ok) {
       return {
         ok: false,
-        message: `Voice Service 返回 ${res.status}`,
+        message: `Voice Service 返回 ${health.status}`,
         latencyMs: Date.now() - started
       };
     }
-    const data = (await res.json().catch(() => ({}))) as { provider?: string };
+
+    const tts = await fetch(`${base}/v1/tts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: '知衡智企语音服务连接测试成功。',
+        voice_id: 'auto',
+        speed: 1,
+        volume: 1,
+        emotion: 'neutral',
+        style: 'business'
+      }),
+      signal: AbortSignal.timeout(30000)
+    });
+
+    if (!tts.ok) {
+      const detail = await tts.text().catch(() => '');
+      return {
+        ok: false,
+        message: `Voice Service TTS 测试失败：${tts.status} ${detail.slice(0, 180)}`,
+        latencyMs: Date.now() - started
+      };
+    }
+
+    const audio = (await tts.json().catch(() => ({}))) as {
+      duration?: number;
+      audio_path?: string;
+      format?: string;
+    };
+    if (!audio.audio_path || !audio.duration || audio.duration <= 0) {
+      return {
+        ok: false,
+        message: 'Voice Service 已响应，但未返回有效音频路径或 duration',
+        latencyMs: Date.now() - started
+      };
+    }
+
     return {
       ok: true,
-      message: `Voice Service 正常（provider=${data?.provider ?? 'unknown'}）`,
+      message: `Voice Service TTS 正常，已生成 ${audio.format ?? 'audio'}，duration=${audio.duration}s`,
       latencyMs: Date.now() - started
     };
   } catch (e) {
@@ -97,7 +133,7 @@ export async function testVideoEngineConnection(): Promise<TestResult> {
   const s = await getVideoEngineStatus();
   const ok = s.cliExists && s.pythonAvailable;
   const message = ok
-    ? `引擎就绪（${s.pythonVersion ?? 'python'}，CLI 存在）`
+    ? `引擎就绪：${s.pythonVersion ?? 'python'}，CLI 存在`
     : `引擎不可用：${s.notes.join('；') || 'CLI 或 Python 缺失'}`;
   return { ok, message, latencyMs: Date.now() - started };
 }

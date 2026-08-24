@@ -50,10 +50,7 @@ const FIELD_LABELS: Record<string, string> = {
   DOUBAO_SPEECH_API_KEY: 'API Key',
   DOUBAO_SPEECH_RESOURCE_ID: 'Resource ID',
   DOUBAO_SPEECH_WS_ENDPOINT: 'WS 端点',
-  DOUBAO_SPEECH_DEFAULT_VOICE: '默认音色',
-  DOUBAO_SPEECH_ENDPOINT: '单向端点',
-  DOUBAO_SPEECH_APP_ID: 'App ID',
-  DOUBAO_SPEECH_APP_KEY: 'App Key'
+  DOUBAO_SPEECH_DEFAULT_VOICE: '默认音色'
 };
 
 function fieldLabel(key: string): string {
@@ -120,13 +117,18 @@ function seedModule(module: SettingModule): EditableProvider[] {
   }
   return [
     {
-      provider: 'openai-compatible',
+      provider: 'volcengine-ark',
       enabled: true,
       isDefault: true,
       fields: [
-        { key: 'base_url', value: 'https://api.openai.com/v1', isSecret: false, changed: false },
+        {
+          key: 'base_url',
+          value: 'https://ark.cn-beijing.volces.com/api/v3',
+          isSecret: false,
+          changed: false
+        },
         { key: 'api_key', value: '', isSecret: true, changed: false },
-        { key: 'model', value: 'gpt-4o-mini', isSecret: false, changed: false }
+        { key: 'model', value: '', isSecret: false, changed: false }
       ]
     }
   ];

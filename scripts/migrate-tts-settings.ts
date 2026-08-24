@@ -23,11 +23,9 @@ import type { ProviderConfigInput, SettingFieldInput } from '../src/lib/settings
 const DOUBAO_KEYS: Array<{ env: string; key: string; secret: boolean }> = [
   { env: 'DOUBAO_SPEECH_API_KEY', key: 'DOUBAO_SPEECH_API_KEY', secret: true },
   { env: 'DOUBAO_SPEECH_RESOURCE_ID', key: 'DOUBAO_SPEECH_RESOURCE_ID', secret: false },
-  { env: 'DOUBAO_SPEECH_ENDPOINT', key: 'DOUBAO_SPEECH_ENDPOINT', secret: false },
+  { env: 'DOUBAO_SPEECH_WS_ENDPOINT', key: 'DOUBAO_SPEECH_WS_ENDPOINT', secret: false },
   { env: 'DOUBAO_SPEECH_DEFAULT_VOICE', key: 'DOUBAO_SPEECH_DEFAULT_VOICE', secret: false },
-  { env: 'DOUBAO_SPEECH_APP_ID', key: 'DOUBAO_SPEECH_APP_ID', secret: false },
-  { env: 'DOUBAO_SPEECH_APP_KEY', key: 'DOUBAO_SPEECH_APP_KEY', secret: false },
-  { env: 'DOUBAO_SPEECH_WS_ENDPOINT', key: 'DOUBAO_SPEECH_WS_ENDPOINT', secret: false }
+  { env: 'DOUBAO_SPEECH_USER_ID', key: 'DOUBAO_SPEECH_USER_ID', secret: false }
 ];
 
 async function main() {
