@@ -245,3 +245,58 @@ export const sessions = sqliteTable(
 
 export type Session = typeof sessions.$inferSelect;
 export type NewSession = typeof sessions.$inferInsert;
+
+/**
+ * 统一模型与接口设置中心 —— Provider 画像表
+ * 每个 (module, provider) 一行，承载「是否启用 / 是否默认」等 Provider 级状态。
+ * 具体键值（API Key / Base URL / Model 等）放在 provider_settings 子表。
+ * secret 类值永远以加密形态入库（AES-256-GCM），绝不明文。
+ */
+export const settingModules = ['llm', 'voice', 'material', 'video_engine'] as const;
+export type SettingModule = (typeof settingModules)[number];
+
+export const providerProfiles = sqliteTable(
+  'provider_profiles',
+  {
+    id: text('id').primaryKey(),
+    module: text('module', { enum: settingModules }).notNull(),
+    provider: text('provider').notNull(),
+    enabled: integer('enabled', { mode: 'boolean' }).notNull().default(false),
+    isDefault: integer('is_default', { mode: 'boolean' }).notNull().default(false),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull()
+  },
+  (table) => ({
+    providerProfileUnique: uniqueIndex('provider_profiles_module_provider_unique').on(
+      table.module,
+      table.provider
+    )
+  })
+);
+
+export const providerSettings = sqliteTable(
+  'provider_settings',
+  {
+    id: text('id').primaryKey(),
+    profileId: text('profile_id')
+      .notNull()
+      .references(() => providerProfiles.id, { onDelete: 'cascade' }),
+    key: text('key').notNull(),
+    /** secret 类为加密后的密文；非 secret 类为明文 */
+    value: text('value'),
+    isSecret: integer('is_secret', { mode: 'boolean' }).notNull().default(false),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull()
+  },
+  (table) => ({
+    providerSettingUnique: uniqueIndex('provider_settings_profile_key_unique').on(
+      table.profileId,
+      table.key
+    )
+  })
+);
+
+export type ProviderProfile = typeof providerProfiles.$inferSelect;
+export type NewProviderProfile = typeof providerProfiles.$inferInsert;
+export type ProviderSetting = typeof providerSettings.$inferSelect;
+export type NewProviderSetting = typeof providerSettings.$inferInsert;

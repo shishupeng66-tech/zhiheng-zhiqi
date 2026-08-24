@@ -12,8 +12,11 @@ from .utils import audio_duration_seconds, ensure_output_dir
 
 def load_project_env() -> None:
     repo_root = Path(__file__).resolve().parents[3]
-    for file_name in (".env.local", ".env"):
-        env_path = repo_root / file_name
+    # 安全桥接：统一模型与接口设置中心在保存 voice 配置后，会写出 gitignored 的桥接文件
+    # data/.voice-service-env（含豆包 TTS 的真实密钥）。该文件是 voice 配置的唯一来源，
+    # 优先于 .env.local / .env 加载（"先加载者胜"），从而让设置中心成为唯一可信配置入口。
+    bridge_env = repo_root / "data" / ".voice-service-env"
+    for env_path in (bridge_env, repo_root / ".env.local", repo_root / ".env"):
         if not env_path.exists():
             continue
         for raw_line in env_path.read_text(encoding="utf-8").splitlines():

@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Icons } from '@/components/icons';
 import { automationVoiceOptions } from './voice-options';
+import { useCurrentUser } from '@/components/auth/user-provider';
 import { toast } from 'sonner';
 
 type UploadedAsset = {
@@ -314,6 +315,7 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
   const [saving, setSaving] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
   const [scriptSettingsOpen, setScriptSettingsOpen] = React.useState(false);
+  const user = useCurrentUser();
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -460,14 +462,12 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
           <Icons.post className='size-4' />
           任务管理
         </ToolButton>
-        <ToolButton
-          onClick={() =>
-            toast.info('模型、素材 API 和缓存管理已保留为引擎配置入口，下一步接入系统设置页。')
-          }
-        >
-          <Icons.settings className='size-4' />
-          模型与素材 API
-        </ToolButton>
+        {user?.role === 'super_admin' ? (
+          <ToolButton onClick={() => (window.location.href = '/dashboard/system/settings')}>
+            <Icons.settings className='size-4' />
+            模型与接口设置
+          </ToolButton>
+        ) : null}
         <ToolButton
           onClick={() =>
             toast.info('运行日志写入 engines/moneyprinterturbo/storage/zhiheng-logs。')
