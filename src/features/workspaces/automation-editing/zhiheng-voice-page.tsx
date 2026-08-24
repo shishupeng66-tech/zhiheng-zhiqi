@@ -37,9 +37,15 @@ export function ZhihengVoicePage({
   const [filter, setFilter] = React.useState<FilterKey>('all');
   const [syncing, setSyncing] = React.useState(false);
   const [syncResult, setSyncResult] = React.useState<string | null>(null);
-  const [previewing, setPreviewing] = React.useState<string | null>(null);
-  const [audioSrc, setAudioSrc] = React.useState('');
+  const [generatingVoice, setGeneratingVoice] = React.useState<string | null>(null);
+  const [playingVoice, setPlayingVoice] = React.useState<string | null>(null);
+  const [doneVoice, setDoneVoice] = React.useState<string | null>(null);
+  const [errorVoice, setErrorVoice] = React.useState<string | null>(null);
+  const [fallbackVoice, setFallbackVoice] = React.useState<string | null>(null);
+  const [fallbackSrc, setFallbackSrc] = React.useState('');
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  const objectUrlRef = React.useRef<string | null>(null);
+  const endHandlerRef = React.useRef<(() => void) | null>(null);
 
   const loadVoices = React.useCallback(async () => {
     setLoading(true);
@@ -67,9 +73,15 @@ export function ZhihengVoicePage({
 
   React.useEffect(() => {
     return () => {
-      if (audioSrc) URL.revokeObjectURL(audioSrc);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        if (endHandlerRef.current) {
+          audioRef.current.removeEventListener('ended', endHandlerRef.current);
+        }
+      }
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
     };
-  }, [audioSrc]);
+  }, []);
 
   const filtered = React.useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -94,24 +106,68 @@ export function ZhihengVoicePage({
   }, [voices, filter, search]);
 
   async function preview(voiceType: string) {
-    setPreviewing(voiceType);
+    const audio = audioRef.current ?? new Audio();
+    audioRef.current = audio;
+
+    // 正在播放同一音色 → 点击即停止。
+    if (playingVoice === voiceType) {
+      audio.pause();
+      audio.currentTime = 0;
+      setPlayingVoice(null);
+      setDoneVoice(voiceType);
+      return;
+    }
+
+    // 切换：先停止当前正在播放 / 降级中的音色，保证同时只有一个在播。
+    audio.pause();
+    audio.currentTime = 0;
+    if (endHandlerRef.current) {
+      audio.removeEventListener('ended', endHandlerRef.current);
+      endHandlerRef.current = null;
+    }
+    setPlayingVoice(null);
+    setDoneVoice(null);
+    setErrorVoice(null);
+    setFallbackVoice(null);
+
+    setGeneratingVoice(voiceType);
     try {
       const res = await fetch(
         `/api/workspaces/${workspaceSlug}/voices/${encodeURIComponent(voiceType)}/preview`
       );
       if (!res.ok) {
+        setErrorVoice(voiceType);
         toast.error('试听生成失败，请稍后重试。');
         return;
       }
-      const url = URL.createObjectURL(await res.blob());
-      if (audioSrc) URL.revokeObjectURL(audioSrc);
-      setAudioSrc(url);
-      audioRef.current?.load();
-      await audioRef.current?.play().catch(() => undefined);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = url;
+
+      const onEnded = () => {
+        setPlayingVoice(null);
+        setDoneVoice(voiceType);
+        endHandlerRef.current = null;
+      };
+      endHandlerRef.current = onEnded;
+      audio.addEventListener('ended', onEnded);
+
+      audio.src = url;
+      try {
+        await audio.play();
+        setPlayingVoice(voiceType);
+      } catch {
+        // 浏览器自动播放策略拦截（异步 fetch 后丢失用户手势上下文）→
+        // 降级为卡片内原生小播放器，由用户手动点播，不再回顶部。
+        setFallbackVoice(voiceType);
+        setFallbackSrc(url);
+      }
     } catch {
+      setErrorVoice(voiceType);
       toast.error('试听生成失败，请稍后重试。');
     } finally {
-      setPreviewing(null);
+      setGeneratingVoice(null);
     }
   }
 
@@ -209,12 +265,6 @@ export function ZhihengVoicePage({
         </div>
       ) : null}
 
-      {audioSrc ? (
-        <div className='rounded-md border bg-muted/30 p-2'>
-          <audio ref={audioRef} src={audioSrc} className='h-9 w-full' controls />
-        </div>
-      ) : null}
-
       <div className='flex flex-col gap-3 sm:flex-row sm:items-center'>
         <div className='relative w-full sm:max-w-xs'>
           <Icons.search className='pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
@@ -309,14 +359,24 @@ export function ZhihengVoicePage({
                       size='sm'
                       className='h-8 flex-1 text-xs'
                       onClick={() => void preview(voice.voiceType)}
-                      disabled={previewing !== null}
+                      disabled={generatingVoice === voice.voiceType}
                     >
-                      {previewing === voice.voiceType ? (
+                      {generatingVoice === voice.voiceType ? (
                         <Icons.spinner className='size-3.5 animate-spin' />
+                      ) : playingVoice === voice.voiceType ? (
+                        <Icons.music className='size-3.5 animate-pulse' />
+                      ) : doneVoice === voice.voiceType ? (
+                        <Icons.check className='size-3.5' />
                       ) : (
                         <Icons.music className='size-3.5' />
                       )}
-                      试听
+                      {generatingVoice === voice.voiceType
+                        ? '生成中'
+                        : playingVoice === voice.voiceType
+                          ? '播放中'
+                          : doneVoice === voice.voiceType
+                            ? '重新试听'
+                            : '试听'}
                     </Button>
                     {canManage ? (
                       voice.enabledForProduction ? (
@@ -342,6 +402,18 @@ export function ZhihengVoicePage({
                       )
                     ) : null}
                   </div>
+
+                  {fallbackVoice === voice.voiceType ? (
+                    <audio
+                      controls
+                      src={fallbackSrc}
+                      className='h-9 w-full rounded-md border bg-muted/30 p-1'
+                    />
+                  ) : null}
+
+                  {errorVoice === voice.voiceType ? (
+                    <p className='text-[11px] text-destructive'>试听生成失败，请稍后重试。</p>
+                  ) : null}
                 </CardContent>
               </Card>
             );
