@@ -28,6 +28,10 @@ const baseConfig: NextConfig = {
   serverExternalPackages: ['better-sqlite3'],
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production'
+  },
+  experimental: {
+    // 增大请求体大小限制，支持大文件上传（默认 10MB 不够视频素材）
+    proxyClientMaxBodySize: '200mb'
   }
 };
 
