@@ -8,6 +8,7 @@ export const workspacePermissions = [
   'assets:manage',
   'topics:manage',
   'scripts:manage',
+  'voices:manage',
   'video:generate',
   'projects:manage',
   'review:approve',

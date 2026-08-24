@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, uniqueIndex, index } from 'drizzle-orm/sqlite-core';
 
 /**
  * 角色：企业本地部署，一套给企业一家。
@@ -300,3 +300,62 @@ export type ProviderProfile = typeof providerProfiles.$inferSelect;
 export type NewProviderProfile = typeof providerProfiles.$inferInsert;
 export type ProviderSetting = typeof providerSettings.$inferSelect;
 export type NewProviderSetting = typeof providerSettings.$inferInsert;
+
+/**
+ * 知衡语音 —— 完整音色库（voice_catalog）
+ * 本地缓存的「真实音色目录」，数据来源于豆包语音合成大模型 2.0（seed-tts-2.0）的官方音色列表。
+ * voice_type 即 Volcengine 资源侧音色 ID，直通 V3 WebSocket 合成，绝不做假数据。
+ *
+ * - voiceKind=preset：平台预置音色（来自 seed-tts-2.0 官方目录）
+ * - voiceKind=cloned：企业声音复刻音色（预留，providerVoiceId 为复刻资源 ID）
+ * - voiceKind=enterprise：企业专属/定制音色（预留）
+ *
+ * enabledForProduction 由管理员在「知衡语音」页统一筛选，视频生产下拉框只返回 enabledForProduction=true。
+ */
+export const voiceKinds = ['preset', 'cloned', 'enterprise'] as const;
+export type VoiceKind = (typeof voiceKinds)[number];
+
+export const voiceCatalog = sqliteTable(
+  'voice_catalog',
+  {
+    /** Volcengine 资源侧音色 ID（voice_type），直通合成；克隆/企业音色则为各自 provider 的 ID */
+    voiceType: text('voice_type').primaryKey(),
+    /** 展示名称（中文） */
+    displayName: text('display_name').notNull(),
+    /** 性别：男 / 女 / 系统 */
+    gender: text('gender'),
+    /** 语种：zh-cn / en 等 */
+    language: text('language'),
+    /** 方言列表，如 粤语/上海/四川... */
+    dialects: text('dialects', { mode: 'json' }).$type<string[]>().notNull().default([]),
+    /** 主使用场景：通用场景 / 视频配音 / 角色扮演 / 客服场景 / 有声阅读 ... */
+    scene: text('scene'),
+    /** 标签，如 抖音同款/豆包同款/剪映同款/指令遵循 */
+    tags: text('tags', { mode: 'json' }).$type<string[]>().notNull().default([]),
+    /** 一句话描述 */
+    description: text('description'),
+    /** Volcengine 资源 ID，默认 seed-tts-2.0 */
+    resourceId: text('resource_id').notNull().default('seed-tts-2.0'),
+    /** 音色来源类型：preset / cloned / enterprise */
+    voiceKind: text('voice_kind', { enum: voiceKinds }).notNull().default('preset'),
+    /** 音色所属 provider（预留多 provider 支持），默认 doubao */
+    provider: text('provider').notNull().default('doubao'),
+    /** 官方试听地址（可选，缺省时由本系统实时合成试听） */
+    previewUrl: text('preview_url'),
+    /** 业务可用：管理员在「知衡语音」页筛选；视频生产下拉框只返回 true */
+    enabledForProduction: integer('enabled_for_production', { mode: 'boolean' })
+      .notNull()
+      .default(false),
+    /** 排序权重，越小越靠前 */
+    sortOrder: integer('sort_order').notNull().default(0),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull()
+  },
+  (table) => ({
+    voiceCatalogEnabledIdx: index('voice_catalog_enabled_idx').on(table.enabledForProduction),
+    voiceCatalogResourceIdx: index('voice_catalog_resource_idx').on(table.resourceId)
+  })
+);
+
+export type VoiceCatalogRow = typeof voiceCatalog.$inferSelect;
+export type NewVoiceCatalogRow = typeof voiceCatalog.$inferInsert;

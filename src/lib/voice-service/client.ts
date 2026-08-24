@@ -1,3 +1,12 @@
+export type VoiceServiceVoice = {
+  id: string;
+  name: string;
+  gender?: string;
+  language?: string;
+  description?: string;
+  previewUrl?: string;
+};
+
 type VoiceServiceRequest = {
   text: string;
   voiceId: string;
@@ -40,4 +49,13 @@ export async function generateVoiceAudio(input: VoiceServiceRequest) {
   }
 
   return (await response.json()) as VoiceServiceResponse;
+}
+
+export async function fetchVoices(): Promise<VoiceServiceVoice[]> {
+  const response = await fetch(`${getVoiceServiceUrl()}/v1/voices`);
+  if (!response.ok) {
+    throw new Error(`Voice Service voices failed: HTTP ${response.status}`);
+  }
+  const data = (await response.json()) as { voices?: VoiceServiceVoice[] };
+  return data.voices ?? [];
 }

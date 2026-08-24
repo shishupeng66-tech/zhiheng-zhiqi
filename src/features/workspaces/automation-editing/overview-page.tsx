@@ -10,7 +10,6 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Icons } from '@/components/icons';
-import { automationVoiceOptions } from './voice-options';
 import { useCurrentUser } from '@/components/auth/user-provider';
 import { toast } from 'sonner';
 
@@ -334,6 +333,39 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
   const [scriptSettingsOpen, setScriptSettingsOpen] = React.useState(false);
   const previewCacheRef = React.useRef(new Map<string, string>());
   const user = useCurrentUser();
+
+  // 业务可用音色：挂载后从「知衡语音」目录拉取（仅 enabledForProduction=true 的音色）。
+  type CatalogVoice = {
+    voiceType: string;
+    displayName: string;
+    gender?: string;
+    language?: string;
+  };
+
+  const [enabledVoices, setEnabledVoices] = React.useState<CatalogVoice[]>([]);
+  const voiceSelectOptions = [
+    { value: 'auto', label: 'AI 自动选择音色' },
+    ...enabledVoices.map((voice) => ({ value: voice.voiceType, label: voice.displayName }))
+  ];
+
+  React.useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/workspaces/${workspaceSlug}/voices?enabledOnly=true`);
+        if (!res.ok) return;
+        const payload = (await res.json()) as { voices?: CatalogVoice[] };
+        if (active && Array.isArray(payload.voices)) {
+          setEnabledVoices(payload.voices);
+        }
+      } catch {
+        // 接口异常时下拉框保留「AI 自动选择音色」，页面不崩溃。
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [workspaceSlug]);
 
   React.useEffect(() => {
     return () => {
@@ -900,7 +932,7 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
               <SelectField
                 label='配音音色'
                 value={form.voiceName}
-                options={automationVoiceOptions}
+                options={voiceSelectOptions}
                 onChange={(value) => update('voiceName', value)}
               />
               <div className='grid grid-cols-2 gap-2'>

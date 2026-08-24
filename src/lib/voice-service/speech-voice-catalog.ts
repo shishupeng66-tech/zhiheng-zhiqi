@@ -125,7 +125,18 @@ export const speechVoiceCatalog: SpeechVoiceCatalogItem[] = [
 
 export function resolveSpeechVoiceId(productVoiceId: string) {
   const defaultVoice = process.env.DOUBAO_SPEECH_DEFAULT_VOICE?.trim();
-  if (productVoiceId === 'auto' && defaultVoice) return defaultVoice;
+  const fallback = defaultVoice || speechVoiceCatalog[0]?.providerVoiceId;
+
+  // AI 自动选择：返回默认音色（如已配置），否则首个推荐音色。
+  if (!productVoiceId || productVoiceId === 'auto') {
+    return fallback;
+  }
+
+  // 直接是 provider voice_type（seed-tts-2.0 的真实音色 ID），直通合成。
+  // 视频生产下拉框、音色库均使用 voice_type 作为产品侧 id。
+  if (/^(zh_|en_|ICL_)/.test(productVoiceId)) return productVoiceId;
+
+  // 兼容旧的产品侧 id（如 voice-guanggao），将其映射到 provider voice_type。
   const item = speechVoiceCatalog.find((voice) => voice.id === productVoiceId);
-  return item?.providerVoiceId || defaultVoice || speechVoiceCatalog[0]?.providerVoiceId;
+  return item?.providerVoiceId || fallback;
 }

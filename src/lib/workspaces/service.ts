@@ -61,6 +61,7 @@ const enterpriseAdminPermissions = [
   'assets:manage',
   'topics:manage',
   'scripts:manage',
+  'voices:manage',
   'video:generate',
   'projects:manage',
   'review:approve',
