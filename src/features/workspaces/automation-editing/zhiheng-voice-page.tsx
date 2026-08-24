@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Icons } from '@/components/icons';
 import { speechVoiceCatalog } from '@/lib/voice-service/speech-voice-catalog';
+import { emitVoiceCatalogChanged } from '@/lib/voice-catalog-events';
 import { toast } from 'sonner';
 
 const RECOMMENDED = new Set(speechVoiceCatalog.map((voice) => voice.providerVoiceId));
@@ -133,6 +134,7 @@ export function ZhihengVoicePage({
         prev.map((voice) => (voice.voiceType === voiceType ? (payload.voice ?? voice) : voice))
       );
       toast.success(next ? '已加入业务可用音色' : '已移出业务可用音色');
+      emitVoiceCatalogChanged();
     } catch {
       toast.error('操作失败，请稍后重试。');
     }
@@ -145,8 +147,11 @@ export function ZhihengVoicePage({
       const res = await fetch(`/api/workspaces/${workspaceSlug}/voices/sync`, { method: 'POST' });
       const payload = (await res.json().catch(() => ({}))) as {
         total?: number;
+        fetched?: number;
+        deduped?: number;
         inserted?: number;
         updated?: number;
+        catalogTotal?: number;
         enabledCount?: number;
         message?: string;
       };
@@ -154,12 +159,15 @@ export function ZhihengVoicePage({
         toast.error(payload.message ?? '同步失败');
         return;
       }
-      toast.success(`同步完成：新增 ${payload.inserted ?? 0}，更新 ${payload.updated ?? 0}`);
+      const inserted = payload.inserted ?? 0;
+      const updated = payload.updated ?? 0;
+      const catalogTotal = payload.catalogTotal ?? 0;
+      const enabledCount = payload.enabledCount ?? 0;
+      toast.success(`音色库更新完成：新增 ${inserted}，更新 ${updated}`);
       setSyncResult(
-        `完整目录 ${payload.total ?? 0} 条 · 新增 ${payload.inserted ?? 0} · 更新 ${
-          payload.updated ?? 0
-        } · 已启用业务音色 ${payload.enabledCount ?? 0}`
+        `音色库更新完成：新增 ${inserted} 个，更新 ${updated} 个，当前共 ${catalogTotal} 个音色；业务可用 ${enabledCount} 个 · 同步时间 ${new Date().toLocaleString('zh-CN', { hour12: false })}`
       );
+      emitVoiceCatalogChanged();
       await loadVoices();
     } catch {
       toast.error('同步失败，请稍后重试。');
@@ -174,8 +182,7 @@ export function ZhihengVoicePage({
         <div className='space-y-1'>
           <h2 className='text-xl font-semibold tracking-tight'>知衡语音</h2>
           <p className='max-w-3xl text-sm leading-6 text-muted-foreground'>
-            企业可用配音音色库。数据来自豆包语音合成大模型
-            2.0（seed-tts-2.0）官方完整音色目录，本地缓存、实时试听；管理员可筛选「业务可用音色」，仅这些音色会出现在视频生产下拉框。
+            统一管理企业可用的智能配音音色。支持丰富的音色筛选、实时试听和业务精选，让视频生产只使用经过企业确认的声音。
           </p>
         </div>
         <div className='flex flex-col items-end gap-2'>
@@ -190,7 +197,7 @@ export function ZhihengVoicePage({
               ) : (
                 <Icons.sparkles className='size-4' />
               )}
-              {syncing ? '同步中...' : '同步完整音色库'}
+              {syncing ? '同步中...' : '同步音色目录'}
             </Button>
           ) : null}
         </div>
@@ -247,7 +254,7 @@ export function ZhihengVoicePage({
           <div className='text-sm font-medium'>音色库为空</div>
           <p className='max-w-sm text-xs text-muted-foreground'>
             {canManage
-              ? '点击右上角「同步完整音色库」从官方目录拉取全部 194 个真实音色。'
+              ? '点击右上角「同步音色目录」拉取完整音色库。'
               : '尚未同步音色目录，请联系超级管理员或工作空间所有者进行同步。'}
           </p>
         </div>

@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Icons } from '@/components/icons';
 import { useCurrentUser } from '@/components/auth/user-provider';
+import { subscribeVoiceCatalogChanged } from '@/lib/voice-catalog-events';
 import { toast } from 'sonner';
 
 type UploadedAsset = {
@@ -334,7 +335,9 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
   const previewCacheRef = React.useRef(new Map<string, string>());
   const user = useCurrentUser();
 
-  // 业务可用音色：挂载后从「知衡语音」目录拉取（仅 enabledForProduction=true 的音色）。
+  // 业务可用音色：从「知衡语音」目录拉取（仅 enabledForProduction=true 的音色）。
+  // 挂载时拉取一次；并订阅「业务音色目录变更」事件，确保从知衡语音页切回时立即刷新，
+  // 无需整页刷新浏览器。
   type CatalogVoice = {
     voiceType: string;
     displayName: string;
@@ -348,24 +351,39 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
     ...enabledVoices.map((voice) => ({ value: voice.voiceType, label: voice.displayName }))
   ];
 
-  React.useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const res = await fetch(`/api/workspaces/${workspaceSlug}/voices?enabledOnly=true`);
-        if (!res.ok) return;
-        const payload = (await res.json()) as { voices?: CatalogVoice[] };
-        if (active && Array.isArray(payload.voices)) {
-          setEnabledVoices(payload.voices);
-        }
-      } catch {
-        // 接口异常时下拉框保留「AI 自动选择音色」，页面不崩溃。
+  const loadEnabledVoices = React.useCallback(async () => {
+    try {
+      const res = await fetch(`/api/workspaces/${workspaceSlug}/voices?enabledOnly=true`);
+      if (!res.ok) return;
+      const payload = (await res.json()) as { voices?: CatalogVoice[] };
+      if (Array.isArray(payload.voices)) {
+        setEnabledVoices(payload.voices);
       }
-    })();
-    return () => {
-      active = false;
-    };
+    } catch {
+      // 接口异常时下拉框保留「AI 自动选择音色」，页面不崩溃。
+    }
   }, [workspaceSlug]);
+
+  React.useEffect(() => {
+    void loadEnabledVoices();
+  }, [loadEnabledVoices]);
+
+  // 知衡语音页对业务音色做增删后，立即重新拉取最新列表。
+  React.useEffect(
+    () => subscribeVoiceCatalogChanged(() => void loadEnabledVoices()),
+    [loadEnabledVoices]
+  );
+
+  // AI 自动选择的候选只能来自业务可用音色：若当前选中的具体音色已不在业务集合中，
+  // 回退到「AI 自动选择音色」，避免选到被管理员移出的音色。
+  React.useEffect(() => {
+    if (form.voiceName === 'auto') return;
+    if (!/^(zh_|en_|ICL_)/.test(form.voiceName)) return; // 旧产品 id 交给 resolver 兼容，不动
+    const stillEnabled = enabledVoices.some((voice) => voice.voiceType === form.voiceName);
+    if (!stillEnabled) {
+      setForm((current) => ({ ...current, voiceName: 'auto' }));
+    }
+  }, [enabledVoices, form.voiceName]);
 
   React.useEffect(() => {
     return () => {

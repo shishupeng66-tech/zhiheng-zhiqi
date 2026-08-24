@@ -71,7 +71,7 @@ export const enterpriseMediaModules: WorkspaceModuleDefinition[] = [
     key: 'scripts',
     label: '知衡语音',
     path: 'voices',
-    description: '管理企业可用配音音色库：同步完整音色目录、筛选业务可用音色、实时试听。',
+    description: '管理企业可用配音音色库：同步音色目录、筛选业务可用音色、实时试听。',
     requiredPermission: 'scripts:manage'
   },
   {
