@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Icons } from '@/components/icons';
 import { useCurrentUser } from '@/components/auth/user-provider';
+import { useVoiceCapability } from '@/hooks/use-voice-capability';
 import { subscribeVoiceCatalogChanged } from '@/lib/voice-catalog-events';
 import { toast } from 'sonner';
 
@@ -334,6 +335,7 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
   const [scriptSettingsOpen, setScriptSettingsOpen] = React.useState(false);
   const previewCacheRef = React.useRef(new Map<string, string>());
   const user = useCurrentUser();
+  const voiceCapability = useVoiceCapability();
 
   // 业务可用音色：从「知衡语音」目录拉取（仅 enabledForProduction=true 的音色）。
   // 挂载时拉取一次；并订阅「业务音色目录变更」事件，确保从知衡语音页切回时立即刷新，
@@ -667,9 +669,9 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
           任务管理
         </ToolButton>
         {user?.role === 'super_admin' ? (
-          <ToolButton onClick={() => (window.location.href = '/dashboard/system/settings')}>
+          <ToolButton onClick={() => (window.location.href = '/dashboard/system/providers')}>
             <Icons.settings className='size-4' />
-            模型与接口设置
+            模型与接口
           </ToolButton>
         ) : null}
         <ToolButton
@@ -970,19 +972,72 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
               <div className='grid grid-cols-2 gap-2'>
                 <ToolButton
                   onClick={() => void playVoicePreview('voice')}
-                  disabled={previewing !== null}
+                  disabled={
+                    previewing !== null ||
+                    voiceCapability.status === 'recovering' ||
+                    voiceCapability.status === 'checking' ||
+                    voiceCapability.status === 'offline' ||
+                    voiceCapability.status === 'error'
+                  }
                 >
-                  <Icons.music className='size-4' />
-                  {previewing === 'voice' ? '生成试听中...' : '试听音色'}
+                  {voiceCapability.status === 'recovering' ||
+                  voiceCapability.status === 'checking' ? (
+                    <Icons.spinner className='size-4 animate-spin' />
+                  ) : (
+                    <Icons.music className='size-4' />
+                  )}
+                  {voiceCapability.status === 'recovering'
+                    ? '语音能力正在恢复'
+                    : voiceCapability.status === 'checking'
+                      ? '检测中'
+                      : voiceCapability.status === 'offline' || voiceCapability.status === 'error'
+                        ? '暂不可用'
+                        : previewing === 'voice'
+                          ? '生成试听中...'
+                          : '试听音色'}
                 </ToolButton>
                 <ToolButton
                   onClick={() => void playVoicePreview('full')}
-                  disabled={previewing !== null}
+                  disabled={
+                    previewing !== null ||
+                    voiceCapability.status === 'recovering' ||
+                    voiceCapability.status === 'checking' ||
+                    voiceCapability.status === 'offline' ||
+                    voiceCapability.status === 'error'
+                  }
                 >
-                  <Icons.video className='size-4' />
-                  {previewing === 'full' ? '生成试听中...' : '完整试听'}
+                  {voiceCapability.status === 'recovering' ||
+                  voiceCapability.status === 'checking' ? (
+                    <Icons.spinner className='size-4 animate-spin' />
+                  ) : (
+                    <Icons.video className='size-4' />
+                  )}
+                  {voiceCapability.status === 'recovering'
+                    ? '正在恢复'
+                    : voiceCapability.status === 'checking'
+                      ? '检测中'
+                      : voiceCapability.status === 'offline' || voiceCapability.status === 'error'
+                        ? '暂不可用'
+                        : previewing === 'full'
+                          ? '生成试听中...'
+                          : '完整试听'}
                 </ToolButton>
               </div>
+              {voiceCapability.status === 'error' ? (
+                <div className='flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-2 py-1.5'>
+                  <p className='flex-1 text-[11px] text-destructive'>语音能力暂不可用</p>
+                  <Button
+                    type='button'
+                    variant='outline'
+                    size='sm'
+                    className='h-6 text-[11px]'
+                    onClick={() => void voiceCapability.recover()}
+                  >
+                    <Icons.refresh className='size-3' />
+                    重新恢复
+                  </Button>
+                </div>
+              ) : null}
               {previewAudioUrl ? (
                 <audio className='h-8 w-full' src={previewAudioUrl} controls />
               ) : null}
@@ -1192,7 +1247,7 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
 
           <Button
             variant='outline'
-            className='mt-auto w-full'
+            className='w-full'
             size='sm'
             onClick={() => setForm(initialForm)}
           >

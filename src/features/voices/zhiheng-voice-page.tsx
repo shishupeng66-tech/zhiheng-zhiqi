@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Icons } from '@/components/icons';
 import { speechVoiceCatalog } from '@/lib/voice-service/speech-voice-catalog';
 import { emitVoiceCatalogChanged } from '@/lib/voice-catalog-events';
+import { useVoiceCapability } from '@/hooks/use-voice-capability';
 import { toast } from 'sonner';
 
 const RECOMMENDED = new Set(speechVoiceCatalog.map((voice) => voice.providerVoiceId));
@@ -41,11 +42,14 @@ export function ZhihengVoicePage({
   const [playingVoice, setPlayingVoice] = React.useState<string | null>(null);
   const [doneVoice, setDoneVoice] = React.useState<string | null>(null);
   const [errorVoice, setErrorVoice] = React.useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = React.useState<string>('试听生成失败，请稍后重试。');
   const [fallbackVoice, setFallbackVoice] = React.useState<string | null>(null);
   const [fallbackSrc, setFallbackSrc] = React.useState('');
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const objectUrlRef = React.useRef<string | null>(null);
   const endHandlerRef = React.useRef<(() => void) | null>(null);
+
+  const voiceCapability = useVoiceCapability();
 
   const loadVoices = React.useCallback(async () => {
     setLoading(true);
@@ -128,6 +132,7 @@ export function ZhihengVoicePage({
     setPlayingVoice(null);
     setDoneVoice(null);
     setErrorVoice(null);
+    setErrorMsg('试听生成失败，请稍后重试。');
     setFallbackVoice(null);
 
     setGeneratingVoice(voiceType);
@@ -136,8 +141,11 @@ export function ZhihengVoicePage({
         `/api/workspaces/${workspaceSlug}/voices/${encodeURIComponent(voiceType)}/preview`
       );
       if (!res.ok) {
+        const payload = (await res.json().catch(() => ({}))) as { message?: string };
+        const msg = payload.message || '试听生成失败，请稍后重试。';
+        setErrorMsg(msg);
         setErrorVoice(voiceType);
-        toast.error('试听生成失败，请稍后重试。');
+        toast.error(msg);
         return;
       }
       const blob = await res.blob();
@@ -359,9 +367,18 @@ export function ZhihengVoicePage({
                       size='sm'
                       className='h-8 flex-1 text-xs'
                       onClick={() => void preview(voice.voiceType)}
-                      disabled={generatingVoice === voice.voiceType}
+                      disabled={
+                        generatingVoice === voice.voiceType ||
+                        voiceCapability.status === 'recovering' ||
+                        voiceCapability.status === 'checking' ||
+                        voiceCapability.status === 'offline' ||
+                        voiceCapability.status === 'error'
+                      }
                     >
-                      {generatingVoice === voice.voiceType ? (
+                      {voiceCapability.status === 'recovering' ||
+                      voiceCapability.status === 'checking' ? (
+                        <Icons.spinner className='size-3.5 animate-spin' />
+                      ) : generatingVoice === voice.voiceType ? (
                         <Icons.spinner className='size-3.5 animate-spin' />
                       ) : playingVoice === voice.voiceType ? (
                         <Icons.music className='size-3.5 animate-pulse' />
@@ -370,13 +387,20 @@ export function ZhihengVoicePage({
                       ) : (
                         <Icons.music className='size-3.5' />
                       )}
-                      {generatingVoice === voice.voiceType
-                        ? '生成中'
-                        : playingVoice === voice.voiceType
-                          ? '播放中'
-                          : doneVoice === voice.voiceType
-                            ? '重新试听'
-                            : '试听'}
+                      {voiceCapability.status === 'recovering'
+                        ? '语音能力正在恢复'
+                        : voiceCapability.status === 'checking'
+                          ? '检测中'
+                          : voiceCapability.status === 'offline' ||
+                              voiceCapability.status === 'error'
+                            ? '暂不可用'
+                            : generatingVoice === voice.voiceType
+                              ? '生成中'
+                              : playingVoice === voice.voiceType
+                                ? '播放中'
+                                : doneVoice === voice.voiceType
+                                  ? '重新试听'
+                                  : '试听'}
                     </Button>
                     {canManage ? (
                       voice.enabledForProduction ? (
@@ -411,8 +435,24 @@ export function ZhihengVoicePage({
                     />
                   ) : null}
 
+                  {voiceCapability.status === 'error' ? (
+                    <div className='flex items-center gap-2'>
+                      <p className='flex-1 text-[11px] text-destructive'>语音能力暂不可用</p>
+                      <Button
+                        type='button'
+                        variant='outline'
+                        size='sm'
+                        className='h-6 text-[11px]'
+                        onClick={() => void voiceCapability.recover()}
+                      >
+                        <Icons.refresh className='size-3' />
+                        重新恢复
+                      </Button>
+                    </div>
+                  ) : null}
+
                   {errorVoice === voice.voiceType ? (
-                    <p className='text-[11px] text-destructive'>试听生成失败，请稍后重试。</p>
+                    <p className='text-[11px] text-destructive'>{errorMsg}</p>
                   ) : null}
                 </CardContent>
               </Card>

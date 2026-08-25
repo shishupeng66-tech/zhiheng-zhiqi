@@ -57,8 +57,20 @@ export async function POST(request: NextRequest, { params }: Ctx) {
     });
   } catch (error) {
     console.error('[voice-preview] failed', error);
+    const cause = error instanceof Error ? error.message : String(error);
+    const isConnRefused =
+      cause.includes('ECONNREFUSED') ||
+      cause.includes('fetch failed') ||
+      cause.includes('ENOTFOUND');
     return NextResponse.json(
-      { error: 'voice_preview_failed', message: '试听生成失败，请稍后重试。' },
+      {
+        error: 'voice_preview_failed',
+        message: isConnRefused
+          ? '语音服务未启动，请联系管理员启动 Voice Service（端口 5015）。'
+          : cause.includes('HTTP ')
+            ? cause.slice(0, 160)
+            : '试听生成失败，请稍后重试。'
+      },
       { status: 500 }
     );
   }

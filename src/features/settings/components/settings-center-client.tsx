@@ -299,7 +299,7 @@ export default function SettingsCenterClient() {
   return (
     <div className='space-y-4 p-4 md:p-6'>
       <div className='space-y-1'>
-        <h1 className='text-xl font-semibold'>模型与接口设置</h1>
+        <h1 className='text-xl font-semibold'>模型与接口中心</h1>
         <p className='text-sm text-muted-foreground'>
           统一管理知衡智企所有外部能力（大模型 / 语音 / 素材 /
           视频引擎）的配置入口。仅超级管理员可访问； secret 类密钥加密存储，列表中始终脱敏展示。

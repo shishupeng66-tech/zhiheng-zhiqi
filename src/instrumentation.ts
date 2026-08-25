@@ -29,6 +29,19 @@ export async function register() {
       Sentry.init(sentryOptions);
     }
   }
+
+  // Service Manager：Next.js 启动后自动检查并恢复 Voice Service
+  // 异步不阻塞 HTTP 服务启动；页面层 /api/services/voice/health 还会兜底一次
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    import('@/lib/service-manager/services')
+      .then(() => import('@/lib/service-manager/auto-start'))
+      .then(({ runAutoStartCheck }) => {
+        runAutoStartCheck('voice');
+      })
+      .catch(() => {
+        /* 静默失败，页面层兜底 */
+      });
+  }
 }
 
 export const onRequestError = Sentry.captureRequestError;

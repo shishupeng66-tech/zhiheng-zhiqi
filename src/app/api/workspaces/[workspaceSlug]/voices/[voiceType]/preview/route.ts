@@ -39,8 +39,15 @@ export async function GET(request: NextRequest, { params }: Ctx) {
   try {
     const upstream = await fetch(url);
     if (!upstream.ok) {
+      const detail = await upstream.text().catch(() => '');
+      console.error(
+        `[voices:preview] Voice Service 返回错误: HTTP ${upstream.status} ${detail ? detail.slice(0, 300) : ''}`
+      );
       return NextResponse.json(
-        { error: 'preview_failed', message: '试听生成失败，请稍后重试。' },
+        {
+          error: 'preview_failed',
+          message: `试听生成失败（语音服务返回 ${upstream.status}），请稍后重试。`
+        },
         { status: 502 }
       );
     }
@@ -54,9 +61,16 @@ export async function GET(request: NextRequest, { params }: Ctx) {
       }
     });
   } catch (error) {
+    const cause = error instanceof Error ? error.message : String(error);
+    const isConnRefused = cause.includes('ECONNREFUSED') || cause.includes('fetch failed');
     console.error('[voices:preview] 代理试听失败', error);
     return NextResponse.json(
-      { error: 'preview_failed', message: '无法连接语音服务。' },
+      {
+        error: 'preview_failed',
+        message: isConnRefused
+          ? '语音服务未启动，请联系管理员启动 Voice Service（端口 5015）。'
+          : `无法连接语音服务：${cause.slice(0, 120)}`
+      },
       { status: 502 }
     );
   }

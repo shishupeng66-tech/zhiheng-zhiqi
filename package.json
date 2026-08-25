@@ -6,6 +6,7 @@
   "author": "知衡智企",
   "scripts": {
     "dev": "next dev",
+    "dev:all": "powershell -ExecutionPolicy Bypass -File scripts\\start-dev.ps1",
     "build": "next build",
     "start": "next start",
     "cleanup": "node scripts/cleanup.js",

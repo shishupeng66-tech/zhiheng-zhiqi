@@ -9,6 +9,12 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from .providers import get_provider
+from .providers.clone import (
+    CloneError as CloneProviderError,
+    CloneStatus,
+    DoubaoCloneProvider,
+    SpeakerIdInvalid as CloneSpeakerIdInvalid,
+)
 from .utils import audio_duration_seconds, ensure_output_dir
 from .volcengine_seed_tts_voices import all_voices, RESOURCE_ID
 
@@ -278,4 +284,153 @@ def tts_preview(
         str(cache_path),
         media_type="audio/mpeg",
         filename=f"{voice_type}.mp3",
+    )
+
+
+# ============================================================================
+# Phase 3-A：声音复刻（最小闭环）
+#
+# 调用链路：
+#   浏览器 -> Next.js /api/.../voices/clone (POST multipart)
+#          -> 落盘 storage/voice-service/clone-samples/<ownerId>/<uuid>.<ext>
+#          -> 调 /v1/voice/clone/train，传 sample_path + 业务字段
+#          -> 调 豆包 voice_clone HTTP，写 outputs/clone-demos/<sid>.mp3
+#          -> 返回结果，Next.js 落库 voice_clones 表
+#
+# Phase 3-B 之前，本模块**不**与 voice_catalog 主表打通、不触发业务可用。
+# ============================================================================
+
+# 复刻素材 demo 试听 mp3 路径（与现有 previews/ 并列，不冲突）
+# 固定指向 /d/知衡智企（Next.js 端的 storage/voice-service/outputs/ 同步使用）
+CLONE_DEMO_DIR = Path("D:/知衡智企/storage/voice-service/outputs/clone-demos")
+# 复刻素材样本路径 — Next.js 端以 <ownerId> 子目录隔离
+CLONE_SAMPLE_BASE_DIR = Path(
+    "D:/知衡智企/storage/voice-service/outputs/clone-samples"
+)
+
+
+class CloneTrainRequest(BaseModel):
+    owner_id: str = Field(min_length=1, max_length=64)
+    workspace_id: str = Field(min_length=1, max_length=64)
+    display_name: str = Field(min_length=1, max_length=80)
+    language: str = Field(default="cn", max_length=8)
+    text: str = Field(min_length=1, max_length=2000)
+    sample_format: str = Field(min_length=1, max_length=8)
+    sample_path: str = Field(min_length=1, max_length=1024)
+    demo_text: str | None = Field(default=None, max_length=500)
+    enable_audio_denoise: bool = Field(default=False)
+    disable_volume_normalization: bool = Field(default=False)
+
+
+class CloneTrainResponse(BaseModel):
+    custom_speaker_id: str
+    status: str  # 'ready' | 'failed' | 'training'
+    demo_audio_path: str | None
+    provider_status: int
+    retry_count: int
+    error_message: str | None = None
+    raw_response: dict | None = None
+
+
+@app.post("/v1/voice/clone/train", response_model=CloneTrainResponse)
+def voice_clone_train(request: CloneTrainRequest):
+    """调豆包 voice_clone HTTP，生成 custom_speaker_id + demo_audio 落盘。
+
+    安全护栏：
+    - sample_path 必须落在 CLONE_SAMPLE_BASE_DIR 之内（防止任意路径读取）
+    - 文件 size 必须 ≤ 10MB（拷贝到本地常量确认）
+    - custom_speaker_id 由 server 端用 owner_id + display_name 生成，client 不传
+    """
+    sample_path = Path(request.sample_path)
+    # 路径安全：强制在 CLONE_SAMPLE_BASE_DIR 之内
+    try:
+        resolved = sample_path.resolve(strict=False)
+        base = CLONE_SAMPLE_BASE_DIR.resolve(strict=False)
+        resolved.relative_to(base)
+    except (FileNotFoundError, ValueError) as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"sample_path must be under {CLONE_SAMPLE_BASE_DIR} (got {sample_path})"
+            ),
+        ) from exc
+    if not resolved.exists():
+        raise HTTPException(status_code=404, detail=f"sample file not found: {sample_path}")
+    if resolved.stat().st_size <= 0:
+        raise HTTPException(status_code=400, detail="sample file is empty")
+    if resolved.stat().st_size > 10 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="sample file exceeds 10MB cap")
+
+    # 1) 生成 custom_speaker_id
+    custom_speaker_id = DoubaoCloneProvider.make_speaker_id(
+        owner_id=request.owner_id, display_name=request.display_name
+    )
+
+    # 2) 实例化 provider 调豆包
+    try:
+        provider = DoubaoCloneProvider()
+    except CloneProviderError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    CLONE_DEMO_DIR.mkdir(parents=True, exist_ok=True)
+    demo_text = request.demo_text.strip() if request.demo_text else None
+
+    try:
+        result = provider.train(
+            sample_path=resolved,
+            sample_format=request.sample_format,
+            custom_speaker_id=custom_speaker_id,
+            display_name=request.display_name,
+            text=request.text,
+            language=request.language,
+            demo_audio_output_dir=CLONE_DEMO_DIR,
+            demo_text=demo_text or "你好，这是我的声音试听。",
+            enable_audio_denoise=request.enable_audio_denoise,
+            disable_volume_normalization=request.disable_volume_normalization,
+        )
+    except CloneSpeakerIdInvalid as exc:
+        # 理论上我们自己 make_speaker_id 不会触发；保留防御性
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except CloneProviderError as exc:
+        raise HTTPException(status_code=502, detail=f"clone failed: {exc}") from exc
+
+    return CloneTrainResponse(
+        custom_speaker_id=result.custom_speaker_id,
+        status=result.status.value,
+        demo_audio_path=result.demo_audio_path,
+        provider_status=result.provider_status,
+        retry_count=result.retry_count,
+        error_message=result.error_message,
+        raw_response=result.raw_response if result.error_message else None,
+    )
+
+
+@app.get("/v1/voice/clone/{sid}")
+def voice_clone_get(sid: str):
+    """Phase 3-A 占位：单个音色复刻记录查询。
+
+    Phase 3-B 之前不实现持久化查询（与 DB 集成属于后续）。
+    当前返回 501 让前端知道该路径未实现。
+    """
+    raise HTTPException(
+        status_code=501,
+        detail=(
+            f"GET /v1/voice/clone/{sid} not implemented in Phase 3-A. "
+            "Query voice_clones table via Next.js API instead."
+        ),
+    )
+
+
+@app.delete("/v1/voice/clone/{sid}")
+def voice_clone_delete(sid: str):
+    """Phase 3-A 占位：删除复刻记录。
+
+    Phase 3-B 之前不实现删除（避免误删 voiceId 已 used 的资产）。
+    """
+    raise HTTPException(
+        status_code=501,
+        detail=(
+            f"DELETE /v1/voice/clone/{sid} not implemented in Phase 3-A. "
+            "Clone deletion will be added in Phase 3-B with usage check."
+        ),
     )

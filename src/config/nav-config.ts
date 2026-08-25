@@ -103,12 +103,19 @@ export const navGroups: NavGroup[] = [
     ]
   },
   {
-    label: 'AI 能力',
+    label: '知衡语音',
     items: [
       {
-        title: '知衡语音',
+        title: '音色库',
         url: '/dashboard/voices',
         icon: 'music',
+        isActive: false,
+        items: []
+      },
+      {
+        title: '声音复刻',
+        url: '/dashboard/voices/clone',
+        icon: 'sparkles',
         isActive: false,
         items: []
       }
@@ -124,12 +131,15 @@ export const navGroups: NavGroup[] = [
         isActive: false,
         items: [],
         access: { role: 'super_admin' }
-      }
-    ]
-  },
-  {
-    label: '',
-    items: [
+      },
+      {
+        title: '模型与接口',
+        url: '/dashboard/system/providers',
+        icon: 'sparkles',
+        isActive: false,
+        items: [],
+        access: { role: 'super_admin' }
+      },
       {
         title: '账户',
         url: '#',

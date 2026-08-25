@@ -359,3 +359,53 @@ export const voiceCatalog = sqliteTable(
 
 export type VoiceCatalogRow = typeof voiceCatalog.$inferSelect;
 export type NewVoiceCatalogRow = typeof voiceCatalog.$inferInsert;
+
+/**
+ * 知衡语音 —— 声音复刻记录（voice_clones）
+ * Phase 3-A 最小闭环专用：仅记录"训练一次 → 拿回 demo_audio"的事实，
+ * 暂不与 voice_catalog 主表打通，不触发业务可用。
+ *
+ * 最小字段原则：够 debug + 够回放 + 够归属，13 列：
+ *   1. 归属：ownerId / workspaceId
+ *   2. 复刻身份：customSpeakerId（豆包规范命名，server 生成）
+ *   3. 展示与状态：displayName / language / status / errorMessage
+ *   4. 训练参考文本：referenceText（用户调整#1，用于 WER 错误排查）
+ *   5. 素材与试听文件路径：samplePath / sampleFormat / sampleSizeBytes
+ *   6. 试听材料路径：demoAudioPath（豆包 demo_audio 落盘后填）
+ *   7. 时间戳：createdAt / updatedAt
+ */
+export const voiceCloneStatuses = ['draft', 'training', 'ready', 'failed', 'archived'] as const;
+export type VoiceCloneStatus = (typeof voiceCloneStatuses)[number];
+
+export const voiceClones = sqliteTable(
+  'voice_clones',
+  {
+    id: text('id').primaryKey(),
+    ownerId: text('owner_id').notNull(),
+    workspaceId: text('workspace_id').notNull(),
+    customSpeakerId: text('custom_speaker_id').notNull().unique(),
+    displayName: text('display_name').notNull(),
+    language: text('language').notNull().default('cn'),
+    status: text('status', { enum: voiceCloneStatuses }).notNull().default('draft'),
+    errorMessage: text('error_message'),
+    /** 训练时上传音频对应的参考文本（豆包会用作 WER 检查），便于错误排查 */
+    referenceText: text('reference_text'),
+    /** 用户上传的训练素材本地路径（storage/voice-service/clone-samples/<ownerId>/<uuid>.<ext>） */
+    samplePath: text('sample_path').notNull(),
+    sampleFormat: text('sample_format').notNull(),
+    sampleSizeBytes: integer('sample_size_bytes').notNull(),
+    /** 豆包 demo_audio 落盘路径（outputs/clone-demos/<sid>.mp3） */
+    demoAudioPath: text('demo_audio_path'),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull()
+  },
+  (table) => ({
+    voiceClonesOwnerIdx: index('voice_clones_owner_idx').on(table.ownerId),
+    voiceClonesWorkspaceIdx: index('voice_clones_workspace_idx').on(table.workspaceId),
+    voiceClonesSpeakerIdx: index('voice_clones_speaker_idx').on(table.customSpeakerId),
+    voiceClonesStatusIdx: index('voice_clones_status_idx').on(table.status)
+  })
+);
+
+export type VoiceClone = typeof voiceClones.$inferSelect;
+export type NewVoiceClone = typeof voiceClones.$inferInsert;
