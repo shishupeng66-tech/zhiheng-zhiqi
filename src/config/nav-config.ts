@@ -103,6 +103,18 @@ export const navGroups: NavGroup[] = [
     ]
   },
   {
+    label: 'AI 能力',
+    items: [
+      {
+        title: '知衡语音',
+        url: '/dashboard/voices',
+        icon: 'music',
+        isActive: false,
+        items: []
+      }
+    ]
+  },
+  {
     label: '系统管理',
     items: [
       {
