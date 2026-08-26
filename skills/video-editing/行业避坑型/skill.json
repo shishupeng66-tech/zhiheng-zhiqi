@@ -1,0 +1,57 @@
+{
+  "id": "industry-avoidance",
+  "name": "行业避坑型",
+  "description": "用清单式干货帮客户避开选厂/合作中的常见坑,降低沟通成本。",
+  "category": "avoidance",
+  "status": "draft",
+  "version": "0.1.0",
+  "content": {
+    "contentType": "避坑 / 行业建议",
+    "targetAudience": "想代工的创业/餐饮老板",
+    "targetPlatform": "抖音 / 视频号",
+    "durationRange": "30-45s"
+  },
+  "script": {
+    "systemPrompt": null,
+    "scriptPrompt": null,
+    "hookRules": [],
+    "structureRules": [],
+    "toneRules": [],
+    "ctaRules": []
+  },
+  "assets": {
+    "assetSelectionRules": [],
+    "preferredCategories": [],
+    "forbiddenCategories": [],
+    "reuseRules": [],
+    "orientationRules": []
+  },
+  "shots": {
+    "shotRules": [],
+    "clipDurationRules": [],
+    "pacingRules": [],
+    "transitionRules": []
+  },
+  "voice": {
+    "voiceStyle": null,
+    "voiceRate": null,
+    "emotionRules": []
+  },
+  "subtitle": {
+    "subtitleStyle": null,
+    "subtitlePosition": null,
+    "subtitleSize": null,
+    "highlightRules": []
+  },
+  "bgm": {
+    "bgmStyle": null,
+    "bgmVolume": null,
+    "bgmRules": []
+  },
+  "review": {
+    "referenceVideoIds": [],
+    "qualityRules": [],
+    "failureRules": [],
+    "acceptanceRules": []
+  }
+}

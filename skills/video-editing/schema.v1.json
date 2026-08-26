@@ -1,0 +1,115 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "知衡智企 · 视频剪辑 Skill Schema V1",
+  "description": "每个视频剪辑 Skill 的结构化定义。skill.json 遵循此 Schema,由 Agent Orchestrator 加载。",
+  "type": "object",
+  "required": ["id", "name", "category", "status", "version", "content", "script"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "全局唯一 Skill id(英文 slug,如 knowledge-science)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Skill 展示名称(中文,如 知识科普型)"
+    },
+    "description": {
+      "type": "string",
+      "description": "一句话说明该 Skill 适用场景"
+    },
+    "category": {
+      "type": "string",
+      "description": "内容形态分类:knowledge / ip / avoidance / factory / case 等"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "testing", "published"],
+      "description": "草稿 / 测试中 / 已发布"
+    },
+    "version": {
+      "type": "string",
+      "description": "Skill 版本号(语义化,如 0.1.0)"
+    },
+    "content": {
+      "type": "object",
+      "description": "内容定位",
+      "properties": {
+        "contentType": { "type": "string", "description": "内容类型,如 知识科普/老板观点/避坑建议/工厂实力/产品案例" },
+        "targetAudience": { "type": "string", "description": "目标人群" },
+        "targetPlatform": { "type": "string", "description": "目标平台,如 抖音/视频号" },
+        "durationRange": { "type": "string", "description": "目标时长区间,如 30-45s" }
+      }
+    },
+    "script": {
+      "type": "object",
+      "description": "脚本规则",
+      "properties": {
+        "systemPrompt": { "type": "string", "description": "Agent 系统提示(角色/任务) — V1 可留空占位" },
+        "scriptPrompt": { "type": "string", "description": "脚本生成 Prompt 模板" },
+        "hookRules": { "type": "array", "items": { "type": "string" }, "description": "开头 3 秒抓人规则" },
+        "structureRules": { "type": "array", "items": { "type": "string" }, "description": "正文结构规则(Hook-展开-结论)" },
+        "toneRules": { "type": "array", "items": { "type": "string" }, "description": "语气/文风规则" },
+        "ctaRules": { "type": "array", "items": { "type": "string" }, "description": "结尾行动号召规则" }
+      }
+    },
+    "assets": {
+      "type": "object",
+      "description": "素材规则",
+      "properties": {
+        "assetSelectionRules": { "type": "array", "items": { "type": "string" }, "description": "素材选择总则(语义匹配/丰富度等)" },
+        "preferredCategories": { "type": "array", "items": { "type": "string" }, "description": "优先素材分类" },
+        "forbiddenCategories": { "type": "array", "items": { "type": "string" }, "description": "禁止素材分类" },
+        "reuseRules": { "type": "array", "items": { "type": "string" }, "description": "复用/去重规则" },
+        "orientationRules": { "type": "array", "items": { "type": "string" }, "description": "横竖屏规则" }
+      }
+    },
+    "shots": {
+      "type": "object",
+      "description": "镜头规则",
+      "properties": {
+        "shotRules": { "type": "array", "items": { "type": "string" }, "description": "镜头编排规则" },
+        "clipDurationRules": { "type": "array", "items": { "type": "string" }, "description": "镜头时长规则" },
+        "pacingRules": { "type": "array", "items": { "type": "string" }, "description": "节奏规则" },
+        "transitionRules": { "type": "array", "items": { "type": "string" }, "description": "转场规则" }
+      }
+    },
+    "voice": {
+      "type": "object",
+      "description": "配音规则",
+      "properties": {
+        "voiceStyle": { "type": "string", "description": "音色风格(如 稳重男声/亲和女声)" },
+        "voiceRate": { "type": "string", "description": "语速(映射 MPT --voice-rate)" },
+        "emotionRules": { "type": "array", "items": { "type": "string" }, "description": "情绪规则" }
+      }
+    },
+    "subtitle": {
+      "type": "object",
+      "description": "字幕规则",
+      "properties": {
+        "subtitleStyle": { "type": "string", "description": "字幕样式" },
+        "subtitlePosition": { "type": "string", "description": "字幕位置(映射 MPT --subtitle-position)" },
+        "subtitleSize": { "type": "string", "description": "字号(映射 MPT --font-size)" },
+        "highlightRules": { "type": "array", "items": { "type": "string" }, "description": "高亮/强调规则" }
+      }
+    },
+    "bgm": {
+      "type": "object",
+      "description": "BGM 规则",
+      "properties": {
+        "bgmStyle": { "type": "string", "description": "BGM 风格" },
+        "bgmVolume": { "type": "string", "description": "BGM 音量(映射 MPT --bgm-volume)" },
+        "bgmRules": { "type": "array", "items": { "type": "string" }, "description": "BGM 具体规则" }
+      }
+    },
+    "review": {
+      "type": "object",
+      "description": "参考与评价",
+      "properties": {
+        "referenceVideoIds": { "type": "array", "items": { "type": "string" }, "description": "参考优秀视频 id" },
+        "qualityRules": { "type": "array", "items": { "type": "string" }, "description": "质量标准" },
+        "failureRules": { "type": "array", "items": { "type": "string" }, "description": "失败归因(对应测试归因表)" },
+        "acceptanceRules": { "type": "array", "items": { "type": "string" }, "description": "验收通过规则" }
+      }
+    }
+  }
+}

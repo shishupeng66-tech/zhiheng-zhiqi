@@ -1,0 +1,57 @@
+{
+  "id": "executive-ip",
+  "name": "老板 IP 观点型",
+  "description": "老板第一人称表达行业观点,建立专业可信与行业判断力。",
+  "category": "ip",
+  "status": "draft",
+  "version": "0.1.0",
+  "content": {
+    "contentType": "老板 IP 观点",
+    "targetAudience": "同行、经销商、行业观察者",
+    "targetPlatform": "抖音 / 视频号",
+    "durationRange": "30-45s"
+  },
+  "script": {
+    "systemPrompt": null,
+    "scriptPrompt": null,
+    "hookRules": [],
+    "structureRules": [],
+    "toneRules": [],
+    "ctaRules": []
+  },
+  "assets": {
+    "assetSelectionRules": [],
+    "preferredCategories": [],
+    "forbiddenCategories": [],
+    "reuseRules": [],
+    "orientationRules": []
+  },
+  "shots": {
+    "shotRules": [],
+    "clipDurationRules": [],
+    "pacingRules": [],
+    "transitionRules": []
+  },
+  "voice": {
+    "voiceStyle": null,
+    "voiceRate": null,
+    "emotionRules": []
+  },
+  "subtitle": {
+    "subtitleStyle": null,
+    "subtitlePosition": null,
+    "subtitleSize": null,
+    "highlightRules": []
+  },
+  "bgm": {
+    "bgmStyle": null,
+    "bgmVolume": null,
+    "bgmRules": []
+  },
+  "review": {
+    "referenceVideoIds": [],
+    "qualityRules": [],
+    "failureRules": [],
+    "acceptanceRules": []
+  }
+}

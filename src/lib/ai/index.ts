@@ -1,8 +1,20 @@
 import { getDefaultProviderConfig } from '@/lib/settings/store';
-import { openaiCompatibleChat, openaiCompatibleStream } from './providers/openai-compatible';
-import type { ChatMessage, LlmProviderConfig } from './types';
+import {
+  openaiCompatibleChat,
+  openaiCompatibleStream,
+  isToolUnsupportedError
+} from './providers/openai-compatible';
+import type {
+  ChatMessage,
+  ChatOptions,
+  ChatResult,
+  LlmProviderConfig,
+  StreamDelta,
+  StreamOptions
+} from './types';
 
 export * from './types';
+export { isToolUnsupportedError };
 
 /** 将 DB 中的字段键值对转换为统一的 LLM Provider 配置。 */
 export function dbConfigToLlmProvider(
@@ -35,7 +47,7 @@ function assertConfigReady(cfg: LlmProviderConfig): void {
   }
 }
 
-/** 业务调用入口：非流式对话。业务代码不直接耦合具体厂商 SDK。 */
+/** 业务调用入口：非流式对话（纯文本，向后兼容）。 */
 export async function chat(messages: ChatMessage[]): Promise<string> {
   const cfg = await getResolvedLlmConfig();
   assertConfigReady(cfg!);
@@ -43,11 +55,35 @@ export async function chat(messages: ChatMessage[]): Promise<string> {
   return r.text;
 }
 
-/** 业务调用入口：流式对话。 */
+/** 业务调用入口：非流式对话（完整结果，支持 tools）。 */
+export async function chatWithTools(
+  messages: ChatMessage[],
+  opts: Omit<ChatOptions, 'signal'> = {}
+): Promise<ChatResult> {
+  const cfg = await getResolvedLlmConfig();
+  assertConfigReady(cfg!);
+  return openaiCompatibleChat(cfg!, messages, opts);
+}
+
+/** 业务调用入口：流式对话（纯文本，向后兼容）。 */
 export async function* stream(messages: ChatMessage[]): AsyncGenerator<string> {
   const cfg = await getResolvedLlmConfig();
   assertConfigReady(cfg!);
-  yield* openaiCompatibleStream(cfg!, messages);
+  for await (const delta of openaiCompatibleStream(cfg!, messages)) {
+    if (delta.type === 'content' && delta.content) {
+      yield delta.content;
+    }
+  }
+}
+
+/** 业务调用入口：流式对话（完整 delta，支持 tools）。 */
+export async function* streamWithTools(
+  messages: ChatMessage[],
+  opts: Omit<StreamOptions, 'signal'> = {}
+): AsyncGenerator<StreamDelta> {
+  const cfg = await getResolvedLlmConfig();
+  assertConfigReady(cfg!);
+  yield* openaiCompatibleStream(cfg!, messages, opts);
 }
 
 /** 测试给定 LLM 配置连通性（不返回任何 secret）。 */

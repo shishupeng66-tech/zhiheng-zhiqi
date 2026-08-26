@@ -1,0 +1,57 @@
+{
+  "id": "product-case",
+  "name": "产品案例型",
+  "description": "用真实客户案例讲\"从想法到落地\"的路径,沉淀复用价值。",
+  "category": "case",
+  "status": "draft",
+  "version": "0.1.0",
+  "content": {
+    "contentType": "产品 / 案例",
+    "targetAudience": "有产品想法但没产线的品牌方",
+    "targetPlatform": "抖音 / 视频号",
+    "durationRange": "30-45s"
+  },
+  "script": {
+    "systemPrompt": null,
+    "scriptPrompt": null,
+    "hookRules": [],
+    "structureRules": [],
+    "toneRules": [],
+    "ctaRules": []
+  },
+  "assets": {
+    "assetSelectionRules": [],
+    "preferredCategories": [],
+    "forbiddenCategories": [],
+    "reuseRules": [],
+    "orientationRules": []
+  },
+  "shots": {
+    "shotRules": [],
+    "clipDurationRules": [],
+    "pacingRules": [],
+    "transitionRules": []
+  },
+  "voice": {
+    "voiceStyle": null,
+    "voiceRate": null,
+    "emotionRules": []
+  },
+  "subtitle": {
+    "subtitleStyle": null,
+    "subtitlePosition": null,
+    "subtitleSize": null,
+    "highlightRules": []
+  },
+  "bgm": {
+    "bgmStyle": null,
+    "bgmVolume": null,
+    "bgmRules": []
+  },
+  "review": {
+    "referenceVideoIds": [],
+    "qualityRules": [],
+    "failureRules": [],
+    "acceptanceRules": []
+  }
+}

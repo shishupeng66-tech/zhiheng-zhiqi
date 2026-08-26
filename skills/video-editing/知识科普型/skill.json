@@ -1,0 +1,57 @@
+{
+  "id": "knowledge-science",
+  "name": "知识科普型",
+  "description": "把客户关心的专业问题讲清楚,用冷知识/反常识开场建立专业信任。",
+  "category": "knowledge",
+  "status": "draft",
+  "version": "0.1.0",
+  "content": {
+    "contentType": "知识科普",
+    "targetAudience": "饮品同行、餐饮老板、想入行代工的创业者",
+    "targetPlatform": "抖音 / 视频号",
+    "durationRange": "30-45s"
+  },
+  "script": {
+    "systemPrompt": null,
+    "scriptPrompt": null,
+    "hookRules": [],
+    "structureRules": [],
+    "toneRules": [],
+    "ctaRules": []
+  },
+  "assets": {
+    "assetSelectionRules": [],
+    "preferredCategories": [],
+    "forbiddenCategories": [],
+    "reuseRules": [],
+    "orientationRules": []
+  },
+  "shots": {
+    "shotRules": [],
+    "clipDurationRules": [],
+    "pacingRules": [],
+    "transitionRules": []
+  },
+  "voice": {
+    "voiceStyle": null,
+    "voiceRate": null,
+    "emotionRules": []
+  },
+  "subtitle": {
+    "subtitleStyle": null,
+    "subtitlePosition": null,
+    "subtitleSize": null,
+    "highlightRules": []
+  },
+  "bgm": {
+    "bgmStyle": null,
+    "bgmVolume": null,
+    "bgmRules": []
+  },
+  "review": {
+    "referenceVideoIds": [],
+    "qualityRules": [],
+    "failureRules": [],
+    "acceptanceRules": []
+  }
+}

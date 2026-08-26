@@ -19,6 +19,9 @@ const VOICE_WORKSPACE_SLUG = 'enterprise-media';
 const VIDEO_EXTENSIONS = new Set(['.mp4', '.mov', '.mkv', '.avi', '.webm', '.m4v', '.flv']);
 const MAX_SCAN_FILES = 200;
 
+// 确保每次请求都重新扫描文件系统，不使用 Next.js 全路由缓存
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: '视频库'
 };
@@ -478,17 +481,35 @@ export default async function VideoLibraryRoute({
   const [assetsProbe, videosProbe] = [probeDir(assetsDir), probeDir(videosDir)];
 
   const workspaceId = result.context.workspace.id;
-  const uploadedAssets = listAutomationVideoAssets(workspaceId)
-    .filter((asset) => asset.fileType === 'video')
-    .map((asset) => ({
-      id: `asset:${asset.id}`,
-      name: asset.name,
-      pathLabel: asset.fileUrl,
-      sourceLabel: '上传素材',
-      extension: extensionFromName(asset.name),
-      size: asset.size,
-      modifiedAt: asset.updatedAt.toISOString()
-    }));
+
+  // 上传素材：先从 DB 读取，再逐个检查真实文件是否存在，过滤掉已被人工删除的
+  const uploadedAssetsRaw = listAutomationVideoAssets(workspaceId).filter(
+    (asset) => asset.fileType === 'video'
+  );
+  const uploadedAssets = (
+    await Promise.all(
+      uploadedAssetsRaw.map(async (asset) => {
+        // fileUrl 格式：/uploads/automation-assets/{slug}/{filename}
+        // 对应磁盘路径：public/uploads/automation-assets/{slug}/{filename}
+        const diskPath = path.join(process.cwd(), 'public', asset.fileUrl);
+        try {
+          const stat = await fs.stat(diskPath);
+          return {
+            id: `asset:${asset.id}`,
+            name: asset.name,
+            pathLabel: asset.fileUrl,
+            sourceLabel: '上传素材',
+            extension: extensionFromName(asset.name),
+            size: stat.size,
+            modifiedAt: stat.mtime.toISOString()
+          } as LibraryVideo;
+        } catch {
+          // 文件不存在或不可读 → 从视频库中过滤掉（DB 记录保留）
+          return null;
+        }
+      })
+    )
+  ).filter((item): item is LibraryVideo => item !== null);
 
   const materialCategories =
     assetsProbe.status === 'normal' ? await listMaterialCategories(assetsDir, uploadedAssets) : [];
@@ -503,20 +524,24 @@ export default async function VideoLibraryRoute({
         (Array.isArray(task.outputVideos) ? task.outputVideos : []).map(
           async (outputPath, index) => {
             const meta = await getFileMeta(outputPath);
+            // 文件不存在 → 从视频库过滤掉（任务记录本身保留在任务历史中）
+            if (!meta) return null;
             return {
               id: `task:${task.id}:${index}`,
               name: path.basename(outputPath) || `${task.title}-${index + 1}`,
               pathLabel: task.title,
               sourceLabel: '剪辑成品',
               extension: extensionFromName(outputPath),
-              size: meta?.size ?? null,
-              modifiedAt: meta?.modifiedAt ?? task.updatedAt.toISOString()
-            } satisfies LibraryVideo;
+              size: meta.size,
+              modifiedAt: meta.modifiedAt
+            } as LibraryVideo;
           }
         )
       )
     )
-  ).sort(sortByModifiedAt);
+  )
+    .filter((item): item is LibraryVideo => item !== null)
+    .sort(sortByModifiedAt);
 
   const materialCount = materialCategories.reduce(
     (total, category) => total + category.videos.length,

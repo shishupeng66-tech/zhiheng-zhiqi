@@ -1,0 +1,57 @@
+{
+  "id": "factory-showcase",
+  "name": "工厂实力展示型",
+  "description": "用产能数字与生产全流程展示制造能力、设备规模与交付稳定性。",
+  "category": "factory",
+  "status": "draft",
+  "version": "0.1.0",
+  "content": {
+    "contentType": "工厂实力展示",
+    "targetAudience": "潜在代工客户、同行参观者",
+    "targetPlatform": "抖音 / 视频号",
+    "durationRange": "30-45s"
+  },
+  "script": {
+    "systemPrompt": null,
+    "scriptPrompt": null,
+    "hookRules": [],
+    "structureRules": [],
+    "toneRules": [],
+    "ctaRules": []
+  },
+  "assets": {
+    "assetSelectionRules": [],
+    "preferredCategories": [],
+    "forbiddenCategories": [],
+    "reuseRules": [],
+    "orientationRules": []
+  },
+  "shots": {
+    "shotRules": [],
+    "clipDurationRules": [],
+    "pacingRules": [],
+    "transitionRules": []
+  },
+  "voice": {
+    "voiceStyle": null,
+    "voiceRate": null,
+    "emotionRules": []
+  },
+  "subtitle": {
+    "subtitleStyle": null,
+    "subtitlePosition": null,
+    "subtitleSize": null,
+    "highlightRules": []
+  },
+  "bgm": {
+    "bgmStyle": null,
+    "bgmVolume": null,
+    "bgmRules": []
+  },
+  "review": {
+    "referenceVideoIds": [],
+    "qualityRules": [],
+    "failureRules": [],
+    "acceptanceRules": []
+  }
+}

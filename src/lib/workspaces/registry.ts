@@ -61,13 +61,6 @@ export const enterpriseMediaModules: WorkspaceModuleDefinition[] = [
     requiredPermission: 'projects:manage'
   },
   {
-    key: 'assets',
-    label: '素材资产',
-    path: 'assets',
-    description: '管理企业实拍视频、图片、品牌素材和素材分析状态。',
-    requiredPermission: 'assets:view'
-  },
-  {
     key: 'members',
     label: '成员',
     shortLabel: '成员',

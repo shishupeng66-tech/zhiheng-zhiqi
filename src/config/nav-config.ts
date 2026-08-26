@@ -91,14 +91,6 @@ export const navGroups: NavGroup[] = [
         shortcut: ['c', 'c'],
         isActive: false,
         items: []
-      },
-      {
-        title: 'AI 聊天',
-        url: '/dashboard/ai-chat',
-        icon: 'sparkles',
-        shortcut: ['a', 'i'],
-        isActive: false,
-        items: []
       }
     ]
   },
