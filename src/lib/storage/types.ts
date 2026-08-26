@@ -42,37 +42,37 @@ export const STORAGE_KEY_META: Record<StorageKey, StorageKeyMeta> = {
     key: 'customers',
     label: '客户资料',
     description: '客户附件、联系人资料文件',
-    defaultSubdir: 'customers'
+    defaultSubdir: '客户资料'
   },
   products: {
     key: 'products',
     label: '产品资料',
     description: '产品图片、规格书、说明文件',
-    defaultSubdir: 'products'
+    defaultSubdir: '产品资料'
   },
   assets: {
     key: 'assets',
     label: '素材资源',
     description: '视频生产用素材（Pexels 等来源的本地副本）',
-    defaultSubdir: 'assets'
+    defaultSubdir: '素材资源'
   },
   videos: {
     key: 'videos',
     label: '视频文件',
     description: 'AI 生成 / 生产的视频成品',
-    defaultSubdir: 'videos'
+    defaultSubdir: '视频文件'
   },
   voices: {
     key: 'voices',
     label: '音频文件',
     description: '音色库试听、声音复刻训练素材与成品',
-    defaultSubdir: 'voices'
+    defaultSubdir: '声音资产'
   },
   knowledge: {
     key: 'knowledge',
     label: '知识文件',
     description: '企业知识库、文档、检索语料',
-    defaultSubdir: 'knowledge'
+    defaultSubdir: '知识文件'
   }
 };
 

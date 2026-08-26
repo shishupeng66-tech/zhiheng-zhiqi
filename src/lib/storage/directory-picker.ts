@@ -29,6 +29,8 @@ export interface DirectoryPickerResult {
 
 /** 固定 PowerShell 脚本 —— 不含任何来自前端的输入，结构不可注入 */
 const PICKER_SCRIPT = [
+  '[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)',
+  '$OutputEncoding = [Console]::OutputEncoding',
   'Add-Type -AssemblyName System.Windows.Forms',
   '$f = New-Object System.Windows.Forms.FolderBrowserDialog',
   '$f.Description = "请选择企业数据目录"',
@@ -57,7 +59,8 @@ export async function selectDirectory(): Promise<DirectoryPickerResult> {
           {
             timeout: PICKER_TIMEOUT_MS,
             windowsHide: false, // 允许弹原生窗口
-            maxBuffer: 1024 * 1024
+            maxBuffer: 1024 * 1024,
+            encoding: 'utf8'
           },
           (err, stdout, stderr) => {
             if (err) reject(err);
