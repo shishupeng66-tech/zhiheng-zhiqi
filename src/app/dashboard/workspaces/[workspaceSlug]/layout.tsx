@@ -1,4 +1,5 @@
 import { WorkspaceAccessDenied } from '@/features/workspaces/components/workspace-access-denied';
+import { WorkspaceHeaderProvider } from '@/features/workspaces/components/workspace-header-actions';
 import { WorkspaceShell } from '@/features/workspaces/components/workspace-shell';
 import { getWorkspaceModules } from '@/lib/workspaces/registry';
 import { hasWorkspacePermission, requireWorkspaceAccess } from '@/lib/workspaces/service';
@@ -38,8 +39,10 @@ export default async function WorkspaceLayout({ children, params }: WorkspaceLay
   );
 
   return (
-    <WorkspaceShell workspace={workspace} role={effectiveRole} modules={modules}>
-      {children}
-    </WorkspaceShell>
+    <WorkspaceHeaderProvider>
+      <WorkspaceShell workspace={workspace} role={effectiveRole} modules={modules}>
+        {children}
+      </WorkspaceShell>
+    </WorkspaceHeaderProvider>
   );
 }

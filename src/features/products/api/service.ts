@@ -24,10 +24,9 @@
 //    → const res = await fetch('https://your-api.com/products?...')
 //    → return res.json()
 //
-// Current: Mock (in-memory fake data for demo/prototyping)
+// Current: Local JSON data through StorageService-backed API
 // ============================================================
 
-import { fakeProducts } from '@/constants/mock-api';
 import type {
   ProductFilters,
   ProductsResponse,
@@ -35,22 +34,57 @@ import type {
   ProductMutationPayload
 } from './types';
 
+function toQuery(filters: ProductFilters) {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      params.set(key, String(value));
+    }
+  });
+  return params.toString();
+}
+
+async function requestJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
+  const res = await fetch(input, init);
+  if (!res.ok) {
+    throw new Error(`Request failed: ${res.status}`);
+  }
+  return (await res.json()) as T;
+}
+
 export async function getProducts(filters: ProductFilters): Promise<ProductsResponse> {
-  return fakeProducts.getProducts(filters);
+  if (typeof window === 'undefined') {
+    const { listProducts } = await import('@/lib/products/local-store');
+    return listProducts(filters);
+  }
+  const query = toQuery(filters);
+  return requestJson<ProductsResponse>(`/api/products${query ? `?${query}` : ''}`);
 }
 
 export async function getProductById(id: number): Promise<ProductByIdResponse> {
-  return fakeProducts.getProductById(id) as Promise<ProductByIdResponse>;
+  if (typeof window === 'undefined') {
+    const { getLocalProductById } = await import('@/lib/products/local-store');
+    return getLocalProductById(id);
+  }
+  return requestJson<ProductByIdResponse>(`/api/products/${id}`);
 }
 
 export async function createProduct(data: ProductMutationPayload) {
-  return fakeProducts.createProduct(data);
+  return requestJson('/api/products', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
 }
 
 export async function updateProduct(id: number, data: ProductMutationPayload) {
-  return fakeProducts.updateProduct(id, data);
+  return requestJson(`/api/products/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
 }
 
 export async function deleteProduct(id: number) {
-  return fakeProducts.deleteProduct(id);
+  return requestJson(`/api/products/${id}`, { method: 'DELETE' });
 }

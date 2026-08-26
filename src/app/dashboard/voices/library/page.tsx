@@ -4,14 +4,18 @@ import { ZhihengVoicePage } from '@/features/voices/zhiheng-voice-page';
 import { hasWorkspacePermission, requireWorkspacePermission } from '@/lib/workspaces/service';
 
 /**
- * 知衡语音一级功能页。
+ * 音色库页面。
  *
  * 音色库（voice_catalog）是全局资源，本阶段沿用 enterprise-media 工作空间作为权限来源，
  * 以便复用既有 API 路径（/api/workspaces/enterprise-media/voices/...）与权限校验逻辑，不做任何改动。
  */
 const VOICE_WORKSPACE_SLUG = 'enterprise-media';
 
-export default async function VoicesTopLevelRoute() {
+export const metadata = {
+  title: '音色库'
+};
+
+export default async function VoiceLibraryRoute() {
   const result = await requireWorkspacePermission(VOICE_WORKSPACE_SLUG, 'scripts:manage');
   if (!result.ok) return <WorkspaceAccessDenied />;
 

@@ -103,11 +103,11 @@ export const navGroups: NavGroup[] = [
     ]
   },
   {
-    label: '知衡语音',
+    label: '素材库',
     items: [
       {
         title: '音色库',
-        url: '/dashboard/voices',
+        url: '/dashboard/voices/library',
         icon: 'music',
         isActive: false,
         items: []
@@ -116,6 +116,20 @@ export const navGroups: NavGroup[] = [
         title: '声音复刻',
         url: '/dashboard/voices/clone',
         icon: 'sparkles',
+        isActive: false,
+        items: []
+      },
+      {
+        title: '视频库',
+        url: '/dashboard/voices/videos',
+        icon: 'video',
+        isActive: false,
+        items: []
+      },
+      {
+        title: '图片库',
+        url: '/dashboard/voices/images',
+        icon: 'photo',
         isActive: false,
         items: []
       }
@@ -136,6 +150,14 @@ export const navGroups: NavGroup[] = [
         title: '模型与接口',
         url: '/dashboard/system/providers',
         icon: 'sparkles',
+        isActive: false,
+        items: [],
+        access: { role: 'super_admin' }
+      },
+      {
+        title: '数据存储',
+        url: '/dashboard/system/storage',
+        icon: 'database',
         isActive: false,
         items: [],
         access: { role: 'super_admin' }
@@ -164,12 +186,6 @@ export const navGroups: NavGroup[] = [
             icon: 'billing',
             shortcut: ['b', 'b'],
             access: { requireOrg: true }
-          },
-          {
-            title: '登录',
-            shortcut: ['l', 'l'],
-            url: '/',
-            icon: 'login'
           }
         ]
       }

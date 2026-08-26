@@ -28,6 +28,7 @@ import {
   IconCode,
   IconCommand,
   IconCreditCard,
+  IconDatabase,
   IconDeviceLaptop,
   IconDots,
   IconDotsVertical,
@@ -129,6 +130,7 @@ export const Icons = {
   dashboard: IconLayoutDashboard,
   kanban: IconLayoutKanban,
   panelLeft: IconLayoutSidebar,
+  database: IconDatabase,
 
   // User
   user: IconUser,
@@ -149,6 +151,7 @@ export const Icons = {
   notification: IconBell,
   phone: IconPhone,
   video: IconVideo,
+  photo: IconPhoto,
   send: IconSend,
   paperclip: IconPaperclip,
 
@@ -221,5 +224,6 @@ export const Icons = {
   slash: IconSlash,
   calendar: IconCalendar,
   galleryVerticalEnd: IconStack2,
+  library: IconStack2,
   moreHorizontal: IconDots
 };

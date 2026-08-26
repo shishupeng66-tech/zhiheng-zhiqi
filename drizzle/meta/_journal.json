@@ -57,6 +57,13 @@
       "when": 1787647832060,
       "tag": "0007_mighty_vertigo",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1787711662765,
+      "tag": "0008_add_storage_configs",
+      "breakpoints": true
     }
   ]
 }

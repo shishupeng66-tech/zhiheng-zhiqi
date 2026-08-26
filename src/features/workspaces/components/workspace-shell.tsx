@@ -5,6 +5,7 @@ import { Icons } from '@/components/icons';
 import type { Workspace, WorkspaceMemberRole } from '@/lib/db/schema';
 import type { WorkspaceModuleDefinition } from '@/lib/workspaces/registry';
 import { workspaceRoleLabels } from '@/lib/workspaces/permissions';
+import { WorkspaceHeaderSlot } from './workspace-header-actions';
 import { WorkspaceModuleNav } from './workspace-module-nav';
 
 type WorkspaceShellProps = {
@@ -46,9 +47,12 @@ export function WorkspaceShell({ workspace, role, modules, children }: Workspace
                 </p>
               </div>
             </div>
-            <Badge variant='outline' className='w-fit'>
-              企业内部工作空间
-            </Badge>
+            <div className='flex flex-col items-end gap-2'>
+              <Badge variant='outline' className='w-fit'>
+                企业内部工作空间
+              </Badge>
+              <WorkspaceHeaderSlot />
+            </div>
           </div>
         </div>
         <div className='w-full px-5 md:px-8 lg:px-10'>

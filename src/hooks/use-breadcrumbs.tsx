@@ -18,6 +18,10 @@ const routeMapping: Record<string, BreadcrumbItem[]> = {
     { title: '系统管理', link: '/dashboard/system/employees' },
     { title: '模型与接口', link: '/dashboard/system/providers' }
   ],
+  '/dashboard/system/storage': [
+    { title: '系统管理', link: '/dashboard/system/employees' },
+    { title: '数据存储', link: '/dashboard/system/storage' }
+  ],
   '/dashboard/system/settings': [
     { title: '系统管理', link: '/dashboard/system/employees' },
     { title: '模型与接口', link: '/dashboard/system/providers' }
@@ -63,7 +67,8 @@ const segmentLabels: Record<string, string> = {
   employee: '员工',
   employees: '员工管理',
   settings: '模型与接口',
-  providers: '模型与接口'
+  providers: '模型与接口',
+  storage: '数据存储'
 };
 
 export function useBreadcrumbs() {

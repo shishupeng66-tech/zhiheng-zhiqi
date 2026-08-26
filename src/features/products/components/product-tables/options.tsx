@@ -1,10 +1,10 @@
 export const CATEGORY_OPTIONS = [
-  { value: 'Electronics', label: '电子产品' },
-  { value: 'Furniture', label: '家具' },
-  { value: 'Clothing', label: '服装' },
-  { value: 'Toys', label: '玩具' },
-  { value: 'Groceries', label: '食品杂货' },
-  { value: 'Books', label: '图书' },
-  { value: 'Jewelry', label: '珠宝' },
-  { value: 'Beauty Products', label: '美妆个护' }
+  { value: 'PET饮料瓶', label: 'PET饮料瓶' },
+  { value: '果汁瓶', label: '果汁瓶' },
+  { value: '茶饮瓶', label: '茶饮瓶' },
+  { value: '矿泉水瓶', label: '矿泉水瓶' },
+  { value: '乳饮瓶', label: '乳饮瓶' },
+  { value: '功能饮料瓶', label: '功能饮料瓶' },
+  { value: '瓶盖配件', label: '瓶盖配件' },
+  { value: '标签包装', label: '标签包装' }
 ];

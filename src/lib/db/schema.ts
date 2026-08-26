@@ -409,3 +409,46 @@ export const voiceClones = sqliteTable(
 
 export type VoiceClone = typeof voiceClones.$inferSelect;
 export type NewVoiceClone = typeof voiceClones.$inferInsert;
+
+/**
+ * 数据存储 —— 企业本地文件目录配置表（storage_configs）
+ * 一套部署对应一家企业（当前无多租户），storage_key 全局唯一，无 workspace_id。
+ *
+ * 管理的是「实际文件资产」目录（客户附件/产品图片/素材/视频/音频/知识文件/AI 生成文件），
+ * 与 SQLite 数据库文件（data/zhiheng*.db）完全解耦 —— 本阶段不迁移数据库路径。
+ *
+ * 预留 key:root  = 默认数据根目录（其余 key 未单独配置时继承 root + 子目录名）
+ * 其余 key :customers/products/assets/videos/voices/knowledge
+ *
+ * storage_type 本阶段固定 'local'；未来扩展 oss/cos/nas 时新增值，不破坏本表结构。
+ */
+export const storageKeys = [
+  'root',
+  'customers',
+  'products',
+  'assets',
+  'videos',
+  'voices',
+  'knowledge'
+] as const;
+export type StorageKey = (typeof storageKeys)[number];
+
+export const storageConfigs = sqliteTable(
+  'storage_configs',
+  {
+    id: text('id').primaryKey(),
+    storageKey: text('storage_key', { enum: storageKeys }).notNull(),
+    /** 本地绝对路径（Windows 盘符 / UNC / POSIX），保存时服务端已真实检测并建目录 */
+    storagePath: text('storage_path').notNull(),
+    /** 本阶段固定 'local'；预留 oss/cos/nas */
+    storageType: text('storage_type').notNull().default('local'),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull()
+  },
+  (table) => ({
+    storageKeyUnique: uniqueIndex('storage_configs_key_unique').on(table.storageKey)
+  })
+);
+
+export type StorageConfig = typeof storageConfigs.$inferSelect;
+export type NewStorageConfig = typeof storageConfigs.$inferInsert;

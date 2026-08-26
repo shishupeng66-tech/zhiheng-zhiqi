@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Icons } from '@/components/icons';
 import { useCurrentUser } from '@/components/auth/user-provider';
+import { WorkspaceHeaderActions } from '@/features/workspaces/components/workspace-header-actions';
 import { useVoiceCapability } from '@/hooks/use-voice-capability';
 import { subscribeVoiceCatalogChanged } from '@/lib/voice-catalog-events';
 import { toast } from 'sonner';
@@ -646,414 +647,470 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
   }
 
   return (
-    <div className='space-y-3 pb-3'>
-      <input
-        ref={fileInputRef}
-        type='file'
-        accept='image/png,image/jpeg,image/webp,video/mp4,video/quicktime,video/x-matroska,video/x-msvideo,video/x-flv,audio/mpeg,audio/wav,audio/mp4,audio/aac,audio/ogg,audio/flac'
-        className='hidden'
-        onChange={(event) => {
-          const files = Array.from(event.target.files ?? []);
-          if (files.length === 0) return;
-          const selectedFiles = uploadTargetRef.current === 'material' ? files : files.slice(0, 1);
-          void uploadAssets(selectedFiles, uploadTargetRef.current);
-        }}
-      />
-
-      <div className='flex flex-wrap items-center gap-2'>
-        <Badge variant='secondary'>MoneyPrinterTurbo 内置版</Badge>
-        <ToolButton
-          onClick={() => (window.location.href = `/dashboard/workspaces/${workspaceSlug}/review`)}
-        >
-          <Icons.post className='size-4' />
-          任务管理
-        </ToolButton>
-        {user?.role === 'super_admin' ? (
-          <ToolButton onClick={() => (window.location.href = '/dashboard/system/providers')}>
-            <Icons.settings className='size-4' />
-            模型与接口
-          </ToolButton>
-        ) : null}
-        <ToolButton
-          onClick={() =>
-            toast.info('运行日志写入 engines/moneyprinterturbo/storage/zhiheng-logs。')
-          }
-        >
-          <Icons.workspace className='size-4' />
-          运行日志
-        </ToolButton>
-        <Button type='button' size='sm' disabled={saving} onClick={createTask}>
-          <Icons.video className='size-4' />
-          {saving ? '正在提交...' : '一键生成视频'}
-        </Button>
-      </div>
-
-      <section className='grid items-stretch gap-3 xl:grid-cols-4'>
-        <StepCard
-          number='01'
-          icon={Icons.post}
-          title='视频内容'
-          description='粘贴知识库给出的脚本文案，也可以保留原有 AI 辅助生成入口。'
-        >
-          <div className='border-t pt-3'>
-            <div className='mb-2 text-xs font-medium'>视频主题（AI 将根据主题生成视频文案）</div>
-            <Textarea
-              className='min-h-16 resize-none text-sm'
-              placeholder='例如：人工智能如何改变日常生活'
-              value={form.prompt}
-              onChange={(event) => update('prompt', event.target.value)}
-            />
-          </div>
-
-          <SelectField
-            label='生成视频脚本的语言'
-            value={form.scriptLanguage}
-            options={['自动检测', '简体中文', '英文', '中英双语']}
-            onChange={(value) => update('scriptLanguage', value)}
-          />
-
-          <button
-            type='button'
-            className='flex h-8 items-center gap-2 rounded-md px-1 text-left text-xs font-medium text-muted-foreground hover:text-foreground'
-            onClick={() => setScriptSettingsOpen((current) => !current)}
+    <>
+      <WorkspaceHeaderActions>
+        <div className='flex flex-wrap items-center justify-end gap-2'>
+          <ToolButton
+            onClick={() =>
+              toast.info('运行日志写入 engines/moneyprinterturbo/storage/zhiheng-logs。')
+            }
           >
-            <span>{scriptSettingsOpen ? '⌄' : '›'}</span>
-            <span>高级脚本设置</span>
-          </button>
+            <Icons.workspace className='size-4' />
+            运行日志
+          </ToolButton>
+          <Button type='button' size='sm' disabled={saving} onClick={createTask}>
+            <Icons.video className='size-4' />
+            {saving ? '正在提交...' : '一键生成视频'}
+          </Button>
+        </div>
+      </WorkspaceHeaderActions>
 
-          {scriptSettingsOpen ? (
-            <div className='space-y-3 rounded-md border bg-muted/20 p-3'>
-              <SliderField
-                label='文案段落数量'
-                value={form.paragraphNumber.match(/\d+/)?.[0] ?? '1'}
-                min={1}
-                max={10}
-                step={1}
-                onChange={(value) => update('paragraphNumber', `${value} 段`)}
+      <div className='pb-3'>
+        <input
+          ref={fileInputRef}
+          type='file'
+          accept='image/png,image/jpeg,image/webp,video/mp4,video/quicktime,video/x-matroska,video/x-msvideo,video/x-flv,audio/mpeg,audio/wav,audio/mp4,audio/aac,audio/ogg,audio/flac'
+          className='hidden'
+          onChange={(event) => {
+            const files = Array.from(event.target.files ?? []);
+            if (files.length === 0) return;
+            const selectedFiles =
+              uploadTargetRef.current === 'material' ? files : files.slice(0, 1);
+            void uploadAssets(selectedFiles, uploadTargetRef.current);
+          }}
+        />
+
+        <section className='grid items-stretch gap-3 xl:grid-cols-4'>
+          <StepCard
+            number='01'
+            icon={Icons.post}
+            title='视频内容'
+            description='粘贴知识库给出的脚本文案，也可以保留原有 AI 辅助生成入口。'
+          >
+            <div className='border-t pt-3'>
+              <div className='mb-2 text-xs font-medium'>视频主题（AI 将根据主题生成视频文案）</div>
+              <Textarea
+                className='min-h-16 resize-none text-sm'
+                placeholder='例如：人工智能如何改变日常生活'
+                value={form.prompt}
+                onChange={(event) => update('prompt', event.target.value)}
               />
-              <div className='grid gap-1.5'>
-                <div className='text-xs font-medium'>自定义文案要求</div>
-                <Textarea
-                  className='min-h-16 resize-none text-xs'
-                  placeholder='例如：语气更轻松，适合小红书风格，面向年轻用户，开头更有悬念'
-                  value={form.scriptPrompt}
-                  onChange={(event) => update('scriptPrompt', event.target.value)}
-                />
-              </div>
-              <div className='grid gap-1.5'>
-                <div className='text-xs font-medium'>系统提示词</div>
-                <Textarea
-                  className='min-h-24 resize-none font-mono text-xs'
-                  value={form.customSystemPrompt || defaultSystemPrompt}
-                  onChange={(event) => update('customSystemPrompt', event.target.value)}
-                />
-              </div>
-              <div className='grid grid-cols-2 gap-2'>
-                <ToolButton
-                  onClick={() =>
-                    setForm((current) => ({
-                      ...current,
-                      paragraphNumber: '1 段',
-                      scriptPrompt: '',
-                      customSystemPrompt: ''
-                    }))
-                  }
-                >
-                  <Icons.palette className='size-4' />
-                  恢复默认提示词
-                </ToolButton>
-                <ToolButton
-                  onClick={() => toast.info(form.customSystemPrompt || defaultSystemPrompt)}
-                >
-                  <Icons.post className='size-4' />
-                  预览最终提示词
-                </ToolButton>
-              </div>
             </div>
-          ) : null}
 
-          <ToolButton onClick={generateAiDraft} disabled={aiGenerating}>
-            <Icons.sparkles className='size-4' />
-            {aiGenerating ? 'AI生成中...' : '点击使用AI生成视频文案和关键词'}
-          </ToolButton>
-
-          <div className='grid gap-1.5'>
-            <div className='flex items-center gap-2 text-xs font-medium'>
-              <span>视频文案（可选）</span>
-              <span className='text-muted-foreground'>?</span>
-            </div>
-            <Textarea
-              className='min-h-24 flex-1 resize-none text-sm'
-              value={form.scriptText}
-              onChange={(event) => update('scriptText', event.target.value)}
-            />
-          </div>
-
-          <ToolButton onClick={generateAiKeywords} disabled={aiGenerating}>
-            <Icons.sparkles className='size-4' />
-            {aiGenerating ? 'AI生成中...' : '点击使用AI根据文案生成视频关键词'}
-          </ToolButton>
-
-          <div className='grid gap-1.5'>
-            <div className='flex items-center gap-2 text-xs font-medium'>
-              <span>视频关键词（英文，可选）</span>
-              <span className='text-muted-foreground'>?</span>
-            </div>
-            <Textarea
-              className='min-h-20 resize-none text-sm'
-              value={form.keywords}
-              onChange={(event) => update('keywords', event.target.value)}
-            />
-          </div>
-        </StepCard>
-
-        <StepCard
-          number='02'
-          icon={Icons.media}
-          title='素材与画面'
-          description='优先选择本地文件，按脚本参数设置素材来源、比例、转场与片段节奏。'
-        >
-          <div className='border-t pt-3'>
             <SelectField
-              label='视频来源'
-              value={form.materialSource}
-              options={['本地文件', 'Pexels', 'Pixabay', 'Coverr']}
-              onChange={(value) => update('materialSource', value)}
+              label='生成视频脚本的语言'
+              value={form.scriptLanguage}
+              options={['自动检测', '简体中文', '英文', '中英双语']}
+              onChange={(value) => update('scriptLanguage', value)}
             />
-          </div>
 
-          {form.materialSource === '本地文件' ? (
-            <div className='grid gap-2'>
-              <div className='text-xs font-medium'>上传本地文件</div>
-              <div className='rounded-md bg-muted/60 p-3'>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  disabled={uploading}
-                  onClick={() => chooseFile('material')}
-                >
-                  <Icons.upload className='size-4' />
-                  Upload
-                </Button>
-                <div className='mt-3 text-xs text-muted-foreground'>
-                  200MB per file • AVI, FLV, JPG, MKV, MOV, MP4, PNG
+            <button
+              type='button'
+              className='flex h-8 items-center gap-2 rounded-md px-1 text-left text-xs font-medium text-muted-foreground hover:text-foreground'
+              onClick={() => setScriptSettingsOpen((current) => !current)}
+            >
+              <span>{scriptSettingsOpen ? '⌄' : '›'}</span>
+              <span>高级脚本设置</span>
+            </button>
+
+            {scriptSettingsOpen ? (
+              <div className='space-y-3 rounded-md border bg-muted/20 p-3'>
+                <SliderField
+                  label='文案段落数量'
+                  value={form.paragraphNumber.match(/\d+/)?.[0] ?? '1'}
+                  min={1}
+                  max={10}
+                  step={1}
+                  onChange={(value) => update('paragraphNumber', `${value} 段`)}
+                />
+                <div className='grid gap-1.5'>
+                  <div className='text-xs font-medium'>自定义文案要求</div>
+                  <Textarea
+                    className='min-h-16 resize-none text-xs'
+                    placeholder='例如：语气更轻松，适合小红书风格，面向年轻用户，开头更有悬念'
+                    value={form.scriptPrompt}
+                    onChange={(event) => update('scriptPrompt', event.target.value)}
+                  />
+                </div>
+                <div className='grid gap-1.5'>
+                  <div className='text-xs font-medium'>系统提示词</div>
+                  <Textarea
+                    className='min-h-24 resize-none font-mono text-xs'
+                    value={form.customSystemPrompt || defaultSystemPrompt}
+                    onChange={(event) => update('customSystemPrompt', event.target.value)}
+                  />
+                </div>
+                <div className='grid grid-cols-2 gap-2'>
+                  <ToolButton
+                    onClick={() =>
+                      setForm((current) => ({
+                        ...current,
+                        paragraphNumber: '1 段',
+                        scriptPrompt: '',
+                        customSystemPrompt: ''
+                      }))
+                    }
+                  >
+                    <Icons.palette className='size-4' />
+                    恢复默认提示词
+                  </ToolButton>
+                  <ToolButton
+                    onClick={() => toast.info(form.customSystemPrompt || defaultSystemPrompt)}
+                  >
+                    <Icons.post className='size-4' />
+                    预览最终提示词
+                  </ToolButton>
                 </div>
               </div>
-              {assets.length > 0 ? (
-                <div className='space-y-1.5 rounded-md border p-2 text-xs'>
-                  <div className='font-medium text-foreground'>已选素材（{assets.length}）</div>
-                  <div className='space-y-1'>
-                    {assets.map((asset) => (
-                      <div
-                        key={asset.id}
-                        className='flex items-center justify-between gap-2 rounded border bg-background px-2 py-1'
-                      >
-                        <span className='truncate text-muted-foreground'>{asset.name}</span>
-                        <Button
-                          type='button'
-                          variant='ghost'
-                          size='sm'
-                          className='h-6 px-2 text-xs'
-                          onClick={() => removeAsset(asset.id)}
-                        >
-                          删除
-                        </Button>
-                      </div>
-                    ))}
+            ) : null}
+
+            <ToolButton onClick={generateAiDraft} disabled={aiGenerating}>
+              <Icons.sparkles className='size-4' />
+              {aiGenerating ? 'AI生成中...' : '点击使用AI生成视频文案和关键词'}
+            </ToolButton>
+
+            <div className='grid gap-1.5'>
+              <div className='flex items-center gap-2 text-xs font-medium'>
+                <span>视频文案（可选）</span>
+                <span className='text-muted-foreground'>?</span>
+              </div>
+              <Textarea
+                className='min-h-24 flex-1 resize-none text-sm'
+                value={form.scriptText}
+                onChange={(event) => update('scriptText', event.target.value)}
+              />
+            </div>
+
+            <ToolButton onClick={generateAiKeywords} disabled={aiGenerating}>
+              <Icons.sparkles className='size-4' />
+              {aiGenerating ? 'AI生成中...' : '点击使用AI根据文案生成视频关键词'}
+            </ToolButton>
+
+            <div className='grid gap-1.5'>
+              <div className='flex items-center gap-2 text-xs font-medium'>
+                <span>视频关键词（英文，可选）</span>
+                <span className='text-muted-foreground'>?</span>
+              </div>
+              <Textarea
+                className='min-h-20 resize-none text-sm'
+                value={form.keywords}
+                onChange={(event) => update('keywords', event.target.value)}
+              />
+            </div>
+          </StepCard>
+
+          <StepCard
+            number='02'
+            icon={Icons.media}
+            title='素材与画面'
+            description='优先选择本地文件，按脚本参数设置素材来源、比例、转场与片段节奏。'
+          >
+            <div className='border-t pt-3'>
+              <SelectField
+                label='视频来源'
+                value={form.materialSource}
+                options={['本地文件', 'Pexels', 'Pixabay', 'Coverr']}
+                onChange={(value) => update('materialSource', value)}
+              />
+            </div>
+
+            {form.materialSource === '本地文件' ? (
+              <div className='grid gap-2'>
+                <div className='text-xs font-medium'>上传本地文件</div>
+                <div className='rounded-md bg-muted/60 p-3'>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    disabled={uploading}
+                    onClick={() => chooseFile('material')}
+                  >
+                    <Icons.upload className='size-4' />
+                    Upload
+                  </Button>
+                  <div className='mt-3 text-xs text-muted-foreground'>
+                    200MB per file • AVI, FLV, JPG, MKV, MOV, MP4, PNG
                   </div>
                 </div>
-              ) : null}
+                {assets.length > 0 ? (
+                  <div className='space-y-1.5 rounded-md border p-2 text-xs'>
+                    <div className='font-medium text-foreground'>已选素材（{assets.length}）</div>
+                    <div className='space-y-1'>
+                      {assets.map((asset) => (
+                        <div
+                          key={asset.id}
+                          className='flex items-center justify-between gap-2 rounded border bg-background px-2 py-1'
+                        >
+                          <span className='truncate text-muted-foreground'>{asset.name}</span>
+                          <Button
+                            type='button'
+                            variant='ghost'
+                            size='sm'
+                            className='h-6 px-2 text-xs'
+                            onClick={() => removeAsset(asset.id)}
+                          >
+                            删除
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            <SelectField
+              label='视频拼接模式'
+              value={form.stitchMode}
+              options={['顺序拼接', '随机拼接']}
+              onChange={(value) => update('stitchMode', value)}
+            />
+
+            <CompactSwitch
+              label='按文案顺序匹配画面'
+              checked={form.matchByScript}
+              onChange={(checked) => update('matchByScript', checked)}
+            />
+
+            <SelectField
+              label='视频转场模式'
+              value={form.transitionMode}
+              options={['无转场', '随机转场', '淡入', '淡出', '滑入', '滑出']}
+              onChange={(value) => update('transitionMode', value)}
+            />
+
+            <SelectField
+              label='视频比例'
+              value={form.videoRatio}
+              options={['竖屏 9:16（抖音视频）', '横屏 16:9', '方屏 1:1']}
+              onChange={(value) => update('videoRatio', value)}
+            />
+
+            <SelectField
+              label='单个片段最大时长（秒）'
+              value={form.clipDuration}
+              options={['2', '3', '5', '8', '10']}
+              onChange={(value) => update('clipDuration', value)}
+            />
+
+            <SliderField
+              label='片段播放速度'
+              value={form.clipSpeed.replace('x', '')}
+              min={0.5}
+              max={2}
+              step={0.05}
+              onChange={(value) => update('clipSpeed', `${value}x`)}
+            />
+
+            <SelectField
+              label='同时生成视频数量'
+              value={form.videoCount}
+              options={['1', '2', '3', '5']}
+              onChange={(value) => update('videoCount', value)}
+            />
+
+            <SelectField
+              label='视频编码器'
+              value={form.videoEncoder}
+              options={['默认（推荐）', 'libx264', 'h264_nvenc']}
+              onChange={(value) => update('videoEncoder', value)}
+            />
+          </StepCard>
+
+          <StepCard
+            number='03'
+            icon={Icons.music}
+            title='配音与音乐'
+            description='设置自动配音、上传配音或无配音，并选择背景音乐相关参数。'
+          >
+            <div className='border-t pt-3'>
+              <div className='mb-2 text-xs font-medium'>配音方式</div>
+              <div className='grid grid-cols-3 overflow-hidden rounded-md border'>
+                {['自动配音', '上传音频', '无配音'].map((item) => (
+                  <Button
+                    key={item}
+                    variant={form.voiceMode === item ? 'default' : 'ghost'}
+                    size='sm'
+                    className='h-8 rounded-none text-xs'
+                    onClick={() => update('voiceMode', item)}
+                  >
+                    {item}
+                  </Button>
+                ))}
+              </div>
             </div>
-          ) : null}
 
-          <SelectField
-            label='视频拼接模式'
-            value={form.stitchMode}
-            options={['顺序拼接', '随机拼接']}
-            onChange={(value) => update('stitchMode', value)}
-          />
+            {form.voiceMode === '自动配音' ? (
+              <>
+                <SelectField
+                  label='配音音色'
+                  value={form.voiceName}
+                  options={voiceSelectOptions}
+                  onChange={(value) => update('voiceName', value)}
+                />
+                <div className='grid grid-cols-2 gap-2'>
+                  <SelectField
+                    label='配音音量'
+                    value={form.voiceVolume}
+                    options={['80%', '100%', '120%']}
+                    onChange={(value) => update('voiceVolume', value)}
+                  />
+                  <SelectField
+                    label='配音语速'
+                    value={form.voiceSpeed}
+                    options={['0.8x', '1.0x', '1.2x']}
+                    onChange={(value) => update('voiceSpeed', value)}
+                  />
+                </div>
+                <div className='grid grid-cols-2 gap-2'>
+                  <ToolButton
+                    onClick={() => void playVoicePreview('voice')}
+                    disabled={
+                      previewing !== null ||
+                      voiceCapability.status === 'recovering' ||
+                      voiceCapability.status === 'checking' ||
+                      voiceCapability.status === 'offline' ||
+                      voiceCapability.status === 'error'
+                    }
+                  >
+                    {voiceCapability.status === 'recovering' ||
+                    voiceCapability.status === 'checking' ? (
+                      <Icons.spinner className='size-4 animate-spin' />
+                    ) : (
+                      <Icons.music className='size-4' />
+                    )}
+                    {voiceCapability.status === 'recovering'
+                      ? '语音能力正在恢复'
+                      : voiceCapability.status === 'checking'
+                        ? '检测中'
+                        : voiceCapability.status === 'offline' || voiceCapability.status === 'error'
+                          ? '暂不可用'
+                          : previewing === 'voice'
+                            ? '生成试听中...'
+                            : '试听音色'}
+                  </ToolButton>
+                  <ToolButton
+                    onClick={() => void playVoicePreview('full')}
+                    disabled={
+                      previewing !== null ||
+                      voiceCapability.status === 'recovering' ||
+                      voiceCapability.status === 'checking' ||
+                      voiceCapability.status === 'offline' ||
+                      voiceCapability.status === 'error'
+                    }
+                  >
+                    {voiceCapability.status === 'recovering' ||
+                    voiceCapability.status === 'checking' ? (
+                      <Icons.spinner className='size-4 animate-spin' />
+                    ) : (
+                      <Icons.video className='size-4' />
+                    )}
+                    {voiceCapability.status === 'recovering'
+                      ? '正在恢复'
+                      : voiceCapability.status === 'checking'
+                        ? '检测中'
+                        : voiceCapability.status === 'offline' || voiceCapability.status === 'error'
+                          ? '暂不可用'
+                          : previewing === 'full'
+                            ? '生成试听中...'
+                            : '完整试听'}
+                  </ToolButton>
+                </div>
+                {voiceCapability.status === 'error' ? (
+                  <div className='flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-2 py-1.5'>
+                    <p className='flex-1 text-[11px] text-destructive'>语音能力暂不可用</p>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='sm'
+                      className='h-6 text-[11px]'
+                      onClick={() => void voiceCapability.recover()}
+                    >
+                      <Icons.refresh className='size-3' />
+                      重新恢复
+                    </Button>
+                  </div>
+                ) : null}
+                {previewAudioUrl ? (
+                  <audio className='h-8 w-full' src={previewAudioUrl} controls />
+                ) : null}
+              </>
+            ) : null}
 
-          <CompactSwitch
-            label='按文案顺序匹配画面'
-            checked={form.matchByScript}
-            onChange={(checked) => update('matchByScript', checked)}
-          />
-
-          <SelectField
-            label='视频转场模式'
-            value={form.transitionMode}
-            options={['无转场', '随机转场', '淡入', '淡出', '滑入', '滑出']}
-            onChange={(value) => update('transitionMode', value)}
-          />
-
-          <SelectField
-            label='视频比例'
-            value={form.videoRatio}
-            options={['竖屏 9:16（抖音视频）', '横屏 16:9', '方屏 1:1']}
-            onChange={(value) => update('videoRatio', value)}
-          />
-
-          <SelectField
-            label='单个片段最大时长（秒）'
-            value={form.clipDuration}
-            options={['2', '3', '5', '8', '10']}
-            onChange={(value) => update('clipDuration', value)}
-          />
-
-          <SliderField
-            label='片段播放速度'
-            value={form.clipSpeed.replace('x', '')}
-            min={0.5}
-            max={2}
-            step={0.05}
-            onChange={(value) => update('clipSpeed', `${value}x`)}
-          />
-
-          <SelectField
-            label='同时生成视频数量'
-            value={form.videoCount}
-            options={['1', '2', '3', '5']}
-            onChange={(value) => update('videoCount', value)}
-          />
-
-          <SelectField
-            label='视频编码器'
-            value={form.videoEncoder}
-            options={['默认（推荐）', 'libx264', 'h264_nvenc']}
-            onChange={(value) => update('videoEncoder', value)}
-          />
-        </StepCard>
-
-        <StepCard
-          number='03'
-          icon={Icons.music}
-          title='配音与音乐'
-          description='设置自动配音、上传配音或无配音，并选择背景音乐相关参数。'
-        >
-          <div className='border-t pt-3'>
-            <div className='mb-2 text-xs font-medium'>配音方式</div>
-            <div className='grid grid-cols-3 overflow-hidden rounded-md border'>
-              {['自动配音', '上传音频', '无配音'].map((item) => (
-                <Button
-                  key={item}
-                  variant={form.voiceMode === item ? 'default' : 'ghost'}
-                  size='sm'
-                  className='h-8 rounded-none text-xs'
-                  onClick={() => update('voiceMode', item)}
-                >
-                  {item}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {form.voiceMode === '自动配音' ? (
-            <>
-              <SelectField
-                label='配音音色'
-                value={form.voiceName}
-                options={voiceSelectOptions}
-                onChange={(value) => update('voiceName', value)}
-              />
-              <div className='grid grid-cols-2 gap-2'>
+            {form.voiceMode === '上传音频' ? (
+              <>
+                <div className='grid gap-2'>
+                  <div className='text-xs font-medium'>上传配音文件</div>
+                  <div className='rounded-md bg-muted/60 p-3'>
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      disabled={uploading}
+                      onClick={() => chooseFile('voice')}
+                    >
+                      <Icons.upload className='size-4' />
+                      Upload
+                    </Button>
+                    <div className='mt-3 text-xs text-muted-foreground'>
+                      200MB per file • AAC, FLAC, M4A, MP3, OGG, WAV
+                    </div>
+                  </div>
+                </div>
+                {form.customAudioFileName ? (
+                  <MiniPanel>
+                    <div className='flex items-center justify-between gap-2 text-xs'>
+                      <span className='truncate'>配音文件：{form.customAudioFileName}</span>
+                      <Button
+                        variant='ghost'
+                        size='sm'
+                        className='h-7'
+                        onClick={() =>
+                          setForm((current) => ({
+                            ...current,
+                            customAudioAssetId: '',
+                            customAudioFileName: ''
+                          }))
+                        }
+                      >
+                        移除
+                      </Button>
+                    </div>
+                  </MiniPanel>
+                ) : null}
                 <SelectField
                   label='配音音量'
                   value={form.voiceVolume}
                   options={['80%', '100%', '120%']}
                   onChange={(value) => update('voiceVolume', value)}
                 />
-                <SelectField
-                  label='配音语速'
-                  value={form.voiceSpeed}
-                  options={['0.8x', '1.0x', '1.2x']}
-                  onChange={(value) => update('voiceSpeed', value)}
-                />
-              </div>
-              <div className='grid grid-cols-2 gap-2'>
-                <ToolButton
-                  onClick={() => void playVoicePreview('voice')}
-                  disabled={
-                    previewing !== null ||
-                    voiceCapability.status === 'recovering' ||
-                    voiceCapability.status === 'checking' ||
-                    voiceCapability.status === 'offline' ||
-                    voiceCapability.status === 'error'
-                  }
-                >
-                  {voiceCapability.status === 'recovering' ||
-                  voiceCapability.status === 'checking' ? (
-                    <Icons.spinner className='size-4 animate-spin' />
-                  ) : (
-                    <Icons.music className='size-4' />
-                  )}
-                  {voiceCapability.status === 'recovering'
-                    ? '语音能力正在恢复'
-                    : voiceCapability.status === 'checking'
-                      ? '检测中'
-                      : voiceCapability.status === 'offline' || voiceCapability.status === 'error'
-                        ? '暂不可用'
-                        : previewing === 'voice'
-                          ? '生成试听中...'
-                          : '试听音色'}
-                </ToolButton>
-                <ToolButton
-                  onClick={() => void playVoicePreview('full')}
-                  disabled={
-                    previewing !== null ||
-                    voiceCapability.status === 'recovering' ||
-                    voiceCapability.status === 'checking' ||
-                    voiceCapability.status === 'offline' ||
-                    voiceCapability.status === 'error'
-                  }
-                >
-                  {voiceCapability.status === 'recovering' ||
-                  voiceCapability.status === 'checking' ? (
-                    <Icons.spinner className='size-4 animate-spin' />
-                  ) : (
-                    <Icons.video className='size-4' />
-                  )}
-                  {voiceCapability.status === 'recovering'
-                    ? '正在恢复'
-                    : voiceCapability.status === 'checking'
-                      ? '检测中'
-                      : voiceCapability.status === 'offline' || voiceCapability.status === 'error'
-                        ? '暂不可用'
-                        : previewing === 'full'
-                          ? '生成试听中...'
-                          : '完整试听'}
-                </ToolButton>
-              </div>
-              {voiceCapability.status === 'error' ? (
-                <div className='flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-2 py-1.5'>
-                  <p className='flex-1 text-[11px] text-destructive'>语音能力暂不可用</p>
-                  <Button
-                    type='button'
-                    variant='outline'
-                    size='sm'
-                    className='h-6 text-[11px]'
-                    onClick={() => void voiceCapability.recover()}
-                  >
-                    <Icons.refresh className='size-3' />
-                    重新恢复
-                  </Button>
-                </div>
-              ) : null}
-              {previewAudioUrl ? (
-                <audio className='h-8 w-full' src={previewAudioUrl} controls />
-              ) : null}
-            </>
-          ) : null}
+              </>
+            ) : null}
 
-          {form.voiceMode === '上传音频' ? (
-            <>
-              <div className='grid gap-2'>
-                <div className='text-xs font-medium'>上传配音文件</div>
+            <div className='my-3 border-t' />
+
+            <SelectField
+              label='背景音乐来源'
+              value={form.musicSource}
+              options={['无背景音乐', '随机背景音乐', '自定义背景音乐', 'Sonilo AI 配乐']}
+              onChange={(value) => update('musicSource', value)}
+            />
+
+            {form.musicSource === 'Sonilo AI 配乐' ? (
+              <Input
+                className='h-8 text-xs'
+                placeholder='Sonilo 音乐风格提示词，可留空'
+                value={form.musicPrompt}
+                onChange={(event) => update('musicPrompt', event.target.value)}
+              />
+            ) : null}
+
+            {form.musicSource === '自定义背景音乐' ? (
+              <>
                 <div className='rounded-md bg-muted/60 p-3'>
                   <Button
                     variant='outline'
                     size='sm'
                     disabled={uploading}
-                    onClick={() => chooseFile('voice')}
+                    onClick={() => chooseFile('music')}
                   >
                     <Icons.upload className='size-4' />
                     Upload
@@ -1062,200 +1119,136 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
                     200MB per file • AAC, FLAC, M4A, MP3, OGG, WAV
                   </div>
                 </div>
-              </div>
-              {form.customAudioFileName ? (
-                <MiniPanel>
-                  <div className='flex items-center justify-between gap-2 text-xs'>
-                    <span className='truncate'>配音文件：{form.customAudioFileName}</span>
-                    <Button
-                      variant='ghost'
-                      size='sm'
-                      className='h-7'
-                      onClick={() =>
-                        setForm((current) => ({
-                          ...current,
-                          customAudioAssetId: '',
-                          customAudioFileName: ''
-                        }))
-                      }
-                    >
-                      移除
-                    </Button>
-                  </div>
-                </MiniPanel>
-              ) : null}
-              <SelectField
-                label='配音音量'
-                value={form.voiceVolume}
-                options={['80%', '100%', '120%']}
-                onChange={(value) => update('voiceVolume', value)}
-              />
-            </>
-          ) : null}
+                {form.customMusicFileName ? (
+                  <MiniPanel>
+                    <div className='flex items-center justify-between gap-2 text-xs'>
+                      <span className='truncate'>音乐文件：{form.customMusicFileName}</span>
+                      <Button
+                        variant='ghost'
+                        size='sm'
+                        className='h-7'
+                        onClick={() =>
+                          setForm((current) => ({
+                            ...current,
+                            customMusicAssetId: '',
+                            customMusicFileName: ''
+                          }))
+                        }
+                      >
+                        移除
+                      </Button>
+                    </div>
+                  </MiniPanel>
+                ) : null}
+              </>
+            ) : null}
 
-          <div className='my-3 border-t' />
-
-          <SelectField
-            label='背景音乐来源'
-            value={form.musicSource}
-            options={['无背景音乐', '随机背景音乐', '自定义背景音乐', 'Sonilo AI 配乐']}
-            onChange={(value) => update('musicSource', value)}
-          />
-
-          {form.musicSource === 'Sonilo AI 配乐' ? (
-            <Input
-              className='h-8 text-xs'
-              placeholder='Sonilo 音乐风格提示词，可留空'
-              value={form.musicPrompt}
-              onChange={(event) => update('musicPrompt', event.target.value)}
+            <SelectField
+              label='背景音乐音量'
+              value={`${form.musicVolume}%`}
+              options={['0%', '10%', '20%', '30%', '50%', '80%', '100%']}
+              onChange={(value) => update('musicVolume', Number(value.replace('%', '')))}
             />
-          ) : null}
+          </StepCard>
 
-          {form.musicSource === '自定义背景音乐' ? (
-            <>
-              <div className='rounded-md bg-muted/60 p-3'>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  disabled={uploading}
-                  onClick={() => chooseFile('music')}
-                >
-                  <Icons.upload className='size-4' />
-                  Upload
-                </Button>
-                <div className='mt-3 text-xs text-muted-foreground'>
-                  200MB per file • AAC, FLAC, M4A, MP3, OGG, WAV
-                </div>
-              </div>
-              {form.customMusicFileName ? (
-                <MiniPanel>
-                  <div className='flex items-center justify-between gap-2 text-xs'>
-                    <span className='truncate'>音乐文件：{form.customMusicFileName}</span>
-                    <Button
-                      variant='ghost'
-                      size='sm'
-                      className='h-7'
-                      onClick={() =>
-                        setForm((current) => ({
-                          ...current,
-                          customMusicAssetId: '',
-                          customMusicFileName: ''
-                        }))
-                      }
-                    >
-                      移除
-                    </Button>
-                  </div>
-                </MiniPanel>
-              ) : null}
-            </>
-          ) : null}
-
-          <SelectField
-            label='背景音乐音量'
-            value={`${form.musicVolume}%`}
-            options={['0%', '10%', '20%', '30%', '50%', '80%', '100%']}
-            onChange={(value) => update('musicVolume', Number(value.replace('%', '')))}
-          />
-        </StepCard>
-
-        <StepCard
-          number='04'
-          icon={Icons.palette}
-          title='字幕样式'
-          description='控制字幕开关、字体、位置、颜色、描边和背景效果。'
-        >
-          <CompactSwitch
-            label='启用字幕'
-            checked={form.subtitleEnabled}
-            onChange={(checked) => update('subtitleEnabled', checked)}
-          />
-
-          <SelectField
-            label='字幕字体'
-            value={form.subtitleFont}
-            options={['BeVietnamPro-Bold.ttf', 'STHeitiMedium.ttc', 'Microsoft YaHei', 'SimHei']}
-            onChange={(value) => update('subtitleFont', value)}
-          />
-
-          <SelectField
-            label='字幕位置'
-            value={form.subtitlePosition}
-            options={['底部（推荐）', '顶部', '中间', '自定义']}
-            onChange={(value) => update('subtitlePosition', value)}
-          />
-
-          {form.subtitlePosition === '自定义' ? (
-            <Input
-              className='h-8 text-xs'
-              placeholder='自定义位置 0-100'
-              value={form.customSubtitlePosition}
-              onChange={(event) => update('customSubtitlePosition', event.target.value)}
-            />
-          ) : null}
-
-          <div className='grid grid-cols-2 gap-4'>
-            <ColorPickerField
-              label='字幕颜色'
-              value={form.subtitleColor}
-              onChange={(value) => update('subtitleColor', value)}
-            />
-            <SliderField
-              label='字幕大小'
-              value={form.subtitleSize}
-              min={12}
-              max={90}
-              step={1}
-              onChange={(value) => update('subtitleSize', value)}
-            />
-          </div>
-
-          <div className='grid grid-cols-2 gap-4'>
-            <ColorPickerField
-              label='描边颜色'
-              value={form.strokeColor}
-              onChange={(value) => update('strokeColor', value)}
-            />
-            <SliderField
-              label='描边粗细'
-              value={form.strokeWidth}
-              min={0}
-              max={6}
-              step={0.25}
-              onChange={(value) => update('strokeWidth', value)}
-            />
-          </div>
-
-          <div className='grid grid-cols-2 gap-4'>
-            <CompactSwitch
-              label='启用字幕背景'
-              checked={form.subtitleBackground}
-              onChange={(checked) => update('subtitleBackground', checked)}
-            />
-            <ColorPickerField
-              label='字幕背景颜色'
-              value={form.subtitleBackgroundColor}
-              onChange={(value) => update('subtitleBackgroundColor', value)}
-            />
-          </div>
-
-          <CompactSwitch
-            label='启用圆角半透明字幕背景'
-            checked={form.roundedSubtitleBackground}
-            onChange={(checked) => update('roundedSubtitleBackground', checked)}
-          />
-
-          <Button
-            variant='outline'
-            className='w-full'
-            size='sm'
-            onClick={() => setForm(initialForm)}
+          <StepCard
+            number='04'
+            icon={Icons.palette}
+            title='字幕样式'
+            description='控制字幕开关、字体、位置、颜色、描边和背景效果。'
           >
-            <Icons.palette className='size-4' />
-            恢复默认字幕设置
-          </Button>
-        </StepCard>
-      </section>
-    </div>
+            <CompactSwitch
+              label='启用字幕'
+              checked={form.subtitleEnabled}
+              onChange={(checked) => update('subtitleEnabled', checked)}
+            />
+
+            <SelectField
+              label='字幕字体'
+              value={form.subtitleFont}
+              options={['BeVietnamPro-Bold.ttf', 'STHeitiMedium.ttc', 'Microsoft YaHei', 'SimHei']}
+              onChange={(value) => update('subtitleFont', value)}
+            />
+
+            <SelectField
+              label='字幕位置'
+              value={form.subtitlePosition}
+              options={['底部（推荐）', '顶部', '中间', '自定义']}
+              onChange={(value) => update('subtitlePosition', value)}
+            />
+
+            {form.subtitlePosition === '自定义' ? (
+              <Input
+                className='h-8 text-xs'
+                placeholder='自定义位置 0-100'
+                value={form.customSubtitlePosition}
+                onChange={(event) => update('customSubtitlePosition', event.target.value)}
+              />
+            ) : null}
+
+            <div className='grid grid-cols-2 gap-4'>
+              <ColorPickerField
+                label='字幕颜色'
+                value={form.subtitleColor}
+                onChange={(value) => update('subtitleColor', value)}
+              />
+              <SliderField
+                label='字幕大小'
+                value={form.subtitleSize}
+                min={12}
+                max={90}
+                step={1}
+                onChange={(value) => update('subtitleSize', value)}
+              />
+            </div>
+
+            <div className='grid grid-cols-2 gap-4'>
+              <ColorPickerField
+                label='描边颜色'
+                value={form.strokeColor}
+                onChange={(value) => update('strokeColor', value)}
+              />
+              <SliderField
+                label='描边粗细'
+                value={form.strokeWidth}
+                min={0}
+                max={6}
+                step={0.25}
+                onChange={(value) => update('strokeWidth', value)}
+              />
+            </div>
+
+            <div className='grid grid-cols-2 gap-4'>
+              <CompactSwitch
+                label='启用字幕背景'
+                checked={form.subtitleBackground}
+                onChange={(checked) => update('subtitleBackground', checked)}
+              />
+              <ColorPickerField
+                label='字幕背景颜色'
+                value={form.subtitleBackgroundColor}
+                onChange={(value) => update('subtitleBackgroundColor', value)}
+              />
+            </div>
+
+            <CompactSwitch
+              label='启用圆角半透明字幕背景'
+              checked={form.roundedSubtitleBackground}
+              onChange={(checked) => update('roundedSubtitleBackground', checked)}
+            />
+
+            <Button
+              variant='outline'
+              className='w-full'
+              size='sm'
+              onClick={() => setForm(initialForm)}
+            >
+              <Icons.palette className='size-4' />
+              恢复默认字幕设置
+            </Button>
+          </StepCard>
+        </section>
+      </div>
+    </>
   );
 }

@@ -24,24 +24,54 @@
 //    → const res = await fetch('https://your-api.com/users?...')
 //    → return res.json()
 //
-// Current: Mock (in-memory fake data for demo/prototyping)
+// Current: Local JSON data through StorageService-backed API
 // ============================================================
 
-import { fakeUsers } from '@/constants/mock-api-users';
 import type { UserFilters, UsersResponse, UserMutationPayload } from './types';
 
+function toQuery(filters: UserFilters) {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      params.set(key, String(value));
+    }
+  });
+  return params.toString();
+}
+
+async function requestJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
+  const res = await fetch(input, init);
+  if (!res.ok) {
+    throw new Error(`Request failed: ${res.status}`);
+  }
+  return (await res.json()) as T;
+}
+
 export async function getUsers(filters: UserFilters): Promise<UsersResponse> {
-  return fakeUsers.getUsers(filters);
+  if (typeof window === 'undefined') {
+    const { listCustomers } = await import('@/lib/customers/local-store');
+    return listCustomers(filters);
+  }
+  const query = toQuery(filters);
+  return requestJson<UsersResponse>(`/api/users${query ? `?${query}` : ''}`);
 }
 
 export async function createUser(data: UserMutationPayload) {
-  return fakeUsers.createUser(data);
+  return requestJson('/api/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
 }
 
 export async function updateUser(id: number, data: UserMutationPayload) {
-  return fakeUsers.updateUser(id, data);
+  return requestJson(`/api/users/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
 }
 
 export async function deleteUser(id: number) {
-  return fakeUsers.deleteUser(id);
+  return requestJson(`/api/users/${id}`, { method: 'DELETE' });
 }
