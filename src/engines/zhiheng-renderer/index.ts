@@ -68,3 +68,49 @@ export {
 
 // Validator
 export { TimelineValidator, validateTimeline } from './validator';
+
+// Environment Preflight
+export {
+  runEnvironmentPreflight,
+  runFfmpeg,
+  type RendererEnvironmentReport,
+  type EnvironmentFilterInfo,
+  type EnvironmentEncoderInfo,
+  type EnvironmentDependencySource
+} from './environment';
+
+// Asset Resolver
+export {
+  AssetResolver,
+  TaskAssetManifest,
+  type ResolvedAsset,
+  type AssetType,
+  type ResolvedAssetSource,
+  type TaskAssetManifestData,
+  type TaskAssetManifestEntry
+} from './asset-resolver';
+
+// Asset Ingest & Probe
+export {
+  probeAsset,
+  type AssetProbeResult,
+  type ColorClass,
+  type ProbeSource,
+  type VideoStreamInfo,
+  type AudioStreamInfo,
+  type ProbeOptions
+} from './ingest';
+
+// Logger
+export { RenderLogger, type RenderReport, type SegmentLogEntry, type LogLevel } from './logger';
+
+// Per-Segment Preprocess
+export {
+  preprocessSegment,
+  type NormalizedSegment,
+  type ColorPipeline,
+  type PreprocessOptions
+} from './preprocess';
+
+// Zhiheng Renderer
+export { ZhihengRenderer, type ZhihengRendererOptions, type PreprocessResult } from './renderer';

@@ -178,7 +178,7 @@ function parseFfmpegIOutput(stderr: string, assetId: string, filePath: string): 
   // Video stream: Stream #0:0[0x1](und): Video: hevc (Main 10) (hvc1 / 0x31637668), yuv420p10le(tv, bt2020nc/bt2020/arib-std-b67, progressive), 1920x1080, 25746 kb/s, 119.94 fps, 120 tbr, 90k tbn (default)
   let video: VideoStreamInfo | null = null;
   const videoLineMatch = stderr.match(
-    /Stream #\d+:\d+[^\n]*Video:\s+([^,]+),\s+([^,]+),\s+(\d+)x(\d+)[^,]*,\s+[^,]*,\s+([\d.]+)\s+fps/
+    /Stream #\d+:\d+[^\n]*Video:\s+([^,]+),\s+([a-z0-9]+(?:\([^)]+\))?),\s+(\d+)x(\d+),\s+[^,]+,\s+([\d.]+)\s+fps/
   );
   if (videoLineMatch) {
     const codecFull = videoLineMatch[1].trim();

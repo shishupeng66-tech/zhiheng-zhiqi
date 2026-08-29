@@ -74,8 +74,8 @@ const RECOMMENDED_ENCODERS = ['libx264'];
  * 解析 ffmpeg 可执行文件路径。
  * 优先级：
  * 1. 环境变量 FFMPEG_PATH
- * 2. 系统 PATH 中的 ffmpeg
- * 3. hermes-agent imageio-ffmpeg 打包的 ffmpeg（开发环境常见）
+ * 2. hermes-agent imageio-ffmpeg 打包的 ffmpeg（优先于系统 PATH，避免 .cmd 包装器问题）
+ * 3. 系统 PATH 中的 ffmpeg
  */
 function resolveFfmpegPath(): { path: string | null; source: EnvironmentDependencySource } {
   // 1. 环境变量
@@ -83,19 +83,7 @@ function resolveFfmpegPath(): { path: string | null; source: EnvironmentDependen
     return { path: process.env.FFMPEG_PATH, source: 'configured_binary' };
   }
 
-  // 2. 系统 PATH
-  const systemResult = spawnSync('where', ['ffmpeg'], { encoding: 'utf8', shell: true });
-  if (systemResult.status === 0 && systemResult.stdout) {
-    const firstLine = systemResult.stdout
-      .split(/\r?\n/)
-      .map((l) => l.trim())
-      .find(Boolean);
-    if (firstLine && fs.existsSync(firstLine)) {
-      return { path: firstLine, source: 'system_path' };
-    }
-  }
-
-  // 3. hermes-agent imageio-ffmpeg
+  // 2. hermes-agent imageio-ffmpeg（直接返回 .exe，避免 .cmd 包装器）
   const hermesFfmpeg = path.join(
     process.env.LOCALAPPDATA || '',
     'hermes',
@@ -109,6 +97,18 @@ function resolveFfmpegPath(): { path: string | null; source: EnvironmentDependen
   );
   if (fs.existsSync(hermesFfmpeg)) {
     return { path: hermesFfmpeg, source: 'hermes_imageio' };
+  }
+
+  // 3. 系统 PATH
+  const systemResult = spawnSync('where', ['ffmpeg'], { encoding: 'utf8', shell: true });
+  if (systemResult.status === 0 && systemResult.stdout) {
+    const firstLine = systemResult.stdout
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .find(Boolean);
+    if (firstLine && fs.existsSync(firstLine)) {
+      return { path: firstLine, source: 'system_path' };
+    }
   }
 
   return { path: null, source: 'not_found' };
@@ -161,7 +161,8 @@ function getFfmpegVersion(ffmpegPath: string): string | null {
   const result = spawnSync(ffmpegPath, ['-version'], {
     encoding: 'utf8',
     maxBuffer: 4 * 1024 * 1024,
-    windowsHide: true
+    windowsHide: true,
+    shell: ffmpegPath.toLowerCase().endsWith('.cmd')
   });
   if (result.status !== 0) return null;
   const firstLine = result.stdout?.split(/\r?\n/)[0]?.trim();
@@ -172,7 +173,8 @@ function checkFilter(ffmpegPath: string, filterName: string): boolean {
   const result = spawnSync(ffmpegPath, ['-filters'], {
     encoding: 'utf8',
     maxBuffer: 8 * 1024 * 1024,
-    windowsHide: true
+    windowsHide: true,
+    shell: ffmpegPath.toLowerCase().endsWith('.cmd')
   });
   if (result.status !== 0) return false;
   // 过滤行格式：" T... zscale            Convert to/from linear colorspace..."
@@ -184,7 +186,8 @@ function checkEncoder(ffmpegPath: string, encoderName: string): boolean {
   const result = spawnSync(ffmpegPath, ['-encoders'], {
     encoding: 'utf8',
     maxBuffer: 8 * 1024 * 1024,
-    windowsHide: true
+    windowsHide: true,
+    shell: ffmpegPath.toLowerCase().endsWith('.cmd')
   });
   if (result.status !== 0) return false;
   // 编码器行格式：" V..... ffv1                 FFmpeg video codec #1 in FFV1..."
