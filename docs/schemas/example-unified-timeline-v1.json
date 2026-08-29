@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "timelineId": "example_timeline_001",
+  "taskId": "example_task_001",
+  "outputProfile": {
+    "width": 1080,
+    "height": 1920,
+    "targetFps": 30,
+    "videoCodec": "h264",
+    "audioCodec": "aac",
+    "pixelFormat": "yuv420p",
+    "colorTarget": "bt709_sdr"
+  },
+  "videoTrack": [
+    {
+      "assetRef": {
+        "type": "library_asset",
+        "assetId": "example_asset_factory_exterior"
+      },
+      "sourceStart": 10.5,
+      "duration": 5.0,
+      "transition": "hard_cut"
+    },
+    {
+      "assetRef": {
+        "type": "library_asset",
+        "assetId": "example_asset_production_line"
+      },
+      "sourceStart": 0.0,
+      "duration": 5.0,
+      "transition": "hard_cut"
+    },
+    {
+      "assetRef": {
+        "type": "task_asset",
+        "assetId": "example_task_asset_quality_check"
+      },
+      "sourceStart": 3.25,
+      "duration": 5.0,
+      "transition": "hard_cut"
+    }
+  ],
+  "voiceTrack": [
+    {
+      "assetRef": {
+        "type": "task_asset",
+        "assetId": "example_voice_asset_001"
+      },
+      "start": 0.0,
+      "duration": 15.0,
+      "volume": 1.0,
+      "fadeIn": 0.3,
+      "fadeOut": 0.5
+    }
+  ],
+  "subtitleTrack": [
+    {
+      "id": "sub_001",
+      "start": 0.5,
+      "duration": 4.0,
+      "text": "这是一家拥有十年经验的饮品代工工厂",
+      "styleId": "subtitle.default",
+      "highlights": [
+        {
+          "keyword": "十年经验",
+          "startChar": 7,
+          "endChar": 11
+        }
+      ]
+    },
+    {
+      "id": "sub_002",
+      "start": 5.0,
+      "duration": 4.5,
+      "text": "全自动生产线日产能可达十万瓶",
+      "styleId": "subtitle.default",
+      "highlights": [
+        {
+          "keyword": "全自动生产线",
+          "startChar": 0,
+          "endChar": 7
+        },
+        {
+          "keyword": "十万瓶",
+          "startChar": 11,
+          "endChar": 14
+        }
+      ]
+    },
+    {
+      "id": "sub_003",
+      "start": 10.0,
+      "duration": 4.5,
+      "text": "每批次产品均经过严格质检后方可出厂",
+      "styleId": "subtitle.default",
+      "highlights": [
+        {
+          "keyword": "严格质检",
+          "startChar": 10,
+          "endChar": 14
+        }
+      ]
+    }
+  ],
+  "titleTrack": [
+    {
+      "id": "title_hook_001",
+      "start": 0.0,
+      "duration": 3.0,
+      "text": "饮品代工怎么选？",
+      "styleId": "title.hook",
+      "layer": 2
+    },
+    {
+      "id": "title_emphasis_001",
+      "start": 5.5,
+      "duration": 2.5,
+      "text": "日产能10万瓶",
+      "styleId": "title.emphasis",
+      "layer": 2
+    }
+  ]
+}

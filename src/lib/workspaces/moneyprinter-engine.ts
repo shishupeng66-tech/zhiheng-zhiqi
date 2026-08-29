@@ -12,6 +12,10 @@ import {
 } from '@/lib/db/schema';
 import { generateVoiceAudio } from '@/lib/voice-service/client';
 import { resolveSpeechVoiceId } from '@/lib/voice-service/speech-voice-catalog';
+import {
+  getTaskExecutionSnapshot,
+  type AutomationExecutionSnapshot
+} from '@/lib/workspaces/automation-editing';
 
 type EngineRunResult = {
   task_id?: string;
@@ -39,6 +43,8 @@ type BuildCliArgsOptions = {
   videoScript?: string;
   customAudioPath?: string;
   forceNoVoice?: boolean;
+  materialPathsOverride?: string[];
+  bgmVolumeOverride?: number;
 };
 
 const repoRoot = /* turbopackIgnore: true */ process.cwd();
@@ -112,6 +118,17 @@ function mapAspect(value: string) {
   if (value.includes('16:9')) return '16:9';
   if (value.includes('1:1')) return '1:1';
   return '9:16';
+}
+
+function videoScaleFilter(value: string) {
+  const aspect = mapAspect(value);
+  if (aspect === '16:9') {
+    return 'scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080';
+  }
+  if (aspect === '1:1') {
+    return 'scale=1080:1080:force_original_aspect_ratio=increase,crop=1080:1080';
+  }
+  return 'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920';
 }
 
 function mapConcatMode(value: string) {
@@ -263,7 +280,9 @@ function buildCliArgs(
   const customBgmAsset = readAssetByOption(task, assets, 'customBgm');
   const customAudioPath = options.customAudioPath ?? resolveAssetPath(customAudioAsset);
   const customBgmPath = ensureManagedBgmFile(engineDir, resolveAssetPath(customBgmAsset), task.id);
-  const assetPaths = resolveMaterialAssetPaths(assets, customAudioAsset, customBgmAsset);
+  const assetPaths =
+    options.materialPathsOverride ??
+    resolveMaterialAssetPaths(assets, customAudioAsset, customBgmAsset);
   const videoSource = mapVideoSource(task.materialSource, assetPaths.length > 0);
   const bgmType = mapBgmType(task.musicSource, Boolean(customBgmPath));
   const args = [
@@ -297,7 +316,7 @@ function buildCliArgs(
     '--bgm-type',
     bgmType,
     '--bgm-volume',
-    String(Math.max(0, Math.min(1, task.musicVolume / 100))),
+    String(Math.max(0, Math.min(1, (options.bgmVolumeOverride ?? task.musicVolume) / 100))),
     '--font-name',
     task.subtitleFont || 'STHeitiMedium.ttc',
     '--subtitle-position',
@@ -401,6 +420,196 @@ function appendLog(logPath: string, text: string) {
   fs.appendFileSync(logPath, text);
 }
 
+function sanitizeFileName(value: string) {
+  return value.replace(/[<>:"/\\|?*\x00-\x1F]/g, '-').slice(0, 80) || 'clip';
+}
+
+function getFfmpegCommand() {
+  if (process.env.FFMPEG_PATH && fs.existsSync(process.env.FFMPEG_PATH)) {
+    return process.env.FFMPEG_PATH;
+  }
+  const lookup = spawnSync(process.platform === 'win32' ? 'where.exe' : 'which', ['ffmpeg'], {
+    encoding: 'utf8',
+    shell: true,
+    windowsHide: true
+  });
+  const resolved = lookup.stdout
+    ?.split(/\r?\n/)
+    .map((line) => line.trim())
+    .find(Boolean);
+  if (resolved && fs.existsSync(resolved)) {
+    return resolved;
+  }
+  throw new Error('找不到 ffmpeg，请配置 FFMPEG_PATH 或把 ffmpeg 加入系统 PATH');
+}
+
+function prepareExecutionTimelineMaterials(input: {
+  snapshot: AutomationExecutionSnapshot | null;
+  engineDir: string;
+  taskId: string;
+  logPath: string;
+}) {
+  if (!input.snapshot) return null;
+  if (input.snapshot.editTimeline.length === 0) {
+    throw new Error('执行快照中没有可裁剪的时间线片段');
+  }
+
+  const clipDir = path.join(input.engineDir, 'storage', 'tasks', input.taskId, 'zhiheng-clips');
+  fs.mkdirSync(clipDir, { recursive: true });
+  const ffmpeg = getFfmpegCommand();
+  const filter = videoScaleFilter(input.snapshot.videoRatio);
+  const clippedPaths: string[] = [];
+
+  appendLog(
+    input.logPath,
+    `[${new Date().toISOString()}] execution-snapshot version=${input.snapshot.version} clips=${input.snapshot.editTimeline.length}\n`
+  );
+
+  for (const item of input.snapshot.editTimeline) {
+    const duration = Math.round((item.sourceEnd - item.sourceStart) * 1000) / 1000;
+    if (duration <= 0) {
+      throw new Error(`第 ${item.order} 段源片段时长无效`);
+    }
+    fs.accessSync(item.sourceFile, fs.constants.R_OK);
+    const output = path.join(
+      clipDir,
+      `${String(item.order).padStart(2, '0')}-${sanitizeFileName(path.basename(item.sourceFile, path.extname(item.sourceFile)))}.mp4`
+    );
+    const args = [
+      '-y',
+      '-ss',
+      String(item.sourceStart),
+      '-i',
+      item.sourceFile,
+      '-t',
+      String(duration),
+      '-vf',
+      filter,
+      '-an',
+      '-c:v',
+      'libx264',
+      '-preset',
+      'veryfast',
+      '-crf',
+      '23',
+      '-pix_fmt',
+      'yuv420p',
+      output
+    ];
+
+    appendLog(
+      input.logPath,
+      [
+        `[${new Date().toISOString()}] timeline-clip order=${item.order}`,
+        `timeline=${item.timelineStart}-${item.timelineEnd}`,
+        `sourceStart=${item.sourceStart}`,
+        `sourceEnd=${item.sourceEnd}`,
+        `source="${item.sourceFile}"`,
+        `output="${output}"`
+      ].join(' ') + '\n'
+    );
+    for (const warning of item.warnings) {
+      appendLog(input.logPath, `[timeline-warning] ${warning}\n`);
+    }
+
+    const result = spawnSync(ffmpeg, args, {
+      encoding: 'utf8',
+      maxBuffer: 20 * 1024 * 1024,
+      shell: process.platform === 'win32' && /\.(cmd|bat)$/i.test(ffmpeg),
+      windowsHide: true
+    });
+    if (result.stderr) {
+      appendLog(input.logPath, result.stderr);
+    }
+    if (result.status !== 0 || !fs.existsSync(output)) {
+      const message =
+        result.error?.message ||
+        result.stderr?.split(/\r?\n/).filter(Boolean).slice(-8).join('\n') ||
+        `ffmpeg exited with ${result.status}`;
+      throw new Error(`第 ${item.order} 段素材裁剪失败：${message}`);
+    }
+    clippedPaths.push(output);
+  }
+
+  return clippedPaths;
+}
+
+function formatSrtTimestamp(seconds: number) {
+  const safe = Math.max(0, seconds);
+  const hours = Math.floor(safe / 3600);
+  const minutes = Math.floor((safe % 3600) / 60);
+  const wholeSeconds = Math.floor(safe % 60);
+  const millis = Math.round((safe - Math.floor(safe)) * 1000);
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(wholeSeconds).padStart(2, '0')},${String(millis).padStart(3, '0')}`;
+}
+
+function getMediaDurationSeconds(filePath: string | null | undefined) {
+  if (!filePath) return null;
+  try {
+    const ffmpeg = getFfmpegCommand();
+    const result = spawnSync(ffmpeg, ['-i', filePath], {
+      encoding: 'utf8',
+      maxBuffer: 4 * 1024 * 1024,
+      shell: process.platform === 'win32' && /\.(cmd|bat)$/i.test(ffmpeg),
+      windowsHide: true
+    });
+    const output = `${result.stdout ?? ''}\n${result.stderr ?? ''}`;
+    const match = output.match(/Duration:\s*(\d{2}):(\d{2}):(\d{2}(?:\.\d+)?)/);
+    if (!match) return null;
+    return Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]);
+  } catch {
+    return null;
+  }
+}
+
+function splitSubtitleText(script: string, snapshot: AutomationExecutionSnapshot | null) {
+  const timelineText = snapshot?.editTimeline.map((item) => item.scriptText.trim()).filter(Boolean);
+  if (timelineText && timelineText.length > 0) return timelineText;
+  return script
+    .split(/[\n。！？!?]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function writePrebuiltSubtitle(input: {
+  taskId: string;
+  engineDir: string;
+  snapshot: AutomationExecutionSnapshot | null;
+  script: string;
+  audioPath: string | null;
+  audioDuration: number | null;
+  logPath: string;
+}) {
+  if (!input.snapshot?.subtitle.enabled) return null;
+  const lines = splitSubtitleText(input.script, input.snapshot);
+  if (lines.length === 0) return null;
+  const actualAudioDuration = getMediaDurationSeconds(input.audioPath);
+  const duration = Math.max(
+    actualAudioDuration ??
+      input.audioDuration ??
+      input.snapshot.editTimeline.at(-1)?.timelineEnd ??
+      0,
+    1
+  );
+  const segmentDuration = duration / lines.length;
+  const taskDir = path.join(input.engineDir, 'storage', 'tasks', input.taskId);
+  fs.mkdirSync(taskDir, { recursive: true });
+  const subtitlePath = path.join(taskDir, 'subtitle.srt');
+  const content = lines
+    .map((line, index) => {
+      const start = index * segmentDuration;
+      const end = index === lines.length - 1 ? duration : (index + 1) * segmentDuration;
+      return `${index + 1}\n${formatSrtTimestamp(start)} --> ${formatSrtTimestamp(end)}\n${line}\n`;
+    })
+    .join('\n');
+  fs.writeFileSync(subtitlePath, content, 'utf8');
+  appendLog(
+    input.logPath,
+    `[${new Date().toISOString()}] prebuilt-subtitle path="${subtitlePath}" lines=${lines.length} duration=${duration}s audioDuration=${input.audioDuration ?? 'unknown'} actualAudioDuration=${actualAudioDuration ?? 'unknown'}\n`
+  );
+  return subtitlePath;
+}
+
 function runCliProcess(input: {
   python: PythonCommand;
   args: string[];
@@ -455,10 +664,10 @@ async function prepareVoiceServiceAudio(input: {
 }) {
   const stopAt = mapStopAt(readTaskOption(input.task, 'stopAt'));
   if (stopAt === 'script' || stopAt === 'terms') {
-    return { audioPath: null, script: input.task.scriptText?.trim() || '' };
+    return { audioPath: null, script: input.task.scriptText?.trim() || '', duration: null };
   }
   if (!shouldUseVoiceService(input.task, input.assets)) {
-    return { audioPath: null, script: input.task.scriptText?.trim() || '' };
+    return { audioPath: null, script: input.task.scriptText?.trim() || '', duration: null };
   }
 
   let script = input.task.scriptText?.trim() || '';
@@ -497,7 +706,7 @@ async function prepareVoiceServiceAudio(input: {
     input.logPath,
     `[${new Date().toISOString()}] voice-service audio=${voiceAudio.audio_path} duration=${voiceAudio.duration}s\n`
   );
-  return { audioPath: voiceAudio.audio_path, script };
+  return { audioPath: voiceAudio.audio_path, script, duration: voiceAudio.duration };
 }
 
 function getTaskAssets(task: AutomationVideoTask) {
@@ -604,6 +813,8 @@ export async function runMoneyPrinterTask(taskId: string) {
   const logPath = path.join(logsDir, `${taskId}.log`);
   const assets = getTaskAssets(task);
   const python = getPythonCommand();
+  const executionSnapshot = getTaskExecutionSnapshot(task);
+  let executionMaterialPaths: string[] | null = null;
   const cliArgs = buildCliArgs(task, assets, status.engineDir);
   const args = [...python.argsPrefix, ...cliArgs];
 
@@ -616,6 +827,12 @@ export async function runMoneyPrinterTask(taskId: string) {
   });
 
   try {
+    executionMaterialPaths = prepareExecutionTimelineMaterials({
+      snapshot: executionSnapshot,
+      engineDir: status.engineDir,
+      taskId,
+      logPath
+    });
     const voiceAudio = await prepareVoiceServiceAudio({
       task,
       assets,
@@ -623,9 +840,20 @@ export async function runMoneyPrinterTask(taskId: string) {
       python,
       logPath
     });
+    writePrebuiltSubtitle({
+      taskId,
+      engineDir: status.engineDir,
+      snapshot: executionSnapshot,
+      script: executionSnapshot?.scriptText || voiceAudio.script || task.scriptText || '',
+      audioPath: voiceAudio.audioPath,
+      audioDuration: voiceAudio.duration,
+      logPath
+    });
     const nextCliArgs = buildCliArgs(task, assets, status.engineDir, {
       customAudioPath: voiceAudio.audioPath ?? undefined,
-      videoScript: voiceAudio.script || undefined
+      videoScript: executionSnapshot?.scriptText || voiceAudio.script || undefined,
+      materialPathsOverride: executionMaterialPaths ?? undefined,
+      bgmVolumeOverride: executionSnapshot?.bgm.volume
     });
     const run = await runCliProcess({
       python,
@@ -648,6 +876,9 @@ export async function runMoneyPrinterTask(taskId: string) {
         errorMessage: null,
         resultSummary: [
           `Voice Service and automation engine generated ${videos.length || parsedVideos.length} video(s).`,
+          executionSnapshot
+            ? `Executed ${executionSnapshot.editTimeline.length} confirmed timeline clip(s).`
+            : '',
           termsText ? `Keywords: ${termsText}` : '',
           script ? `Script: ${script.slice(0, 120)}${script.length > 120 ? '...' : ''}` : ''
         ]
@@ -669,11 +900,12 @@ export async function runMoneyPrinterTask(taskId: string) {
     return;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    appendLog(logPath, `\n[${new Date().toISOString()}] voice-pipeline-error ${message}\n`);
+    appendLog(logPath, `\n[${new Date().toISOString()}] automation-execution-error ${message}\n`);
     updateTask(taskId, {
       status: 'failed',
       errorMessage: message,
-      resultSummary: 'Local Voice Service failed to generate audio. The video task was stopped.'
+      resultSummary:
+        'Automation execution failed. Check the task log for the exact stage and message.'
     });
     return;
   }

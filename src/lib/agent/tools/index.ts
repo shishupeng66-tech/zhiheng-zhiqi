@@ -9,6 +9,13 @@ import {
 import { loadCompanyContext } from '../company-context';
 import type { CompanyContext } from '../types';
 import { searchVideoClips, type VideoClipResult } from '../video-asset-index';
+import {
+  createDraftTaskFromVideoPlan,
+  executeAutomationVideoDraftTask,
+  getTaskAgentPlan
+} from '@/lib/workspaces/automation-editing';
+import { getWorkspaceBySlug } from '@/lib/workspaces/service';
+import { startMoneyPrinterTaskWorker } from '@/lib/workspaces/moneyprinter-engine';
 
 // ============================================================
 // Tool 1: list_video_skills
@@ -223,6 +230,477 @@ const searchVideoAssetsTool: AgentTool<
 };
 
 // ============================================================
+// Tool 5: create_video_plan
+// Generate an editing plan only. It does not render video.
+// ============================================================
+
+const createVideoPlanInput = z.object({
+  userRequest: z.string().describe('用户的视频创作需求或主题'),
+  enterprisePositioning: z.string().optional().describe('可选的企业定位补充'),
+  skillId: z.string().optional().describe('视频剪辑 Skill ID'),
+  contentType: z.string().optional().describe('视频内容类型，如 知识科普型、老板IP观点型'),
+  script: z.string().optional().describe('已有脚本文案；为空时按需求生成规划段落'),
+  platform: z.string().optional().describe('发布平台，默认 抖音'),
+  targetDuration: z.number().optional().describe('目标视频时长，单位秒，默认 30'),
+  videoRatio: z.string().optional().describe('视频比例，默认 9:16')
+});
+
+export type VideoPlanSegmentMatchLevel = 'high_match' | 'medium_match' | 'low_match' | 'no_match';
+
+export type VideoPlanTimelineItem = {
+  order: number;
+  timelineStart: number;
+  timelineEnd: number;
+  scriptText: string;
+  purpose: string;
+  asset: {
+    fileName: string | null;
+    relativePath: string | null;
+    sourceStart: number | null;
+    sourceEnd: number | null;
+  };
+  usageRole: string;
+  matchLevel: VideoPlanSegmentMatchLevel;
+  matchScore: number;
+  matchReasons: string[];
+  cropSafety: string | null;
+  transitionOut: string;
+};
+
+export type CreateVideoPlanOutput = {
+  title: string;
+  topic: string;
+  contentType: string;
+  platform: string;
+  targetDuration: number;
+  videoRatio: string;
+  skill: {
+    id: string | null;
+    name: string | null;
+    contentType: string | null;
+  };
+  script: string;
+  scriptSegments: string[];
+  timeline: VideoPlanTimelineItem[];
+  coverage: {
+    totalSegments: number;
+    highMatch: number;
+    mediumMatch: number;
+    lowMatch: number;
+    noMatch: number;
+    highQualityCoverageRate: number;
+    status: 'confirmed' | 'warning' | 'insufficient';
+  };
+  warnings: string[];
+  voice: {
+    strategy: string;
+    style: string | null;
+  };
+  subtitle: {
+    enabled: boolean;
+    style: string | null;
+  };
+  bgm: {
+    strategy: string;
+    style: string | null;
+  };
+};
+
+const createVideoPlanTool: AgentTool<
+  z.infer<typeof createVideoPlanInput>,
+  CreateVideoPlanOutput
+> = {
+  name: 'create_video_plan',
+  displayName: '生成视频剪辑方案',
+  description:
+    '根据用户需求、企业定位、视频 Skill、脚本和秒级素材搜索结果，生成低风险视频剪辑方案。只输出方案，不渲染视频、不调用 MoneyPrinterTurbo、不执行真实剪辑。',
+  inputSchema: createVideoPlanInput,
+  riskLevel: 'low',
+  requiredPermission: undefined,
+  execute: async (input) => {
+    const companyContext = await loadCompanyContext();
+    const skills = await listVideoEditingSkills();
+    const skill = await resolveVideoPlanSkill(input, skills);
+    const platform = input.platform || skill?.content.targetPlatform || '抖音';
+    const targetDuration = input.targetDuration || inferDuration(skill) || 30;
+    const videoRatio = input.videoRatio || '9:16';
+    const scriptSegments = buildScriptSegments(input, companyContext, skill);
+    const secondsPerSegment = Math.max(
+      3,
+      Math.round((targetDuration / scriptSegments.length) * 10) / 10
+    );
+
+    const timeline: VideoPlanTimelineItem[] = [];
+    const warnings: string[] = [];
+    const usedAssetPaths = new Set<string>();
+
+    for (let i = 0; i < scriptSegments.length; i++) {
+      const scriptText = scriptSegments[i];
+      const usageRole = inferUsageRole(i, scriptSegments.length);
+      const query = buildAssetQuery(scriptText, input, companyContext, skill, usageRole);
+      const results = await searchVideoClips({
+        query,
+        contentType: skill?.content.contentType || input.contentType,
+        orientation: videoRatio.includes('9:16')
+          ? 'portrait'
+          : videoRatio.includes('16:9')
+            ? 'landscape'
+            : undefined,
+        excludeDuplicateGroups: true,
+        limit: 5
+      });
+      const best = results.find((result) => !usedAssetPaths.has(result.relativePath)) ?? results[0];
+      if (best?.relativePath) {
+        usedAssetPaths.add(best.relativePath);
+      }
+      const matchLevel = getMatchLevel(best?.matchScore ?? 0);
+      if (!best || matchLevel === 'no_match') {
+        warnings.push(`第 ${i + 1} 段素材不足：${scriptText}`);
+      }
+
+      const timelineStart = Math.round(i * secondsPerSegment * 10) / 10;
+      const timelineEnd =
+        i === scriptSegments.length - 1
+          ? targetDuration
+          : Math.round((i + 1) * secondsPerSegment * 10) / 10;
+
+      timeline.push({
+        order: i + 1,
+        timelineStart,
+        timelineEnd,
+        scriptText,
+        purpose: inferSegmentPurpose(i, scriptSegments.length, skill),
+        asset: {
+          fileName: best?.fileName ?? null,
+          relativePath: best?.relativePath ?? null,
+          sourceStart: best?.recommendedStart ?? null,
+          sourceEnd: best?.recommendedEnd ?? null
+        },
+        usageRole,
+        matchLevel,
+        matchScore: best?.matchScore ?? 0,
+        matchReasons: best?.matchReasons ?? [],
+        cropSafety: best?.cropSafety ?? null,
+        transitionOut: i === scriptSegments.length - 1 ? 'none' : 'cut'
+      });
+    }
+
+    const coverage = buildCoverage(timeline);
+    if (coverage.status === 'warning') {
+      warnings.push('素材高质量覆盖率在 60%-80%，建议人工复核低匹配片段。');
+    }
+    if (coverage.status === 'insufficient') {
+      warnings.push('素材高质量覆盖率低于 60%，建议修改脚本或补充素材。');
+    }
+
+    warnings.push(...buildGuardrailWarnings(companyContext));
+
+    return {
+      title: buildPlanTitle(input),
+      topic: input.userRequest,
+      contentType: skill?.content.contentType || input.contentType || '企业宣传短视频',
+      platform,
+      targetDuration,
+      videoRatio,
+      skill: {
+        id: skill?.id ?? null,
+        name: skill?.name ?? null,
+        contentType: skill?.content.contentType ?? null
+      },
+      script: scriptSegments.join('\n'),
+      scriptSegments,
+      timeline,
+      coverage,
+      warnings: [...new Set(warnings)],
+      voice: {
+        strategy: '使用企业默认声音资产；正式生成时再进入语音合成链路。',
+        style: skill?.voice.voiceStyle ?? companyContext?.voiceStyle?.tone ?? null
+      },
+      subtitle: {
+        enabled: true,
+        style: skill?.subtitle.subtitleStyle ?? '企业默认字幕'
+      },
+      bgm: {
+        strategy: '使用企业默认背景音乐；音量在正式生成阶段控制。',
+        style: skill?.bgm.bgmStyle ?? null
+      }
+    };
+  }
+};
+
+// ============================================================
+// Tool 6: save_video_plan_as_draft
+// Persist an existing plan as a draft task. High risk, requires confirmation.
+// ============================================================
+
+const saveVideoPlanAsDraftInput = z.object({
+  workspaceSlug: z.string().describe('工作空间 slug，例如 enterprise-media'),
+  plan: z
+    .object({
+      title: z.string(),
+      topic: z.string(),
+      contentType: z.string(),
+      platform: z.string(),
+      targetDuration: z.number(),
+      videoRatio: z.string(),
+      skill: z.object({
+        id: z.string().nullable(),
+        name: z.string().nullable(),
+        contentType: z.string().nullable()
+      }),
+      script: z.string(),
+      scriptSegments: z.array(z.string()),
+      timeline: z.array(z.any()),
+      coverage: z.object({
+        totalSegments: z.number(),
+        highMatch: z.number(),
+        mediumMatch: z.number(),
+        lowMatch: z.number(),
+        noMatch: z.number(),
+        highQualityCoverageRate: z.number(),
+        status: z.enum(['confirmed', 'warning', 'insufficient'])
+      }),
+      warnings: z.array(z.string()),
+      voice: z.object({
+        strategy: z.string(),
+        style: z.string().nullable()
+      }),
+      subtitle: z.object({
+        enabled: z.boolean(),
+        style: z.string().nullable()
+      }),
+      bgm: z.object({
+        strategy: z.string(),
+        style: z.string().nullable()
+      })
+    })
+    .describe('create_video_plan 返回的完整方案对象')
+});
+
+const saveVideoPlanAsDraftTool: AgentTool<
+  z.infer<typeof saveVideoPlanAsDraftInput>,
+  { taskId: string; editorUrl: string; status: string; agentPlanSaved: boolean }
+> = {
+  name: 'save_video_plan_as_draft',
+  displayName: '保存剪辑方案为草稿任务',
+  description:
+    '将已经生成并由用户确认的视频剪辑方案保存为自动化剪辑草稿任务。只写入 draft，不渲染视频、不调用 MoneyPrinterTurbo、不调用 Voice Service。',
+  inputSchema: saveVideoPlanAsDraftInput,
+  riskLevel: 'high',
+  requiredPermission: 'video:generate',
+  execute: async (input, ctx) => {
+    const workspace = getWorkspaceBySlug(input.workspaceSlug);
+    if (!workspace) {
+      throw new Error('工作空间不存在');
+    }
+    if (ctx.workspaceId && ctx.workspaceId !== workspace.id) {
+      throw new Error('工作空间上下文不匹配');
+    }
+    const task = createDraftTaskFromVideoPlan(workspace.id, ctx.userId, input.plan);
+    return {
+      taskId: task.id,
+      editorUrl: `/dashboard/workspaces/${input.workspaceSlug}?taskId=${task.id}`,
+      status: task.status,
+      agentPlanSaved: Boolean(getTaskAgentPlan(task))
+    };
+  }
+};
+
+// ============================================================
+// Tool 7: execute_video_task
+// Confirm and execute an existing draft task. High risk.
+// ============================================================
+
+const executeVideoTaskInput = z.object({
+  workspaceSlug: z.string().describe('工作空间 slug，例如 enterprise-media'),
+  taskId: z.string().describe('需要确认执行的草稿任务 ID')
+});
+
+const executeVideoTaskTool: AgentTool<
+  z.infer<typeof executeVideoTaskInput>,
+  { taskId: string; status: string; timelineClips: number; executionSnapshotSaved: boolean }
+> = {
+  name: 'execute_video_task',
+  displayName: '开始生成视频任务',
+  description:
+    '在用户确认后执行一个已保存的自动化剪辑草稿任务。该工具会冻结当前草稿配置和 Agent 剪辑方案，按 sourceStart/sourceEnd 裁剪素材，并调用视频合成链路。此工具会产生真实任务执行，必须先获得用户确认。',
+  inputSchema: executeVideoTaskInput,
+  riskLevel: 'high',
+  requiredPermission: 'video:generate',
+  execute: async (input, ctx) => {
+    const workspace = getWorkspaceBySlug(input.workspaceSlug);
+    if (!workspace) {
+      throw new Error('工作空间不存在');
+    }
+    if (ctx.workspaceId && ctx.workspaceId !== workspace.id) {
+      throw new Error('工作空间上下文不匹配');
+    }
+    const { task, snapshot } = await executeAutomationVideoDraftTask(workspace.id, input.taskId);
+    startMoneyPrinterTaskWorker(input.taskId);
+    return {
+      taskId: input.taskId,
+      status: task?.status ?? 'generating',
+      timelineClips: snapshot.editTimeline.length,
+      executionSnapshotSaved: true
+    };
+  }
+};
+
+async function resolveVideoPlanSkill(
+  input: z.infer<typeof createVideoPlanInput>,
+  skills: VideoEditingSkill[]
+): Promise<VideoEditingSkill | null> {
+  if (input.skillId) {
+    return getVideoEditingSkill(input.skillId);
+  }
+  if (input.contentType) {
+    const direct = await getSkillByContentType(input.contentType);
+    if (direct) return direct;
+    return (
+      skills.find((skill) =>
+        [skill.name, skill.content.contentType, skill.description]
+          .filter(Boolean)
+          .some((text) => text.includes(input.contentType!))
+      ) ?? null
+    );
+  }
+
+  const request = input.userRequest;
+  return (
+    skills.find((skill) =>
+      [skill.name, skill.content.contentType, skill.description]
+        .filter(Boolean)
+        .some((text) => request.includes(text) || text.includes(request))
+    ) ??
+    skills.find((skill) => skill.id === 'factory-showcase') ??
+    skills[0] ??
+    null
+  );
+}
+
+function inferDuration(skill: VideoEditingSkill | null): number | null {
+  const range = skill?.content.durationRange;
+  if (!range) return null;
+  const numbers = range.match(/\d+/g)?.map(Number) ?? [];
+  if (numbers.length === 0) return null;
+  if (numbers.length === 1) return numbers[0];
+  return Math.round((numbers[0] + numbers[1]) / 2);
+}
+
+function buildScriptSegments(
+  input: z.infer<typeof createVideoPlanInput>,
+  companyContext: CompanyContext | null,
+  skill: VideoEditingSkill | null
+): string[] {
+  const existing = splitScript(input.script);
+  if (existing.length > 0) return existing.slice(0, 8);
+
+  const audience = companyContext?.audience?.primary || '目标客户';
+  const tone = companyContext?.brand?.tone || companyContext?.voiceStyle?.tone || '专业可信';
+  const topic = input.userRequest.replace(/[。！？!?\n\r]+$/g, '');
+  const skillName = skill?.name || input.contentType || '企业宣传';
+
+  return [
+    `${topic}：先用一个客户最关心的问题作为开场，引出视频主题。`,
+    `结合${audience}的真实关注点，说明这个问题为什么值得重视。`,
+    `用企业现场、流程和团队画面证明能力，语气保持${tone}。`,
+    `补充关键细节和风险提醒，避免夸大未确认的企业事实。`,
+    `最后回到${skillName}的核心观点，给出清晰的行动建议。`
+  ];
+}
+
+function splitScript(script?: string): string[] {
+  if (!script?.trim()) return [];
+  return script
+    .split(/[\n。！？!?]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function inferUsageRole(index: number, total: number): string {
+  if (index === 0) return 'Hook';
+  if (index === total - 1) return '结尾';
+  if (index === 1) return '正文B-roll';
+  return '能力证明';
+}
+
+function inferSegmentPurpose(
+  index: number,
+  total: number,
+  skill: VideoEditingSkill | null
+): string {
+  if (index === 0) return '开场抓住注意力';
+  if (index === total - 1) return '收束观点并形成记忆点';
+  const rules = skill?.shots.shotRules ?? [];
+  return rules[index - 1] || '承接脚本信息并匹配可信画面';
+}
+
+function buildAssetQuery(
+  scriptText: string,
+  input: z.infer<typeof createVideoPlanInput>,
+  companyContext: CompanyContext | null,
+  skill: VideoEditingSkill | null,
+  usageRole: string
+): string {
+  const parts = [
+    scriptText,
+    input.userRequest,
+    input.enterprisePositioning,
+    skill?.content.contentType,
+    skill?.assets.preferredCategories?.join(' '),
+    companyContext?.brand?.positioning,
+    companyContext?.contentStrategy?.directions?.join(' '),
+    usageRole
+  ];
+  return parts.filter(Boolean).join(' ');
+}
+
+function getMatchLevel(score: number): VideoPlanSegmentMatchLevel {
+  if (score >= 0.6) return 'high_match';
+  if (score >= 0.35) return 'medium_match';
+  if (score >= 0.2) return 'low_match';
+  return 'no_match';
+}
+
+function buildCoverage(timeline: VideoPlanTimelineItem[]): CreateVideoPlanOutput['coverage'] {
+  const counts = {
+    highMatch: timeline.filter((item) => item.matchLevel === 'high_match').length,
+    mediumMatch: timeline.filter((item) => item.matchLevel === 'medium_match').length,
+    lowMatch: timeline.filter((item) => item.matchLevel === 'low_match').length,
+    noMatch: timeline.filter((item) => item.matchLevel === 'no_match').length
+  };
+  const highQualityCoverageRate =
+    timeline.length > 0
+      ? Math.round(((counts.highMatch + counts.mediumMatch) / timeline.length) * 1000) / 10
+      : 0;
+  return {
+    totalSegments: timeline.length,
+    ...counts,
+    highQualityCoverageRate,
+    status:
+      highQualityCoverageRate >= 80
+        ? 'confirmed'
+        : highQualityCoverageRate >= 60
+          ? 'warning'
+          : 'insufficient'
+  };
+}
+
+function buildPlanTitle(input: z.infer<typeof createVideoPlanInput>): string {
+  const clean = input.userRequest.replace(/[。！？!?\n\r]+/g, '').trim();
+  return clean.length > 24 ? `${clean.slice(0, 24)}...` : clean || '企业短视频剪辑方案';
+}
+
+function buildGuardrailWarnings(companyContext: CompanyContext | null): string[] {
+  const warnings: string[] = [];
+  const forbiddenFacts = companyContext?.guardrails?.forbiddenFacts ?? [];
+  if (forbiddenFacts.length > 0) {
+    warnings.push('方案已读取企业事实边界；涉及未确认企业事实时应人工复核。');
+  }
+  return warnings;
+}
+
+// ============================================================
 // 注册所有 Tool
 // ============================================================
 
@@ -230,11 +708,17 @@ toolRegistry.register(listVideoSkillsTool);
 toolRegistry.register(getVideoSkillTool);
 toolRegistry.register(getCompanyContextSummaryTool);
 toolRegistry.register(searchVideoAssetsTool);
+toolRegistry.register(createVideoPlanTool);
+toolRegistry.register(saveVideoPlanAsDraftTool);
+toolRegistry.register(executeVideoTaskTool);
 
 export {
   listVideoSkillsTool,
   getVideoSkillTool,
   getCompanyContextSummaryTool,
-  searchVideoAssetsTool
+  searchVideoAssetsTool,
+  createVideoPlanTool,
+  saveVideoPlanAsDraftTool,
+  executeVideoTaskTool
 };
 export type { CompanyContextSummary };

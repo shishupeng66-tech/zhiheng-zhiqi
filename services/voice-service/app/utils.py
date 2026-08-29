@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import wave
 from pathlib import Path
@@ -37,9 +38,36 @@ def audio_duration_seconds(audio_path: Path) -> float:
         )
         return round(float(result.stdout.strip()), 3)
     except Exception:
+        ffmpeg_duration = _ffmpeg_duration_seconds(audio_path)
+        if ffmpeg_duration > 0:
+            return ffmpeg_duration
         if audio_path.suffix.lower() == ".mp3":
             return _mp3_duration_seconds(audio_path)
         return 0.0
+
+
+def _ffmpeg_duration_seconds(audio_path: Path) -> float:
+    try:
+        result = subprocess.run(
+            ["ffmpeg", "-hide_banner", "-i", str(audio_path), "-f", "null", "-"],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+    except Exception:
+        return 0.0
+
+    output = f"{result.stdout}\n{result.stderr}"
+    match = re.search(r"Duration:\s*(\d{2}):(\d{2}):(\d{2}(?:\.\d+)?)", output)
+    if not match:
+        return 0.0
+
+    hours = int(match.group(1))
+    minutes = int(match.group(2))
+    seconds = float(match.group(3))
+    return round(hours * 3600 + minutes * 60 + seconds, 3)
 
 
 def _mp3_duration_seconds(audio_path: Path) -> float:
@@ -54,13 +82,15 @@ def _mp3_duration_seconds(audio_path: Path) -> float:
         )
         position = 10 + tag_size
 
+    # MPEG layer bits are encoded as: 01=Layer III, 10=Layer II, 11=Layer I.
+    # Keep this parser only as a fallback when ffprobe/ffmpeg are unavailable.
     bitrates = {
         (3, 1): [None, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, None],
         (3, 2): [None, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384, None],
         (3, 3): [None, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, None],
-        (2, 1): [None, 32, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 256, None],
+        (2, 1): [None, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, None],
         (2, 2): [None, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, None],
-        (2, 3): [None, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, None],
+        (2, 3): [None, 32, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 256, None],
     }
     sample_rates = {
         3: [44100, 48000, 32000, None],
@@ -68,15 +98,15 @@ def _mp3_duration_seconds(audio_path: Path) -> float:
         0: [11025, 12000, 8000, None],
     }
     samples_per_frame = {
-        (3, 1): 384,
+        (3, 1): 1152,
         (3, 2): 1152,
-        (3, 3): 1152,
-        (2, 1): 384,
+        (3, 3): 384,
+        (2, 1): 576,
         (2, 2): 1152,
-        (2, 3): 576,
-        (0, 1): 384,
+        (2, 3): 384,
+        (0, 1): 576,
         (0, 2): 1152,
-        (0, 3): 576,
+        (0, 3): 384,
     }
 
     duration = 0.0
@@ -104,9 +134,10 @@ def _mp3_duration_seconds(audio_path: Path) -> float:
         frames += 1
         if layer == 3:
             frame_length = (12 * bitrate * 1000 // sample_rate + padding) * 4
+        elif layer == 1 and version in {0, 2}:
+            frame_length = 72 * bitrate * 1000 // sample_rate + padding
         else:
-            coefficient = 144 if version == 3 or layer != 3 else 72
-            frame_length = coefficient * bitrate * 1000 // sample_rate + padding
+            frame_length = 144 * bitrate * 1000 // sample_rate + padding
         position += max(frame_length, 1)
 
     return round(duration, 3) if frames else 0.0

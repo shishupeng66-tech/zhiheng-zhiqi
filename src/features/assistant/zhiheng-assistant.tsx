@@ -36,6 +36,7 @@ interface StreamEvent {
   content?: string;
   tool?: string;
   toolDisplayName?: string;
+  toolResult?: unknown;
   error?: string;
   errorCode?: string;
   confirmation?: {
@@ -44,6 +45,36 @@ interface StreamEvent {
     description: string;
     riskLevel: 'low' | 'high';
   };
+}
+
+type PendingVideoPlan = {
+  title: string;
+  topic: string;
+  script: string;
+  timeline: Array<unknown>;
+  coverage: {
+    highQualityCoverageRate: number;
+    status: string;
+  };
+  warnings: string[];
+};
+
+function isPendingVideoPlan(value: unknown): value is PendingVideoPlan {
+  if (!value || typeof value !== 'object') return false;
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.title === 'string' &&
+    typeof record.topic === 'string' &&
+    typeof record.script === 'string' &&
+    Array.isArray(record.timeline) &&
+    typeof record.coverage === 'object' &&
+    Array.isArray(record.warnings)
+  );
+}
+
+function getWorkspaceSlug(pathname: string) {
+  const match = pathname.match(/^\/dashboard\/workspaces\/([^/?#]+)/);
+  return match?.[1] ? decodeURIComponent(match[1]) : null;
 }
 
 export function ZhihengAssistant() {
@@ -73,6 +104,8 @@ export function ZhihengAssistant() {
   }, [pathname, setCurrentRoute]);
 
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const [pendingVideoPlan, setPendingVideoPlan] = React.useState<PendingVideoPlan | null>(null);
+  const [savingDraft, setSavingDraft] = React.useState(false);
 
   async function send() {
     const text = inputValue.trim();
@@ -188,6 +221,9 @@ export function ZhihengAssistant() {
           updateToolStatus(toolId, { status: 'completed' });
           toolIdMap.current.delete(event.tool ?? '');
         }
+        if (event.tool === 'create_video_plan' && isPendingVideoPlan(event.toolResult)) {
+          setPendingVideoPlan(event.toolResult);
+        }
         break;
       }
 
@@ -218,9 +254,59 @@ export function ZhihengAssistant() {
   function handleNewChat() {
     resetConversation();
     toolIdMap.current.clear();
+    setPendingVideoPlan(null);
     setTimeout(() => {
       textareaRef.current?.focus();
     }, 100);
+  }
+
+  async function savePendingPlanAsDraft() {
+    if (!pendingVideoPlan || savingDraft) return;
+    const workspaceSlug = getWorkspaceSlug(pathname);
+    if (!workspaceSlug) {
+      addMessage({
+        id: generateId(),
+        role: 'assistant',
+        content: '请先进入具体工作空间页面，再保存剪辑草稿。',
+        createdAt: Date.now(),
+        status: 'error'
+      });
+      return;
+    }
+
+    const confirmed = window.confirm('确认把当前剪辑方案保存为草稿，并打开高级编辑工作台？');
+    if (!confirmed) return;
+
+    setSavingDraft(true);
+    try {
+      const response = await fetch(
+        `/api/workspaces/${encodeURIComponent(workspaceSlug)}/automation/tasks/from-plan`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan: pendingVideoPlan })
+        }
+      );
+      const payload = (await response.json().catch(() => ({}))) as {
+        editorUrl?: string;
+        message?: string;
+      };
+      if (!response.ok || !payload.editorUrl) {
+        throw new Error(payload.message ?? '保存草稿失败');
+      }
+      setPendingVideoPlan(null);
+      window.location.href = payload.editorUrl;
+    } catch (error) {
+      addMessage({
+        id: generateId(),
+        role: 'assistant',
+        content: error instanceof Error ? error.message : '保存草稿失败',
+        createdAt: Date.now(),
+        status: 'error'
+      });
+    } finally {
+      setSavingDraft(false);
+    }
   }
 
   return (
@@ -336,6 +422,64 @@ export function ZhihengAssistant() {
                         </MessageScrollerItem>
                       );
                     })}
+                    {pendingVideoPlan ? (
+                      <MessageScrollerItem messageId='pending-video-plan-actions'>
+                        <div className='ml-11 rounded-lg border bg-muted/40 p-3 text-xs'>
+                          <div className='font-medium'>已生成剪辑方案</div>
+                          <div className='mt-1 text-muted-foreground'>
+                            {pendingVideoPlan.title} · 素材覆盖率{' '}
+                            {pendingVideoPlan.coverage.highQualityCoverageRate}% ·{' '}
+                            {pendingVideoPlan.timeline.length} 个片段 ·{' '}
+                            {pendingVideoPlan.warnings.length} 条提醒
+                          </div>
+                          <div className='mt-3 grid gap-2'>
+                            <Button
+                              type='button'
+                              size='sm'
+                              variant='outline'
+                              onClick={() =>
+                                addMessage({
+                                  id: generateId(),
+                                  role: 'assistant',
+                                  content: [
+                                    `剪辑方案：${pendingVideoPlan.title}`,
+                                    `主题：${pendingVideoPlan.topic}`,
+                                    `素材覆盖率：${pendingVideoPlan.coverage.highQualityCoverageRate}%`,
+                                    `片段数量：${pendingVideoPlan.timeline.length}`,
+                                    pendingVideoPlan.warnings.length > 0
+                                      ? `提醒：${pendingVideoPlan.warnings.join('；')}`
+                                      : '提醒：暂无'
+                                  ].join('\n'),
+                                  createdAt: Date.now(),
+                                  status: 'done'
+                                })
+                              }
+                            >
+                              查看剪辑方案
+                            </Button>
+                            <Button
+                              type='button'
+                              size='sm'
+                              variant='outline'
+                              onClick={() => {
+                                setInputValue('请基于当前剪辑方案继续修改：');
+                                textareaRef.current?.focus();
+                              }}
+                            >
+                              修改方案
+                            </Button>
+                            <Button
+                              type='button'
+                              size='sm'
+                              disabled={savingDraft}
+                              onClick={() => void savePendingPlanAsDraft()}
+                            >
+                              {savingDraft ? '正在保存...' : '保存为草稿并打开高级编辑'}
+                            </Button>
+                          </div>
+                        </div>
+                      </MessageScrollerItem>
+                    ) : null}
                   </MessageScrollerContent>
                 </MessageScrollerViewport>
                 <MessageScrollerButton />

@@ -1,0 +1,457 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://zhiheng-zhiqi.local/schemas/unified-timeline-v1.schema.json",
+  "title": "Unified Timeline V1",
+  "description": "知衡智企自动剪辑统一时间线 V1。Agent/LLM 与执行层之间的结构化契约。source of truth: src/engines/zhiheng-renderer/types.ts",
+  "version": 1,
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "timelineId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "taskId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "outputProfile": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
+        "height": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
+        "targetFps": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "videoCodec": {
+          "type": "string"
+        },
+        "audioCodec": {
+          "type": "string"
+        },
+        "pixelFormat": {
+          "type": "string"
+        },
+        "colorTarget": {
+          "type": "string",
+          "enum": [
+            "bt709_sdr"
+          ]
+        }
+      },
+      "required": [
+        "width",
+        "height",
+        "targetFps",
+        "videoCodec",
+        "audioCodec",
+        "pixelFormat",
+        "colorTarget"
+      ],
+      "additionalProperties": false
+    },
+    "videoTrack": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "assetRef": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "library_asset",
+                  "task_asset"
+                ]
+              },
+              "assetId": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "type",
+              "assetId"
+            ],
+            "additionalProperties": false
+          },
+          "sourceStart": {
+            "type": "number",
+            "minimum": 0
+          },
+          "duration": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "transition": {
+            "type": "string",
+            "const": "hard_cut"
+          }
+        },
+        "required": [
+          "assetRef",
+          "sourceStart",
+          "duration",
+          "transition"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "voiceTrack": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "assetRef": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "library_asset",
+                  "task_asset"
+                ]
+              },
+              "assetId": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "type",
+              "assetId"
+            ],
+            "additionalProperties": false
+          },
+          "start": {
+            "type": "number",
+            "minimum": 0
+          },
+          "duration": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "volume": {
+            "default": 1,
+            "type": "number",
+            "minimum": 0,
+            "maximum": 2
+          },
+          "fadeIn": {
+            "type": "number",
+            "minimum": 0
+          },
+          "fadeOut": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "assetRef",
+          "start",
+          "duration",
+          "volume"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "subtitleTrack": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "start": {
+            "type": "number",
+            "minimum": 0
+          },
+          "duration": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "styleId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "highlights": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "keyword": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "startChar": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "endChar": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "keyword"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "start",
+          "duration",
+          "text",
+          "styleId",
+          "highlights"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "titleTrack": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "start": {
+            "type": "number",
+            "minimum": 0
+          },
+          "duration": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "styleId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "layer": {
+            "default": 2,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "id",
+          "start",
+          "duration",
+          "text",
+          "styleId",
+          "layer"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "overlayTrack": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "assetRef": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "library_asset",
+                  "task_asset"
+                ]
+              },
+              "assetId": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "type",
+              "assetId"
+            ],
+            "additionalProperties": false
+          },
+          "start": {
+            "type": "number",
+            "minimum": 0
+          },
+          "duration": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        },
+        "required": [
+          "id",
+          "assetRef",
+          "start",
+          "duration"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "bgmTrack": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "assetRef": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "library_asset",
+                  "task_asset"
+                ]
+              },
+              "assetId": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "type",
+              "assetId"
+            ],
+            "additionalProperties": false
+          },
+          "start": {
+            "type": "number",
+            "minimum": 0
+          },
+          "duration": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "volume": {
+            "default": 0.3,
+            "type": "number",
+            "minimum": 0,
+            "maximum": 2
+          },
+          "loop": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "assetRef",
+          "start",
+          "duration",
+          "volume",
+          "loop"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "sfxTrack": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "assetRef": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "library_asset",
+                  "task_asset"
+                ]
+              },
+              "assetId": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "type",
+              "assetId"
+            ],
+            "additionalProperties": false
+          },
+          "start": {
+            "type": "number",
+            "minimum": 0
+          },
+          "duration": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "volume": {
+            "default": 1,
+            "type": "number",
+            "minimum": 0,
+            "maximum": 2
+          }
+        },
+        "required": [
+          "id",
+          "assetRef",
+          "start",
+          "duration",
+          "volume"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "timelineId",
+    "taskId",
+    "outputProfile",
+    "videoTrack",
+    "voiceTrack",
+    "subtitleTrack",
+    "titleTrack"
+  ],
+  "additionalProperties": false
+}

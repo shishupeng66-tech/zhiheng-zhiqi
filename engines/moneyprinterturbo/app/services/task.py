@@ -518,6 +518,10 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
         return ""
 
     subtitle_path = path.join(utils.task_dir(task_id), "subtitle.srt")
+    if sub_maker is None and os.path.exists(subtitle_path):
+        logger.info(f"using prebuilt subtitle file: {subtitle_path}")
+        return subtitle_path
+
     subtitle_provider = config.app.get("subtitle_provider", "edge").strip().lower()
     logger.info(f"\n\n## generating subtitle, provider: {subtitle_provider}")
 

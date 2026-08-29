@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +22,50 @@ type UploadedAsset = {
   name: string;
   fileUrl: string;
   fileType: string;
+};
+
+type AgentMaterialTimelineItem = {
+  order: number;
+  timelineStart: number;
+  timelineEnd: number;
+  scriptText: string;
+  fileName: string | null;
+  relativePath: string | null;
+  sourceStart: number | null;
+  sourceEnd: number | null;
+  usageRole: string;
+  matchLevel: string;
+  matchScore: number;
+};
+
+type AgentPlanSummary = {
+  title: string;
+  skill?: {
+    id: string | null;
+    name: string | null;
+    contentType: string | null;
+  };
+  coverage?: {
+    highQualityCoverageRate: number;
+    status: string;
+  };
+  warnings?: string[];
+};
+
+type AutomationTaskPayload = {
+  task?: Partial<FormState> & {
+    id: string;
+    status: string;
+    title?: string;
+    prompt?: string;
+    keywords?: string[];
+    materialAssetIds?: string[];
+    packagingOptions?: string[];
+  };
+  agentPlan?: AgentPlanSummary | null;
+  currentConfig?: {
+    materialTimeline?: AgentMaterialTimelineItem[];
+  } | null;
 };
 
 type UploadTarget = 'material' | 'voice' | 'music';
@@ -59,6 +104,7 @@ type FormState = {
   subtitleEnabled: boolean;
   subtitleFont: string;
   subtitlePosition: string;
+  subtitleStyle: string;
   customSubtitlePosition: string;
   subtitleSize: string;
   subtitleColor: string;
@@ -105,8 +151,9 @@ const initialForm: FormState = {
   customMusicFileName: '',
   musicVolume: 30,
   subtitleEnabled: true,
-  subtitleFont: 'BeVietnamPro-Bold.ttf',
+  subtitleFont: 'STHeitiMedium.ttc',
   subtitlePosition: '底部（推荐）',
+  subtitleStyle: '简洁商务字幕',
   customSubtitlePosition: '70',
   subtitleSize: '30',
   subtitleColor: '#F3EDED',
@@ -324,6 +371,7 @@ function StepCard({
 }
 
 export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug: string }) {
+  const searchParams = useSearchParams();
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const uploadTargetRef = React.useRef<UploadTarget>('material');
   const [form, setForm] = React.useState<FormState>(initialForm);
@@ -334,6 +382,10 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
   const [previewing, setPreviewing] = React.useState<'voice' | 'full' | null>(null);
   const [previewAudioUrl, setPreviewAudioUrl] = React.useState('');
   const [scriptSettingsOpen, setScriptSettingsOpen] = React.useState(false);
+  const [draftTaskId, setDraftTaskId] = React.useState<string | null>(null);
+  const [draftStatus, setDraftStatus] = React.useState<string | null>(null);
+  const [agentPlan, setAgentPlan] = React.useState<AgentPlanSummary | null>(null);
+  const [materialTimeline, setMaterialTimeline] = React.useState<AgentMaterialTimelineItem[]>([]);
   const previewCacheRef = React.useRef(new Map<string, string>());
   const user = useCurrentUser();
   const voiceCapability = useVoiceCapability();
@@ -399,6 +451,122 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
   }
+
+  function parseOption(options: string[] | undefined, key: string) {
+    const prefix = `${key}:`;
+    return options?.find((option) => option.startsWith(prefix))?.slice(prefix.length) ?? '';
+  }
+
+  function applyTaskPayload(payload: AutomationTaskPayload) {
+    const task = payload.task;
+    if (!task?.id) return;
+    const packagingOptions = Array.isArray(task.packagingOptions) ? task.packagingOptions : [];
+    setDraftTaskId(task.id);
+    setDraftStatus(task.status ?? null);
+    setAgentPlan(payload.agentPlan ?? null);
+    setMaterialTimeline(payload.currentConfig?.materialTimeline ?? []);
+    setForm((current) => ({
+      ...current,
+      prompt: typeof task.prompt === 'string' ? task.prompt : current.prompt,
+      scriptLanguage:
+        typeof task.scriptLanguage === 'string' ? task.scriptLanguage : current.scriptLanguage,
+      keywords: Array.isArray(task.keywords) ? task.keywords.join('、') : current.keywords,
+      scriptText: typeof task.scriptText === 'string' ? task.scriptText : current.scriptText,
+      materialSource:
+        typeof task.materialSource === 'string' ? task.materialSource : current.materialSource,
+      stitchMode: typeof task.stitchMode === 'string' ? task.stitchMode : current.stitchMode,
+      transitionMode:
+        typeof task.transitionMode === 'string' ? task.transitionMode : current.transitionMode,
+      videoRatio: typeof task.videoRatio === 'string' ? task.videoRatio : current.videoRatio,
+      clipDuration:
+        typeof task.clipDuration === 'string' ? task.clipDuration : current.clipDuration,
+      matchByScript:
+        typeof task.matchByScript === 'boolean' ? task.matchByScript : current.matchByScript,
+      voiceMode: typeof task.voiceMode === 'string' ? task.voiceMode : current.voiceMode,
+      voiceService:
+        typeof task.voiceService === 'string' ? task.voiceService : current.voiceService,
+      voiceName: typeof task.voiceName === 'string' ? task.voiceName : current.voiceName,
+      voiceVolume: typeof task.voiceVolume === 'string' ? task.voiceVolume : current.voiceVolume,
+      voiceSpeed: typeof task.voiceSpeed === 'string' ? task.voiceSpeed : current.voiceSpeed,
+      musicSource: typeof task.musicSource === 'string' ? task.musicSource : current.musicSource,
+      musicVolume: typeof task.musicVolume === 'number' ? task.musicVolume : current.musicVolume,
+      subtitleEnabled:
+        typeof task.subtitleEnabled === 'boolean' ? task.subtitleEnabled : current.subtitleEnabled,
+      subtitleFont:
+        typeof task.subtitleFont === 'string' ? task.subtitleFont : current.subtitleFont,
+      subtitlePosition:
+        typeof task.subtitlePosition === 'string'
+          ? task.subtitlePosition
+          : current.subtitlePosition,
+      subtitleStyle:
+        typeof task.subtitleStyle === 'string' ? task.subtitleStyle : current.subtitleStyle,
+      subtitleSize:
+        typeof task.subtitleSize === 'string' ? task.subtitleSize : current.subtitleSize,
+      subtitleColor:
+        typeof task.subtitleColor === 'string' ? task.subtitleColor : current.subtitleColor,
+      subtitleBackground:
+        typeof task.subtitleBackground === 'boolean'
+          ? task.subtitleBackground
+          : current.subtitleBackground,
+      videoCount: parseOption(packagingOptions, 'count') || current.videoCount,
+      clipSpeed: parseOption(packagingOptions, 'clipSpeed')
+        ? `${parseOption(packagingOptions, 'clipSpeed')}x`
+        : current.clipSpeed,
+      videoEncoder: parseOption(packagingOptions, 'videoEncoder') || current.videoEncoder,
+      stopAt: parseOption(packagingOptions, 'stopAt') || current.stopAt,
+      workerThreads: parseOption(packagingOptions, 'workerThreads') || current.workerThreads,
+      paragraphNumber: parseOption(packagingOptions, 'paragraph')
+        ? `${parseOption(packagingOptions, 'paragraph')} 段`
+        : current.paragraphNumber,
+      scriptPrompt: parseOption(packagingOptions, 'scriptPrompt') || current.scriptPrompt,
+      customSystemPrompt:
+        parseOption(packagingOptions, 'customSystemPrompt') || current.customSystemPrompt,
+      customAudioAssetId:
+        parseOption(packagingOptions, 'customAudio') || current.customAudioAssetId,
+      musicPrompt: parseOption(packagingOptions, 'bgmPrompt') || current.musicPrompt,
+      customMusicAssetId: parseOption(packagingOptions, 'customBgm') || current.customMusicAssetId,
+      customSubtitlePosition:
+        parseOption(packagingOptions, 'customPosition') || current.customSubtitlePosition,
+      strokeColor: parseOption(packagingOptions, 'strokeColor') || current.strokeColor,
+      strokeWidth: parseOption(packagingOptions, 'strokeWidth') || current.strokeWidth,
+      subtitleBackgroundColor:
+        parseOption(packagingOptions, 'subtitleBgColor') || current.subtitleBackgroundColor,
+      roundedSubtitleBackground:
+        parseOption(packagingOptions, 'roundedSubtitleBackground') === 'true'
+    }));
+  }
+
+  React.useEffect(() => {
+    const taskId = searchParams.get('taskId');
+    if (!taskId) return;
+    const resolvedTaskId = taskId;
+
+    let cancelled = false;
+    async function loadDraftTask() {
+      try {
+        const res = await fetch(
+          `/api/workspaces/${workspaceSlug}/automation/tasks/${encodeURIComponent(resolvedTaskId)}`
+        );
+        const payload = (await res.json().catch(() => ({}))) as AutomationTaskPayload & {
+          message?: string;
+        };
+        if (!res.ok) {
+          toast.error(payload.message ?? '加载草稿任务失败');
+          return;
+        }
+        if (!cancelled) {
+          applyTaskPayload(payload);
+        }
+      } catch {
+        if (!cancelled) toast.error('加载草稿任务失败');
+      }
+    }
+
+    void loadDraftTask();
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams, workspaceSlug]);
 
   function chooseFile(target: UploadTarget) {
     uploadTargetRef.current = target;
@@ -592,6 +760,96 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
     }
   }
 
+  function buildTaskPayload() {
+    const packagingOptions = [
+      form.titleEnabled ? 'title' : '',
+      form.descriptionEnabled ? 'description' : '',
+      form.tagsEnabled ? 'tags' : '',
+      form.coverEnabled ? 'cover' : '',
+      `count:${form.videoCount.match(/\d+/)?.[0] ?? '1'}`,
+      `clipSpeed:${form.clipSpeed.replace('x', '')}`,
+      `videoEncoder:${form.videoEncoder}`,
+      `stopAt:${form.stopAt}`,
+      `workerThreads:${form.workerThreads}`,
+      `paragraph:${form.paragraphNumber.match(/\d+/)?.[0] ?? '1'}`,
+      form.scriptPrompt.trim() ? `scriptPrompt:${form.scriptPrompt.trim()}` : '',
+      form.customSystemPrompt.trim() ? `customSystemPrompt:${form.customSystemPrompt.trim()}` : '',
+      form.customAudioAssetId ? `customAudio:${form.customAudioAssetId}` : '',
+      form.musicPrompt.trim() ? `bgmPrompt:${form.musicPrompt.trim()}` : '',
+      form.customMusicAssetId ? `customBgm:${form.customMusicAssetId}` : '',
+      `customPosition:${form.customSubtitlePosition}`,
+      `strokeColor:${form.strokeColor}`,
+      `strokeWidth:${form.strokeWidth}`,
+      `subtitleBgColor:${form.subtitleBackgroundColor}`,
+      `roundedSubtitleBackground:${form.roundedSubtitleBackground ? 'true' : 'false'}`
+    ].filter(Boolean);
+
+    return {
+      ...form,
+      keywords: splitKeywords(form.keywords),
+      materialAssetIds: assets.map((asset) => asset.id),
+      packagingOptions
+    };
+  }
+
+  async function saveDraftTask() {
+    if (!draftTaskId || draftStatus !== 'draft') return;
+    if (!form.prompt.trim() && !form.scriptText.trim()) {
+      toast.error('请先输入视频主题、需求或完整脚本');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch(
+        `/api/workspaces/${workspaceSlug}/automation/tasks/${encodeURIComponent(draftTaskId)}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(buildTaskPayload())
+        }
+      );
+      const payload = (await res.json().catch(() => ({}))) as AutomationTaskPayload & {
+        message?: string;
+      };
+      if (!res.ok) {
+        toast.error(payload.message ?? '保存草稿失败');
+        return;
+      }
+      applyTaskPayload(payload);
+      toast.success('草稿已保存');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function executeDraftTask() {
+    if (!draftTaskId || draftStatus !== 'draft') return;
+    const confirmed = window.confirm(
+      '即将按当前草稿方案开始生成视频，并调用配音与视频合成引擎。确认开始？'
+    );
+    if (!confirmed) return;
+
+    setSaving(true);
+    try {
+      const res = await fetch(
+        `/api/workspaces/${workspaceSlug}/automation/tasks/${encodeURIComponent(draftTaskId)}/execute`,
+        { method: 'POST' }
+      );
+      const payload = (await res.json().catch(() => ({}))) as AutomationTaskPayload & {
+        message?: string;
+      };
+      if (!res.ok) {
+        toast.error(payload.message ?? '任务开始失败');
+        return;
+      }
+      applyTaskPayload(payload);
+      toast.success('已开始生成视频，可在任务审核中查看进度');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function createTask() {
     if (!form.prompt.trim() && !form.scriptText.trim()) {
       toast.error('请先输入视频主题、需求或完整脚本');
@@ -600,40 +858,10 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
 
     setSaving(true);
     try {
-      const packagingOptions = [
-        form.titleEnabled ? 'title' : '',
-        form.descriptionEnabled ? 'description' : '',
-        form.tagsEnabled ? 'tags' : '',
-        form.coverEnabled ? 'cover' : '',
-        `count:${form.videoCount.match(/\d+/)?.[0] ?? '1'}`,
-        `clipSpeed:${form.clipSpeed.replace('x', '')}`,
-        `videoEncoder:${form.videoEncoder}`,
-        `stopAt:${form.stopAt}`,
-        `workerThreads:${form.workerThreads}`,
-        `paragraph:${form.paragraphNumber.match(/\d+/)?.[0] ?? '1'}`,
-        form.scriptPrompt.trim() ? `scriptPrompt:${form.scriptPrompt.trim()}` : '',
-        form.customSystemPrompt.trim()
-          ? `customSystemPrompt:${form.customSystemPrompt.trim()}`
-          : '',
-        form.customAudioAssetId ? `customAudio:${form.customAudioAssetId}` : '',
-        form.musicPrompt.trim() ? `bgmPrompt:${form.musicPrompt.trim()}` : '',
-        form.customMusicAssetId ? `customBgm:${form.customMusicAssetId}` : '',
-        `customPosition:${form.customSubtitlePosition}`,
-        `strokeColor:${form.strokeColor}`,
-        `strokeWidth:${form.strokeWidth}`,
-        `subtitleBgColor:${form.subtitleBackgroundColor}`,
-        `roundedSubtitleBackground:${form.roundedSubtitleBackground ? 'true' : 'false'}`
-      ].filter(Boolean);
-
       const res = await fetch(`/api/workspaces/${workspaceSlug}/automation/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          keywords: splitKeywords(form.keywords),
-          materialAssetIds: assets.map((asset) => asset.id),
-          packagingOptions
-        })
+        body: JSON.stringify(buildTaskPayload())
       });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -658,6 +886,23 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
             <Icons.workspace className='size-4' />
             运行日志
           </ToolButton>
+          {draftTaskId && draftStatus === 'draft' ? (
+            <ToolButton onClick={() => void saveDraftTask()} disabled={saving}>
+              <Icons.check className='size-4' />
+              {saving ? '正在保存...' : '保存草稿'}
+            </ToolButton>
+          ) : null}
+          {draftTaskId && draftStatus === 'draft' ? (
+            <Button
+              type='button'
+              size='sm'
+              disabled={saving}
+              onClick={() => void executeDraftTask()}
+            >
+              <Icons.video className='size-4' />
+              {saving ? '正在启动...' : '开始生成'}
+            </Button>
+          ) : null}
           <Button type='button' size='sm' disabled={saving} onClick={createTask}>
             <Icons.video className='size-4' />
             {saving ? '正在提交...' : '一键生成视频'}
@@ -679,6 +924,35 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
             void uploadAssets(selectedFiles, uploadTargetRef.current);
           }}
         />
+
+        {agentPlan ? (
+          <div className='mb-3 rounded-lg border bg-muted/20 p-3'>
+            <div className='flex flex-wrap items-center gap-2'>
+              <Badge variant='secondary'>知衡助手草稿</Badge>
+              <span className='text-sm font-medium'>{agentPlan.title}</span>
+              {agentPlan.skill?.name ? (
+                <Badge variant='outline'>Skill：{agentPlan.skill.name}</Badge>
+              ) : null}
+              {agentPlan.coverage ? (
+                <Badge variant='outline'>
+                  素材覆盖率 {agentPlan.coverage.highQualityCoverageRate}%
+                </Badge>
+              ) : null}
+              {agentPlan.warnings ? (
+                <Badge variant={agentPlan.warnings.length > 0 ? 'destructive' : 'outline'}>
+                  {agentPlan.warnings.length} 条提醒
+                </Badge>
+              ) : null}
+            </div>
+            {agentPlan.warnings && agentPlan.warnings.length > 0 ? (
+              <div className='mt-2 space-y-1 text-xs text-muted-foreground'>
+                {agentPlan.warnings.slice(0, 3).map((warning, index) => (
+                  <div key={index}>- {warning}</div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         <section className='grid items-stretch gap-3 xl:grid-cols-4'>
           <StepCard
@@ -855,6 +1129,33 @@ export function AutomationEditingOverviewPage({ workspaceSlug }: { workspaceSlug
                     </div>
                   </div>
                 ) : null}
+              </div>
+            ) : null}
+
+            {materialTimeline.length > 0 ? (
+              <div className='space-y-1.5 rounded-md border p-2 text-xs'>
+                <div className='font-medium text-foreground'>
+                  剪辑方案素材（{materialTimeline.length}）
+                </div>
+                <div className='max-h-44 space-y-1 overflow-y-auto'>
+                  {materialTimeline.map((item) => (
+                    <div key={item.order} className='rounded border bg-background px-2 py-1.5'>
+                      <div className='flex items-center justify-between gap-2'>
+                        <span className='font-medium'>
+                          #{item.order} {item.fileName ?? '待补充素材'}
+                        </span>
+                        <Badge variant='outline'>{item.matchLevel}</Badge>
+                      </div>
+                      <div className='mt-1 text-muted-foreground'>
+                        时间线 {item.timelineStart}s → {item.timelineEnd}s；素材{' '}
+                        {item.sourceStart ?? '-'}s → {item.sourceEnd ?? '-'}s
+                      </div>
+                      <div className='mt-1 line-clamp-2 text-muted-foreground'>
+                        {item.scriptText}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : null}
 
