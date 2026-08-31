@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Zhiheng Renderer Phase 2A 测试脚本。
  *
  * 测试内容：
@@ -28,10 +28,10 @@ import { DEFAULT_OUTPUT_PROFILE } from '../src/engines/zhiheng-renderer/types';
 // ============================================================================
 
 const SDR_ASSET_PATH =
-  'D:\\知衡智企\\浩明饮品知识库\\08_人工样片拆解\\04_样片004\\ddb67fecf27d89093298aa8f8c6fab4f.mp4';
+  'D:\\知衡智企数据库\\企业知识库\\浩明饮品\\知识库\\08_人工样片拆解\\04_样片004\\ddb67fecf27d89093298aa8f8c6fab4f.mp4';
 
 const HLG_ASSET_PATH =
-  'D:\\知衡智企\\浩明饮品知识库\\08_人工样片拆解\\04_样片004\\afeae50bd4f303d9739d0626b1b663e7_raw.mp4';
+  'D:\\知衡智企数据库\\企业知识库\\浩明饮品\\知识库\\08_人工样片拆解\\04_样片004\\afeae50bd4f303d9739d0626b1b663e7_raw.mp4';
 
 const SDR_ASSET_ID = 'test_sdr_001';
 const HLG_ASSET_ID = 'test_hlg_001';

@@ -49,6 +49,12 @@ export interface NormalizedSegment {
   fps: number;
   pixelFormat: string;
   codec: string;
+  /** 源素材的 display matrix 旋转角度（度），null 表示无 rotation metadata */
+  sourceRotation: number | null;
+  /** FFmpeg autorotate 是否已禁用。正式方案始终禁用（-noautorotate），由 Renderer 显式旋转 */
+  ffmpegAutorotate: boolean;
+  /** Renderer 实际应用的手动旋转角度（度），0 表示未应用 */
+  manualRotationApplied: number;
   ffmpegExitCode: number;
   elapsedMs: number;
   warnings: string[];
@@ -193,6 +199,9 @@ export function preprocessSegment(
   }
 
   // 9. 记录实际参数（V0.1 假设 requested = actual，后续可用 ffprobe 验证输出）
+  const sourceRotation = probeResult.video?.rotation ?? null;
+  // 使用 FFmpeg 默认 autorotate，Renderer 不手动旋转
+  const manualRotationApplied = 0;
   const normalized: NormalizedSegment = {
     segmentIndex,
     assetId: videoSegment.assetRef.assetId,
@@ -208,6 +217,9 @@ export function preprocessSegment(
     fps: outputProfile.targetFps,
     pixelFormat: 'yuv420p10le',
     codec: 'ffv1',
+    sourceRotation,
+    ffmpegAutorotate: true, // 正式方案使用 FFmpeg 默认 autorotate
+    manualRotationApplied,
     ffmpegExitCode: lastExitCode,
     elapsedMs,
     warnings
@@ -218,6 +230,10 @@ export function preprocessSegment(
     actualDuration: normalized.actualDuration,
     ffmpegExitCode: lastExitCode
   });
+  logger.log(
+    'info',
+    `[segment ${segmentIndex}] rotation: sourceRotation=${sourceRotation}°, ffmpegAutorotate=true, manualRotationApplied=0°`
+  );
   logger.finishSegment(segmentIndex, 'success', elapsedMs);
 
   return normalized;
@@ -270,36 +286,27 @@ function buildFfmpegCommand(
 ): BuiltCommand {
   const filters: string[] = [];
 
-  // 1. 旋转（如果检测到 displaymatrix rotation）
-  const rotation = probeResult.video?.rotation;
-  if (rotation != null && Math.abs(rotation) > 0.1) {
-    // FFmpeg transpose: 0=逆时针90+垂直翻转, 1=顺时针90, 2=逆时针90, 3=顺时针90+垂直翻转
-    // 旋转 -90 度（逆时针 90）→ transpose=2
-    // 旋转 90 度（顺时针 90）→ transpose=1
-    // 旋转 180 度 → transpose=1,transpose=1 或 vflip,hflip
-    const normalizedRotation = ((rotation % 360) + 360) % 360;
-    if (Math.abs(normalizedRotation - 90) < 1) {
-      filters.push('transpose=1');
-    } else if (Math.abs(normalizedRotation - 270) < 1 || Math.abs(normalizedRotation + 90) < 1) {
-      filters.push('transpose=2');
-    } else if (Math.abs(normalizedRotation - 180) < 1) {
-      filters.push('transpose=1,transpose=1');
-    }
-  }
+  // 旋转：使用 FFmpeg 默认 autorotate，不在 filter chain 中手动 transpose。
+  // 原因：手动 transpose 后输出文件仍保留原始 displaymatrix side_data，
+  // 播放器播放时会再次应用 rotation，导致二次旋转。
+  // FFmpeg 默认 autorotate 会自动旋转画面并清除输出的 rotation metadata。
+  // sourceRotation 仍记录在 NormalizedSegment 中用于日志和调试。
 
-  // 2. scale + crop（cover 填满，center crop，禁止 stretch）
+  // 1. scale + crop（cover 填满，center crop，禁止 stretch）
   const { width, height } = outputProfile;
   filters.push(`scale=${width}:${height}:force_original_aspect_ratio=increase`);
   filters.push(`crop=${width}:${height}`);
 
-  // 3. HDR → SDR 色彩处理
+  // 3. HDR → SDR 色彩处理（libplacebo 方案，2026-08-30 人工验收通过）
+  // 旧方案 zscale→tonemap=hable:desat=0.5:peak=100→zscale bt709 已废弃：
+  // peak 的语义是 signal peak override（非"目标100 nit"），在真实 HLG 素材上
+  // 造成发灰、发白、对比度下降。经 A-F 对照实验人工确认 F-libplacebo-hable 最佳。
   if (colorPipeline === 'hlg_to_sdr' || colorPipeline === 'pq_to_sdr') {
-    // 转 linear 空间（zscale 自动从输入 metadata 检测 HLG/PQ）
-    filters.push('zscale=t=linear:npl=100');
-    // tone mapping（hable 算子，去饱和 0.5，峰值 100 nits）
-    filters.push('tonemap=hable:desat=0.5:peak=100');
-    // 转 BT.709 SDR
-    filters.push('zscale=t=bt709:m=bt709:p=bt709:r=tv');
+    // libplacebo HDR→SDR：hable tonemapping + 动态峰值检测（peak_detect=1）
+    // 直接输出 BT.709 SDR + yuv420p10le，参数与实验 F-libplacebo-hable 完全一致
+    filters.push(
+      `libplacebo=w=${width}:h=${height}:format=yuv420p10le:colorspace=bt709:color_primaries=bt709:color_trc=bt709:tonemapping=hable:peak_detect=1`
+    );
   }
 
   // 4. 统一帧率
@@ -318,6 +325,11 @@ function buildFfmpegCommand(
     // 裁剪：-ss 在 -i 之前做 fast seek
     '-ss',
     sourceStart.toFixed(3),
+    // 使用 FFmpeg 默认 autorotate。
+    // 正式方案：FFmpeg 自动应用 display matrix rotation，
+    // 输出文件不保留 rotation metadata，避免播放时二次旋转。
+    // 不使用 -noautorotate + 手动 transpose，因为手动 transpose 后
+    // 输出文件仍会保留原始 displaymatrix side_data，导致播放器再次旋转。
     '-i',
     inputPath,
     // 持续时间

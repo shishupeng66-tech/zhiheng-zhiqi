@@ -1,4 +1,4 @@
-# 知衡助手 Agent V1 — 架构审计与实施方案
+﻿# 知衡助手 Agent V1 — 架构审计与实施方案
 
 > 版本：V1.1  
 > 日期：2026-08-26  
@@ -210,7 +210,7 @@ Agent 生成方案后，只需：
 | 维度 | 现状 |
 |------|------|
 | 人工语义索引 | ✅ 有 | `索引总表.md`，90 条精选素材，与真实文件 100% 匹配 |
-| 索引位置 | 素材目录内 | `D:\知衡智企数据库\素材资源\索引总表.md`（与素材同级） |
+| 索引位置 | 素材目录内 | `D:\知衡智企数据库\企业知识库\浩明饮品\素材资源\视频\索引总表.md`（与素材同级） |
 | 真实精选视频 | 90 条 | 横屏 69 + 竖屏 21 |
 | 匹配度 | 90/90 全匹配 | 缺失 0，冗余 0，时长错误 0 |
 | 精确重复组 | 13 组，涉及 28 个文件 | 同一组内素材内容高度相似 |
@@ -243,7 +243,7 @@ id / workspaceId / uploadedBy / name / fileUrl / fileType / mimeType / size / st
 
 | 素材来源 | 路径获取方式 | 示例 |
 |---------|-------------|------|
-| 本地素材目录 | `getPath('assets')` | `D:\知衡智企数据库\素材资源` |
+| 本地素材目录 | `getPath('assets')` | `D:\知衡智企数据库\企业知识库\浩明饮品\素材资源\视频` |
 | 视频成品目录 | `getPath('videos')` | `D:\知衡智企数据库\视频文件` |
 | 上传素材 | `public/` + fileUrl | `public/uploads/automation-assets/{slug}/{uuid}.mp4` |
 
@@ -286,7 +286,7 @@ id / workspaceId / uploadedBy / name / fileUrl / fileType / mimeType / size / st
 #### 文件位置
 
 ```
-D:\知衡智企数据库\素材资源\video-assets.json
+D:\知衡智企数据库\企业知识库\浩明饮品\素材资源\视频\video-assets.json
 ```
 
 （与 `索引总表.md` 同级，通过 `getPath('assets')` + `video-assets.json` 定位）
@@ -1054,7 +1054,7 @@ src/
 
 ```typescript
 const knowledgeRoot = await getPath('knowledge');
-// 如：D:\知衡智企数据库\知识文件
+// 如：D:\知衡智企数据库\企业知识库\浩明饮品\内容资料\知识文件
 ```
 
 #### 约定目录结构

@@ -1,0 +1,237 @@
+{
+    "library":  "zhiheng-text-styles",
+    "name":  "知衡智企「智剪」花字模板库",
+    "version":  "1.0.0",
+    "createdAt":  "2026-08-30",
+    "source":  "自制（基于企业短视频包装设计）",
+    "license":  "自有版权，可自由商用",
+    "totalAssets":  12,
+    "status":  "provisional",
+    "categories":  {
+                       "opening":  {
+                                       "name":  "开场标题",
+                                       "dir":  "01_开场标题",
+                                       "count":  2
+                                   },
+                       "emphasis":  {
+                                        "name":  "重点强调",
+                                        "dir":  "02_重点强调",
+                                        "count":  2
+                                    },
+                       "keypoint":  {
+                                        "name":  "划重点",
+                                        "dir":  "03_划重点",
+                                        "count":  4
+                                    },
+                       "data":  {
+                                    "name":  "数据突出",
+                                    "dir":  "04_数据突出",
+                                    "count":  2
+                                },
+                       "emotion":  {
+                                       "name":  "情绪表达",
+                                       "dir":  "05_情绪表达",
+                                       "count":  1
+                                   },
+                       "ending":  {
+                                      "name":  "结尾引导",
+                                      "dir":  "06_结尾引导",
+                                      "count":  1
+                                  }
+                   },
+    "assets":  [
+                   {
+                       "id":  "textstyle_opening_boom",
+                       "name":  "开场爆炸式",
+                       "category":  "opening",
+                       "file":  "01_开场标题/textstyle_opening_boom.json",
+                       "tags":  [
+                                    "开场",
+                                    "爆炸",
+                                    "大标题",
+                                    "冲击",
+                                    "黄色",
+                                    "红色"
+                                ],
+                       "status":  "provisional"
+                   },
+                   {
+                       "id":  "textstyle_opening_clean",
+                       "name":  "开场简洁式",
+                       "category":  "opening",
+                       "file":  "01_开场标题/textstyle_opening_clean.json",
+                       "tags":  [
+                                    "开场",
+                                    "简洁",
+                                    "商务",
+                                    "白色",
+                                    "侧边条",
+                                    "淡入"
+                                ],
+                       "status":  "provisional"
+                   },
+                   {
+                       "id":  "textstyle_emphasis_block",
+                       "name":  "重点色块式",
+                       "category":  "emphasis",
+                       "file":  "02_重点强调/textstyle_emphasis_block.json",
+                       "tags":  [
+                                    "重点",
+                                    "色块",
+                                    "黄色",
+                                    "强调",
+                                    "核心卖点",
+                                    "弹入"
+                                ],
+                       "status":  "provisional"
+                   },
+                   {
+                       "id":  "textstyle_emphasis_underline",
+                       "name":  "重点下划线式",
+                       "category":  "emphasis",
+                       "file":  "02_重点强调/textstyle_emphasis_underline.json",
+                       "tags":  [
+                                    "重点",
+                                    "下划线",
+                                    "白色",
+                                    "简洁",
+                                    "强调",
+                                    "淡入"
+                                ],
+                       "status":  "provisional"
+                   },
+                   {
+                       "id":  "textstyle_keypoint_yellow",
+                       "name":  "划重点黄色式",
+                       "category":  "keypoint",
+                       "file":  "03_划重点/textstyle_keypoint_yellow.json",
+                       "tags":  [
+                                    "划重点",
+                                    "黄色",
+                                    "标签",
+                                    "注意",
+                                    "知识点",
+                                    "弹入"
+                                ],
+                       "status":  "provisional"
+                   },
+                   {
+                       "id":  "textstyle_keypoint_red",
+                       "name":  "划重点红色式",
+                       "category":  "keypoint",
+                       "file":  "03_划重点/textstyle_keypoint_red.json",
+                       "tags":  [
+                                    "划重点",
+                                    "红色",
+                                    "警告",
+                                    "避坑",
+                                    "重要提醒",
+                                    "抖动"
+                                ],
+                       "status":  "provisional"
+                   },
+                   {
+                       "id":  "textstyle_data_big",
+                       "name":  "数据大字式",
+                       "category":  "data",
+                       "file":  "04_数据突出/textstyle_data_big.json",
+                       "tags":  [
+                                    "数据",
+                                    "大字",
+                                    "数字",
+                                    "黄色",
+                                    "统计",
+                                    "淡入"
+                                ],
+                       "status":  "provisional"
+                   },
+                   {
+                       "id":  "textstyle_data_with_unit",
+                       "name":  "数据带单位式",
+                       "category":  "data",
+                       "file":  "04_数据突出/textstyle_data_with_unit.json",
+                       "tags":  [
+                                    "数据",
+                                    "图标",
+                                    "单位",
+                                    "白色",
+                                    "展示",
+                                    "滑入"
+                                ],
+                       "status":  "provisional"
+                   },
+                   {
+                       "id":  "textstyle_shock_warning",
+                       "name":  "震惊警告式",
+                       "category":  "emotion",
+                       "file":  "05_情绪表达/textstyle_shock_warning.json",
+                       "tags":  [
+                                    "震惊",
+                                    "警告",
+                                    "红色",
+                                    "抖动",
+                                    "情绪",
+                                    "避坑"
+                                ],
+                       "status":  "provisional"
+                   },
+                   {
+                       "id":  "textstyle_ending_follow",
+                       "name":  "结尾引导式",
+                       "category":  "ending",
+                       "file":  "06_结尾引导/textstyle_ending_follow.json",
+                       "tags":  [
+                                    "结尾",
+                                    "引导",
+                                    "蓝色",
+                                    "关注",
+                                    "合作",
+                                    "滑入"
+                                ],
+                       "status":  "provisional"
+                   },
+                   {
+                       "id":  "textstyle_keypoint_top",
+                       "name":  "关键词互动-上",
+                       "tags":  [
+                                    "关键词",
+                                    "互动",
+                                    "上下排列",
+                                    "黄色",
+                                    "色块",
+                                    "弹入"
+                                ],
+                       "status":  "provisional",
+                       "category":  "keypoint",
+                       "file":  "03_划重点/textstyle_keypoint_top.json"
+                   },
+                   {
+                       "id":  "textstyle_keypoint_bottom",
+                       "name":  "关键词互动-下",
+                       "tags":  [
+                                    "关键词",
+                                    "互动",
+                                    "上下排列",
+                                    "黄色",
+                                    "色块",
+                                    "弹入"
+                                ],
+                       "status":  "provisional",
+                       "category":  "keypoint",
+                       "file":  "03_划重点/textstyle_keypoint_bottom.json"
+                   }
+               ],
+    "animationTypes":  [
+                           "fade_in",
+                           "pop_in",
+                           "shake_in",
+                           "slide_up",
+                           "slide_right",
+                           "fade_in_scale"
+                       ],
+    "rendererIntegration":  {
+                                "timelineField":  "titleTrack (styleId)",
+                                "resolver":  "TextStyleResolver",
+                                "generator":  "ASSGenerator + OverlayCompositor"
+                            }
+}

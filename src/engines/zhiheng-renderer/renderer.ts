@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Zhiheng Renderer —— 知衡自研渲染器。
  *
  * 实现 RendererInterface，串联：
@@ -33,6 +33,21 @@ import { AssetResolver, type TaskAssetManifestEntry } from './asset-resolver';
 import { probeAsset, type AssetProbeResult } from './ingest';
 import { RenderLogger } from './logger';
 import { preprocessSegment, type NormalizedSegment } from './preprocess';
+import { AssGenerator } from './ass-generator';
+import { StyleRegistry } from './style-registry';
+import { composeFinal, type ComposeResult, type OverlayInput } from './compose';
+import {
+  generateAllGraphics,
+  generateGraphicCustom,
+  type GeneratedGraphic
+} from './graphic-generator';
+import {
+  calculateLayout,
+  getOverlayLayer,
+  DEFAULT_SAFE_AREA,
+  DEFAULT_ELEMENT_SIZES
+} from './layout-registry';
+import { PackagingAssetResolver } from './packaging-asset-resolver';
 
 // ============================================================================
 // 类型定义
@@ -43,6 +58,16 @@ export interface ZhihengRendererOptions {
   libraryAssetMap?: Record<string, string>;
   /** 工作目录根路径，默认 tmp/zhiheng-renderer */
   workRoot?: string;
+  /**
+   * 诊断/开发 fallback 模式。
+   * - false（默认，正式生产模式）：ffmpeg + ffprobe 都是必需依赖。
+   *   ffprobe 不存在时 Environment Preflight 返回 ENVIRONMENT_CHECK_FAILED，不继续 preprocess。
+   *   Asset Ingest 必须使用 ffprobe JSON，不得使用 ffmpeg -i 正则 fallback。
+   * - true（诊断/开发模式）：允许 ffprobe 缺失时使用 ffmpeg -i 正则 fallback，
+   *   但必须产生 NON_PRODUCTION_PROBE_FALLBACK warning。此模式仅用于开发排查，
+   *   正式 ZhihengRenderer.render() 不得默认启用。
+   */
+  diagnosticMode?: boolean;
 }
 
 export interface PreprocessResult {
@@ -67,10 +92,12 @@ export class ZhihengRenderer implements RendererInterface {
     { localPath: string; options?: { originalName?: string; metadata?: Record<string, unknown> } }
   > = {};
   private validator: TimelineValidator;
+  private diagnosticMode: boolean;
 
   constructor(options: ZhihengRendererOptions = {}) {
     this.libraryAssetMap = options.libraryAssetMap || {};
     this.workRoot = options.workRoot || path.join(process.cwd(), 'tmp', 'zhiheng-renderer');
+    this.diagnosticMode = options.diagnosticMode ?? false;
     this.validator = new TimelineValidator();
   }
 
@@ -83,22 +110,22 @@ export class ZhihengRenderer implements RendererInterface {
   }
 
   getVersion(): string {
-    return '0.1.0-phase2a';
+    return '0.2.0-phase2d';
   }
 
   getCapabilities(): RendererCapabilities {
     return {
       sourceTrim: true,
-      multiSegmentConcat: false, // Phase 2A 不实现 concat，Phase 2B 实现
+      multiSegmentConcat: true,
       scaleCrop: true,
       hdrToneMap: true,
-      assSubtitles: false, // Phase 2B 实现
-      keywordHighlight: false, // Phase 2B 实现
-      titleTrack: false, // Phase 2B 实现
-      overlayTrack: false, // Phase 2C 实现
-      bgmTrack: false, // Phase 2C 实现
-      sfxTrack: false, // Phase 2C 实现
-      voiceMix: false, // Phase 2B 实现
+      assSubtitles: true,
+      keywordHighlight: true,
+      titleTrack: true,
+      overlayTrack: true, // Phase 2C 实现：PNG/Logo/Badge/Title Panel/Info Card/Sticker
+      bgmTrack: true, // Phase 2D 实现：BGM 循环 + 音量
+      sfxTrack: true, // Phase 2D 实现：SFX 时间点插入
+      voiceMix: true,
       outputProfile: true,
       transitions: ['hard_cut']
     };
@@ -112,31 +139,23 @@ export class ZhihengRenderer implements RendererInterface {
     const caps = this.getCapabilities();
     const tl = timeline as UnifiedTimelineV1;
 
-    if (tl?.subtitleTrack && tl.subtitleTrack.length > 0 && !caps.assSubtitles) {
+    // overlay/bgm/sfx 能力检查
+    // overlayTrack 已在 Phase 2C 实现，不再报错
+    if (tl?.bgmTrack && tl.bgmTrack.length > 0 && !caps.bgmTrack) {
       result.errors.push({
-        field: 'subtitleTrack',
-        message: 'ZhihengRenderer Phase 2A 不支持 ASS 字幕烧录，Timeline 中包含 subtitleTrack。',
+        field: 'bgmTrack',
+        message: 'ZhihengRenderer V0.1 不支持 bgmTrack，Timeline 中包含 bgmTrack。',
         code: ValidationErrorCode.UNSUPPORTED_CAPABILITY
       });
     }
 
-    if (tl?.titleTrack && tl.titleTrack.length > 0 && !caps.titleTrack) {
+    if (tl?.sfxTrack && tl.sfxTrack.length > 0 && !caps.sfxTrack) {
       result.errors.push({
-        field: 'titleTrack',
-        message: 'ZhihengRenderer Phase 2A 不支持 titleTrack，Timeline 中包含 titleTrack。',
+        field: 'sfxTrack',
+        message: 'ZhihengRenderer V0.1 不支持 sfxTrack，Timeline 中包含 sfxTrack。',
         code: ValidationErrorCode.UNSUPPORTED_CAPABILITY
       });
     }
-
-    if (tl?.voiceTrack && tl.voiceTrack.length > 0 && !caps.voiceMix) {
-      result.errors.push({
-        field: 'voiceTrack',
-        message: 'ZhihengRenderer Phase 2A 不支持 voiceMix，Timeline 中包含 voiceTrack。',
-        code: ValidationErrorCode.UNSUPPORTED_CAPABILITY
-      });
-    }
-
-    // overlay/bgm/sfx 是预留字段，V0.1 不实现，如果存在则 warning（validator 已处理）
 
     result.valid = result.errors.length === 0;
     return result;
@@ -197,7 +216,7 @@ export class ZhihengRenderer implements RendererInterface {
 
       // 2. Environment Preflight
       logger.log('info', '开始 Environment Preflight...');
-      const envReport = runEnvironmentPreflight();
+      const envReport = runEnvironmentPreflight({ diagnosticMode: this.diagnosticMode });
       logger.setEnvironment(envReport.ffmpegPath, envReport.ffprobePath, envReport.ffmpegVersion);
 
       if (!envReport.ready) {
@@ -234,6 +253,20 @@ export class ZhihengRenderer implements RendererInterface {
       }
       // 保存 Task Asset Manifest
       assetResolver.getTaskManifest().saveToFile(path.join(workDir, 'task-asset-manifest.json'));
+
+      // 3.5 初始化 Packaging Asset Resolver（音效/贴纸/花字模板库）
+      const packagingResolver = new PackagingAssetResolver();
+      const pkgStats = packagingResolver.getStats();
+      logger.log(
+        'info',
+        'Packaging Asset Resolver 初始化：音效' +
+          pkgStats.sound.count +
+          '个, 贴纸' +
+          pkgStats.sticker.count +
+          '个, 花字' +
+          pkgStats.textStyle.count +
+          '个'
+      );
 
       // 4. 逐 segment 处理
       const normalizedSegments: NormalizedSegment[] = [];
@@ -272,9 +305,11 @@ export class ZhihengRenderer implements RendererInterface {
           probeResult = probeAsset(videoSegment.assetRef.assetId, resolvedAsset.resolvedPath, {
             ffmpegPath: envReport.ffmpegPath!,
             ffprobePath: envReport.ffprobePath,
-            cacheDir: probeDir
+            cacheDir: probeDir,
+            diagnosticMode: this.diagnosticMode
           });
         } catch (err) {
+          console.error('渲染错误堆栈:', (err as Error).stack);
           const msg = `ffprobe 失败：${(err as Error).message}`;
           logger.addSegmentError(i, msg);
           errors.push({ stage: 'probe', message: msg });
@@ -309,6 +344,7 @@ export class ZhihengRenderer implements RendererInterface {
           });
           normalizedSegments.push(normalized);
         } catch (err) {
+          console.error('渲染错误堆栈:', (err as Error).stack);
           const msg = `Preprocess 失败：${(err as Error).message}`;
           errors.push({ stage: 'preprocess', message: msg });
           logger.finish('failed');
@@ -340,14 +376,423 @@ export class ZhihengRenderer implements RendererInterface {
         'utf8'
       );
 
-      logger.finish('success');
-      warnings.push(
-        'Phase 2A：输出为 Normalized FFV1 Segments（中间产物），最终合成将在 Phase 2B 实现。'
+      // 6. 保存 timeline.json
+      fs.writeFileSync(path.join(workDir, 'timeline.json'), JSON.stringify(tl, null, 2), 'utf8');
+
+      // 7. 生成 ASS 字幕文件
+      const assPath = path.join(workDir, 'subtitles.ass');
+      const styleRegistry = new StyleRegistry();
+      const assGenerator = new AssGenerator(styleRegistry, {
+        width: outputProfile.width,
+        height: outputProfile.height,
+        videoDuration: totalDuration,
+        textStyleResolver: packagingResolver
+      });
+      const assResult = assGenerator.generateToFile(
+        tl.subtitleTrack || [],
+        tl.titleTrack || [],
+        assPath
       );
+      warnings.push(...assResult.warnings.map((w) => 'ASS: ' + w));
+      logger.log(
+        'info',
+        `ASS 生成完成：${assResult.subtitleCount} 条字幕, ${assResult.titleCount} 条标题, 用到 ${assResult.usedStyles.length} 个样式`
+      );
+
+      // 7.5 花字模板装饰转换为 overlay（sticker + graphic色块背景）
+      const textStyleOverlaySegments: any[] = [];
+      const textStyleGraphicInputs: OverlayInput[] = [];
+      if (assResult.textStyleOverlays && assResult.textStyleOverlays.length > 0) {
+        const graphicDir = path.join(workDir, 'graphics');
+        for (const tso of assResult.textStyleOverlays) {
+          if (tso.type === 'sticker') {
+            // sticker 类型：转换成 overlay segment，后续统一处理
+            let anchor = 'top_left';
+            if (tso.position === 'behind_text') anchor = 'center';
+            else if (tso.position === 'left_of_text') anchor = 'top_left';
+            else if (tso.position === 'right_of_text') anchor = 'top_right';
+            textStyleOverlaySegments.push({
+              id: 'textstyle_' + tso.titleId + '_dec' + tso.decorationIndex,
+              type: 'sticker',
+              assetRef: { type: 'library_asset', assetId: tso.assetId },
+              styleId: 'sticker.default',
+              anchor: anchor,
+              start: tso.start,
+              duration: tso.duration,
+              transition: 'hard_cut'
+            });
+          } else if (tso.type === 'graphic') {
+            // graphic 类型：直接生成色块背景PNG，构建OverlayInput
+            try {
+              const bgColor = tso.graphicBackgroundColor || '#FBBF24@0.9';
+              const opacity = tso.opacity ?? 1.0;
+              // 如果颜色格式是 #RRGGBB 且 opacity<1，加上透明度
+              let finalColor = bgColor;
+              if (!bgColor.includes('@') && opacity < 1.0) {
+                finalColor = bgColor + '@' + opacity;
+              }
+              const graphic = generateGraphicCustom(
+                envReport.ffmpegPath!,
+                graphicDir,
+                'textstyle_' + tso.titleId + '_dec' + tso.decorationIndex,
+                tso.graphicWidth || 400,
+                tso.graphicHeight || 100,
+                finalColor
+              );
+              textStyleGraphicInputs.push({
+                id: 'textstyle_graphic_' + tso.titleId + '_dec' + tso.decorationIndex,
+                imagePath: graphic.outputPath,
+                x: tso.graphicX || 0,
+                y: tso.graphicY || 0,
+                start: tso.start,
+                end: tso.start + tso.duration,
+                layer: 5, // 色块背景在文字下方
+                opacity: 1.0 // 透明度已经在PNG中
+              });
+              logger.log(
+                'info',
+                '花字模板色块背景生成：' +
+                  tso.titleId +
+                  ' dec' +
+                  tso.decorationIndex +
+                  ' (' +
+                  graphic.width +
+                  'x' +
+                  graphic.height +
+                  ', x=' +
+                  (tso.graphicX || 0) +
+                  ', y=' +
+                  (tso.graphicY || 0) +
+                  ')'
+              );
+            } catch (e: any) {
+              warnings.push('花字模板色块背景生成失败：' + tso.titleId + ' - ' + e.message);
+            }
+          }
+        }
+        logger.log(
+          'info',
+          '花字模板装饰转换：' +
+            textStyleOverlaySegments.length +
+            ' 个 sticker, ' +
+            textStyleGraphicInputs.length +
+            ' 个 graphic色块'
+        );
+      }
+      // 8. 解析 voice asset
+      let voicePath: string | undefined;
+      let voiceVolume = 1.0;
+      if (tl.voiceTrack && tl.voiceTrack.length > 0) {
+        const voiceSegment = tl.voiceTrack[0]; // V0.1 只支持一个 voice track
+        const resolvedVoice = assetResolver.resolve(voiceSegment.assetRef);
+        if (resolvedVoice.resolvedPath && resolvedVoice.exists) {
+          voicePath = resolvedVoice.resolvedPath;
+          voiceVolume = voiceSegment.volume ?? 1.0;
+          logger.log('info', `voice asset 解析成功：${voicePath}, volume=${voiceVolume}`);
+        } else {
+          const msg = `voice asset 解析失败：assetId=${voiceSegment.assetRef.assetId}`;
+          logger.log('error', msg);
+          errors.push({ stage: 'voice_resolve', message: msg });
+          logger.finish('failed');
+          return {
+            success: false,
+            durationMs: Date.now() - startTime,
+            errors,
+            warnings,
+            rendererName: this.getName(),
+            rendererVersion: this.getVersion(),
+            logPath: path.join(logsDir, 'render.log')
+          };
+        }
+      }
+
+      // 9. Overlay 包装层处理（Phase 2C）
+      const overlayInputs: OverlayInput[] = [];
+      if (tl.overlayTrack && tl.overlayTrack.length > 0) {
+        logger.log('info', `处理 overlayTrack：${tl.overlayTrack.length} 个包装元素`);
+
+        // 9.1 生成 graphic（badge/title_panel/info_card 背景 PNG，过滤 sticker/image/logo）
+        const graphicOverlays = tl.overlayTrack.filter(function (ov) {
+          return ov.type === 'badge' || ov.type === 'title_panel' || ov.type === 'info_card';
+        });
+        let graphics: Map<string, GeneratedGraphic> = new Map();
+        try {
+          graphics = generateAllGraphics(envReport.ffmpegPath!, graphicOverlays, workDir);
+          logger.log('info', `已生成 ${graphics.size} 个 graphic 背景`);
+        } catch (e: any) {
+          const msg = `graphic 生成失败：${e.message}`;
+          logger.log('error', msg);
+          errors.push({ stage: 'graphic_generate', message: msg });
+        }
+
+        // 9.2 对每个 overlay 计算 layout 并构建 OverlayInput（含花字模板装饰贴纸）
+        const allOverlays = [...(tl.overlayTrack || []), ...textStyleOverlaySegments];
+        for (const ov of allOverlays) {
+          let imagePath: string | null = null;
+          let elementWidth = 0;
+          let elementHeight = 0;
+
+          if (ov.type === 'image' || ov.type === 'logo') {
+            // image/logo 类型：通过 Asset Resolver 获取 PNG 路径
+            if (!ov.assetRef) {
+              warnings.push(`overlay ${ov.id} (${ov.type}) 缺少 assetRef，跳过`);
+              continue;
+            }
+            const resolved = assetResolver.resolve(ov.assetRef);
+            if (!resolved.exists) {
+              warnings.push(`overlay ${ov.id} 素材不存在：${ov.assetRef.assetId}，跳过`);
+              continue;
+            }
+            imagePath = resolved.resolvedPath;
+            // 用 ffprobe 获取图片尺寸（简化：用默认尺寸，后续可优化）
+            const defaultSize = DEFAULT_ELEMENT_SIZES[ov.styleId] || { width: 200, height: 200 };
+            elementWidth = defaultSize.width;
+            elementHeight = defaultSize.height;
+          } else if (ov.type === 'sticker') {
+            // sticker 类型：通过 Packaging Asset Resolver 从贴纸库获取 PNG 路径
+            if (!ov.assetRef) {
+              warnings.push('overlay ' + ov.id + ' (sticker) 缺少 assetRef，跳过');
+              continue;
+            }
+            const stickerResolved = packagingResolver.resolve(ov.assetRef.assetId, 'sticker_asset');
+            if (!stickerResolved.exists) {
+              warnings.push('overlay ' + ov.id + ' 贴纸不存在：' + ov.assetRef.assetId + '，跳过');
+              continue;
+            }
+            imagePath = stickerResolved.resolvedPath!;
+            const stickerSize = DEFAULT_ELEMENT_SIZES[ov.styleId] || { width: 160, height: 160 };
+            elementWidth = stickerSize.width;
+            elementHeight = stickerSize.height;
+          } else {
+            // badge/title_panel/info_card：使用生成的 graphic
+            const graphic = graphics.get(ov.id);
+            if (!graphic) {
+              warnings.push(`overlay ${ov.id} graphic 未生成，跳过`);
+              continue;
+            }
+            imagePath = graphic.outputPath;
+            elementWidth = graphic.width;
+            elementHeight = graphic.height;
+          }
+
+          if (!imagePath) continue;
+
+          // 9.3 计算 layout 坐标
+          const layout = calculateLayout(
+            ov.anchor,
+            { width: elementWidth, height: elementHeight },
+            outputProfile.width,
+            outputProfile.height,
+            DEFAULT_SAFE_AREA
+          );
+
+          if (layout.subtitleAvoidanceApplied) {
+            logger.log('info', `overlay ${ov.id} 触发字幕避让，y 调整为 ${layout.y}`);
+          }
+
+          // 9.4 构建 OverlayInput
+          overlayInputs.push({
+            id: ov.id,
+            imagePath,
+            x: layout.x,
+            y: layout.y,
+            start: ov.start,
+            end: ov.start + ov.duration,
+            layer: getOverlayLayer(ov.type),
+            opacity: ov.opacity
+          });
+
+          logger.log(
+            'info',
+            `overlay ${ov.id} (${ov.type}): x=${layout.x}, y=${layout.y}, t=${ov.start.toFixed(2)}-${(ov.start + ov.duration).toFixed(2)}s`
+          );
+        }
+
+        logger.log(
+          'info',
+          `overlay 处理完成：${overlayInputs.length}/${tl.overlayTrack.length} 个元素将被叠加`
+        );
+      }
+
+      // 9.5 加入花字模板色块背景 overlay（在文字下方）
+      if (textStyleGraphicInputs.length > 0) {
+        overlayInputs.push(...textStyleGraphicInputs);
+        logger.log('info', '加入花字模板色块背景：' + textStyleGraphicInputs.length + ' 个');
+      }
+
+      // 9.6 处理 BGM / SFX（通过 Packaging Asset Resolver 解析音效库）
+      const bgmTracks: Array<{
+        path: string;
+        start: number;
+        duration: number;
+        volume: number;
+        loop: boolean;
+      }> = [];
+      const sfxTracks: Array<{ path: string; start: number; duration: number; volume: number }> =
+        [];
+
+      if (tl.bgmTrack && tl.bgmTrack.length > 0) {
+        for (const bgm of tl.bgmTrack) {
+          const resolved = packagingResolver.resolve(bgm.assetRef.assetId, 'sound_asset');
+          if (resolved.exists) {
+            bgmTracks.push({
+              path: resolved.resolvedPath!,
+              start: bgm.start,
+              duration: bgm.duration,
+              volume: bgm.volume,
+              loop: bgm.loop
+            });
+            logger.log(
+              'info',
+              'BGM 解析成功：' +
+                bgm.assetRef.assetId +
+                ' -> ' +
+                resolved.resolvedPath +
+                ', volume=' +
+                bgm.volume +
+                ', loop=' +
+                bgm.loop
+            );
+          } else {
+            warnings.push('BGM 素材不存在：' + bgm.assetRef.assetId + '，跳过');
+          }
+        }
+      }
+
+      if (tl.sfxTrack && tl.sfxTrack.length > 0) {
+        for (const sfx of tl.sfxTrack) {
+          const resolved = packagingResolver.resolve(sfx.assetRef.assetId, 'sound_asset');
+          if (resolved.exists) {
+            sfxTracks.push({
+              path: resolved.resolvedPath!,
+              start: sfx.start,
+              duration: sfx.duration,
+              volume: sfx.volume
+            });
+            logger.log(
+              'info',
+              'SFX 解析成功：' +
+                sfx.assetRef.assetId +
+                ' -> ' +
+                resolved.resolvedPath +
+                ', start=' +
+                sfx.start +
+                's, volume=' +
+                sfx.volume
+            );
+          } else {
+            warnings.push('SFX 素材不存在：' + sfx.assetRef.assetId + '，跳过');
+          }
+        }
+      }
+
+      // 9.7 花字模板入场音效自动添加（entrySfx）
+      if (assResult.textStyleEntrySfxs && assResult.textStyleEntrySfxs.length > 0) {
+        for (const esfx of assResult.textStyleEntrySfxs) {
+          const resolved = packagingResolver.resolve(esfx.sfxAssetId, 'sound_asset');
+          if (resolved.exists) {
+            sfxTracks.push({
+              path: resolved.resolvedPath!,
+              start: esfx.start,
+              duration: 2.0,
+              volume: esfx.volume
+            });
+            logger.log(
+              'info',
+              '花字模板入场音效：' +
+                esfx.sfxAssetId +
+                ' -> ' +
+                resolved.resolvedPath +
+                ', start=' +
+                esfx.start +
+                's, volume=' +
+                esfx.volume
+            );
+          } else {
+            warnings.push('花字模板入场音效素材不存在：' + esfx.sfxAssetId + '，跳过');
+          }
+        }
+      }
+
+      // 10. 最终合成
+      const finalOutputPath = path.join(workDir, 'final.mp4');
+      logger.log(
+        'info',
+        `开始最终合成（concat + ${overlayInputs.length} overlays + ASS + voice + H.264/AAC）...`
+      );
+      const composeResult: ComposeResult = composeFinal(normalizedSegments, {
+        ffmpegPath: envReport.ffmpegPath!,
+        outputProfile,
+        workDir,
+        outputPath: finalOutputPath,
+        assPath,
+        voicePath,
+        voiceVolume,
+        overlays: overlayInputs,
+        bgmTracks,
+        sfxTracks,
+        videoDuration: totalDuration,
+        logger
+      });
+
+      warnings.push(...composeResult.warnings);
+      if (!composeResult.success) {
+        for (const err of composeResult.errors) {
+          errors.push({ stage: 'compose', message: err });
+        }
+        logger.finish('failed');
+        return {
+          success: false,
+          durationMs: Date.now() - startTime,
+          errors,
+          warnings,
+          rendererName: this.getName(),
+          rendererVersion: this.getVersion(),
+          logPath: path.join(logsDir, 'render.log')
+        };
+      }
+
+      // 10. 保存 render report
+      const renderReport = {
+        renderId,
+        taskId: tl.taskId,
+        timelineId: tl.timelineId,
+        rendererName: this.getName(),
+        rendererVersion: this.getVersion(),
+        startTime: new Date(startTime).toISOString(),
+        totalDurationMs: Date.now() - startTime,
+        outputProfile,
+        videoTotalDuration: totalDuration,
+        segmentCount: normalizedSegments.length,
+        subtitleCount: assResult.subtitleCount,
+        titleCount: assResult.titleCount,
+        hasVoice: !!voicePath,
+        compose: {
+          expectedDuration: composeResult.expectedDuration,
+          finalDuration: composeResult.finalDuration,
+          durationDiff: composeResult.durationDiff,
+          ffmpegExitCode: composeResult.ffmpegExitCode,
+          elapsedMs: composeResult.elapsedMs
+        },
+        outputPath: finalOutputPath,
+        warnings,
+        errors: errors.map((e) => ({ stage: e.stage, message: e.message }))
+      };
+      fs.writeFileSync(
+        path.join(workDir, 'render-report.json'),
+        JSON.stringify(renderReport, null, 2),
+        'utf8'
+      );
+
+      logger.log(
+        'info',
+        `渲染完成：final.mp4, 时长 ${composeResult.finalDuration.toFixed(3)}s (期望 ${totalDuration.toFixed(3)}s, 差异 ${composeResult.durationDiff.toFixed(3)}s)`
+      );
+      logger.finish('success');
 
       return {
         success: true,
-        outputPath: segmentsDir, // V0.1 输出 segments 目录，Phase 2B 将输出最终 mp4
+        outputPath: finalOutputPath,
         durationMs: Date.now() - startTime,
         errors,
         warnings,
@@ -356,6 +801,7 @@ export class ZhihengRenderer implements RendererInterface {
         logPath: path.join(logsDir, 'render.log')
       };
     } catch (err) {
+      console.error('渲染错误堆栈:', (err as Error).stack);
       const msg = `渲染过程中发生未预期错误：${(err as Error).message}`;
       logger.log('error', msg);
       errors.push({ stage: 'unknown', message: msg });

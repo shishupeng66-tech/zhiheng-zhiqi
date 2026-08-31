@@ -1,0 +1,49 @@
+{
+  "id": "textstyle_opening_clean",
+  "name": "开场简洁式",
+  "category": "opening",
+  "description": "白色大字+黄色侧边条+淡入动画，简洁商务风格",
+  "version": "1.0",
+  "status": "provisional",
+  "assStyle": {
+    "fontName": "Microsoft YaHei",
+    "fontSize": 88,
+    "primaryColor": "&H00FFFFFF",
+    "outlineColor": "&H00000000",
+    "backColor": "&H00000000",
+    "bold": true,
+    "borderStyle": 1,
+    "outline": 5,
+    "shadow": 2,
+    "alignment": 4,
+    "marginL": 140,
+    "marginR": 60,
+    "marginV": 380
+  },
+  "decorations": [
+    {
+      "type": "sticker",
+      "assetId": "sticker_accent_bar_yellow",
+      "position": "left_of_text",
+      "scale": 0.8,
+      "opacity": 1.0,
+      "offsetX": -80,
+      "offsetY": 0
+    }
+  ],
+  "animation": {
+    "in": "fade_in",
+    "inDuration": 500,
+    "out": "fade_out",
+    "outDuration": 300
+  },
+  "usage": "用于商务风格开场，简洁不花哨。适合企业介绍、品牌故事等正式场合开场。",
+  "tags": [
+    "开场",
+    "简洁",
+    "商务",
+    "白色",
+    "侧边条",
+    "淡入"
+  ]
+}

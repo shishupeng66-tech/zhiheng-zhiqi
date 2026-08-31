@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Unified Timeline V1 —— 知衡智企自动剪辑统一时间线。
  *
  * 本文件是 Unified Timeline V1 的唯一权威类型定义（source of truth）。
@@ -199,16 +199,75 @@ export const TitleSegmentSchema = z.object({
 export type TitleSegment = z.infer<typeof TitleSegmentSchema>;
 
 // ============================================================================
-// 预留 Track（V0.2+ 实现，V0.1 不执行）
+// Overlay Track —— 包装/图像叠加轨道（Phase 2C V0.1 实现）
 // ============================================================================
 
-/** 图像叠加条目（PNG/Logo/印章等），V0.2 实现 */
+/**
+ * Anchor 锚点。V0.1 只支持固定语义锚点，不允许 Timeline 写自由 x/y。
+ * Renderer 根据 outputProfile + safe area + style + element size 计算最终像素坐标。
+ */
+export const AnchorSchema = z.enum([
+  'top_left',
+  'top_center',
+  'top_right',
+  'center_left',
+  'center',
+  'center_right',
+  'bottom_left',
+  'bottom_center',
+  'bottom_right'
+]);
+export type Anchor = z.infer<typeof AnchorSchema>;
+
+/**
+ * 包装元素类型。
+ *
+ * - image / logo：需要 assetRef 指向 PNG/图片素材，Renderer 负责 scale/anchor/overlay
+ * - badge / title_panel / info_card：由 Renderer 根据 styleId 生成 graphic（色块/底板/卡片），
+ *   文字仍走 ASS（通过 titleTrack 或独立文字层），不需要 assetRef
+ */
+export const OverlayTypeSchema = z.enum([
+  'image',
+  'logo',
+  'sticker',
+  'badge',
+  'title_panel',
+  'info_card'
+]);
+export type OverlayType = z.infer<typeof OverlayTypeSchema>;
+
+/**
+ * 包装/图像叠加条目。
+ *
+ * Timeline 只描述语义意图（type/styleId/anchor/start/duration/text），
+ * 禁止输出 x/y/width/fontSize/opacity/FFmpeg filter 等具体像素参数。
+ *
+ * 不同 type 的字段要求：
+ * - image / logo：必须有 assetRef
+ * - badge：必须有 text（角标文字），可选 assetRef
+ * - title_panel：可选 text（面板标题），通常配合 titleTrack 文字使用
+ * - info_card：必须有 title，可选 subtitle
+ */
 export const OverlaySegmentSchema = z.object({
   id: NonEmptyString,
-  assetRef: AssetRefSchema,
+  /** 包装元素类型 */
+  type: OverlayTypeSchema,
+  /** 图片素材引用（image/logo 类型必需；badge/title_panel/info_card 可选） */
+  assetRef: AssetRefSchema.optional(),
+  /** 样式 ID，对应 Style Registry，如 "badge.oem" / "panel.default" / "card.info" */
+  styleId: NonEmptyString,
+  /** 锚点位置，V0.1 只支持固定语义锚点 */
+  anchor: AnchorSchema,
+  /** 开始时间（秒） */
   start: TimeSeconds,
-  duration: z.number().positive()
-  // 位置/尺寸/透明度等字段 V0.2 定义
+  /** 持续时长（秒） */
+  duration: z.number().positive('duration 必须大于 0'),
+  /** 角标/面板文字（badge 必需，title_panel/info_card 可选） */
+  text: z.string().optional(),
+  /** 信息卡副标题（仅 info_card 使用） */
+  subtitle: z.string().optional(),
+  /** 透明度 0-1，可选。不指定时由 styleId 决定。 */
+  opacity: z.number().min(0).max(1).optional()
 });
 export type OverlaySegment = z.infer<typeof OverlaySegmentSchema>;
 
@@ -263,7 +322,7 @@ export const UnifiedTimelineV1Schema = z.object({
   subtitleTrack: z.array(SubtitleSegmentSchema).default([]),
   /** 标题轨道：允许 overlap，通过 layer 区分层级。 */
   titleTrack: z.array(TitleSegmentSchema).default([]),
-  /** 预留：图像叠加轨道，V0.1 不执行（Validator 会警告） */
+  /** 包装/图像叠加轨道：PNG/Logo/角标/标题底板/信息卡。Phase 2C V0.1 实现。可选。 */
   overlayTrack: z.array(OverlaySegmentSchema).optional(),
   /** 预留：背景音乐轨道，V0.1 不执行 */
   bgmTrack: z.array(BgmSegmentSchema).optional(),

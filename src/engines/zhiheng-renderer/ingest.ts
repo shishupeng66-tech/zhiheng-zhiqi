@@ -353,13 +353,30 @@ export interface ProbeOptions {
   ffmpegPath: string;
   ffprobePath: string | null;
   cacheDir?: string; // probe 结果缓存目录
+  /**
+   * 诊断/开发 fallback 模式。
+   * - false（默认，正式生产模式）：必须使用 ffprobe JSON。ffprobe 不存在或失败时抛出 FFPROBE_NOT_FOUND，
+   *   不得使用 ffmpeg -i stderr 正则作为生产 metadata parser。
+   * - true（诊断/开发模式）：允许 ffprobe 缺失时使用 ffmpeg -i 正则 fallback，
+   *   但必须在结果中产生 NON_PRODUCTION_PROBE_FALLBACK warning。正式 ZhihengRenderer.render() 不得默认启用。
+   */
+  diagnosticMode?: boolean;
 }
 
 /**
  * 探测素材元数据。
  *
- * 优先使用 ffprobe（结构化 JSON）。
- * ffprobe 不可用时使用 ffmpeg -i fallback（文本解析）。
+ * 正式路径（diagnosticMode=false，默认）：
+ *   Asset Ingest → ffprobe JSON → 解析媒体 metadata。
+ *   必须使用 ffprobe 结构化 JSON 输出。
+ *   不得使用 ffmpeg -i stderr 正则作为生产 metadata parser。
+ *   ffprobe 不存在或执行失败 → 抛出 FFPROBE_NOT_FOUND 错误。
+ *
+ * 诊断/开发 fallback（diagnosticMode=true）：
+ *   允许 ffprobe 缺失时使用 ffmpeg -i 文本正则 fallback，
+ *   但必须在结果 warnings 中产生 NON_PRODUCTION_PROBE_FALLBACK。
+ *   此路径仅用于开发排查，不得作为正式 Renderer 正常运行路径。
+ *
  * 结果可缓存到 cacheDir。
  */
 export function probeAsset(
@@ -367,6 +384,8 @@ export function probeAsset(
   filePath: string,
   options: ProbeOptions
 ): AssetProbeResult {
+  const diagnosticMode = options.diagnosticMode ?? false;
+
   // 1. 检查缓存
   if (options.cacheDir) {
     const cacheFile = path.join(options.cacheDir, `${assetId}.probe.json`);
@@ -382,8 +401,22 @@ export function probeAsset(
 
   let result: AssetProbeResult;
 
-  // 2. 优先 ffprobe
-  if (options.ffprobePath) {
+  // 2. 正式模式：ffprobe 必须存在
+  if (!options.ffprobePath) {
+    if (diagnosticMode) {
+      // 诊断模式：允许 ffmpeg -i fallback
+      result = probeWithFfmpegI(assetId, filePath, options.ffmpegPath);
+      result.warnings.push(
+        'NON_PRODUCTION_PROBE_FALLBACK：ffprobe 不存在，当前为诊断/开发 fallback 模式，使用 ffmpeg -i stderr 正则解析 metadata。此路径不得用于正式 Renderer 生产运行。请安装完整 FFmpeg 发行版（包含 ffprobe.exe）。'
+      );
+    } else {
+      // 正式模式：ffprobe 是必需依赖
+      throw new Error(
+        'FFPROBE_NOT_FOUND：正式 Renderer 必须依赖 ffprobe 结构化 JSON 输出解析媒体 metadata。当前环境未找到 ffprobe，不得使用 ffmpeg -i stderr 正则作为生产 metadata parser。请安装完整 FFmpeg 发行版（包含 ffmpeg.exe + ffprobe.exe），或配置 FFPROBE_PATH 环境变量。'
+      );
+    }
+  } else {
+    // 3. ffprobe 存在，执行正式探测
     const ffprobeResult = spawnSync(
       options.ffprobePath,
       ['-v', 'quiet', '-print_format', 'json', '-show_format', '-show_streams', filePath],
@@ -399,16 +432,32 @@ export function probeAsset(
       try {
         const json = JSON.parse(ffprobeResult.stdout) as FfprobeJson;
         result = parseFfprobeJson(json, assetId, filePath);
-      } catch {
-        // JSON 解析失败，fallback 到 ffmpeg -i
-        result = probeWithFfmpegI(assetId, filePath, options.ffmpegPath);
+      } catch (err) {
+        // ffprobe JSON 解析失败
+        if (diagnosticMode) {
+          result = probeWithFfmpegI(assetId, filePath, options.ffmpegPath);
+          result.warnings.push(
+            `NON_PRODUCTION_PROBE_FALLBACK：ffprobe JSON 解析失败（${(err as Error).message}），诊断模式下 fallback 到 ffmpeg -i 正则解析。此路径不得用于正式生产。`
+          );
+        } else {
+          throw new Error(
+            `FFPROBE_PARSE_FAILED：ffprobe 输出 JSON 解析失败：${(err as Error).message}。正式模式不得 fallback 到 ffmpeg -i 正则解析。`
+          );
+        }
       }
     } else {
-      result = probeWithFfmpegI(assetId, filePath, options.ffmpegPath);
+      // ffprobe 执行失败
+      if (diagnosticMode) {
+        result = probeWithFfmpegI(assetId, filePath, options.ffmpegPath);
+        result.warnings.push(
+          `NON_PRODUCTION_PROBE_FALLBACK：ffprobe 执行失败（exit code=${ffprobeResult.status}），诊断模式下 fallback 到 ffmpeg -i 正则解析。此路径不得用于正式生产。`
+        );
+      } else {
+        throw new Error(
+          `FFPROBE_EXEC_FAILED：ffprobe 执行失败（exit code=${ffprobeResult.status}）。正式模式不得 fallback 到 ffmpeg -i 正则解析。stderr: ${(ffprobeResult.stderr || '').slice(0, 300)}`
+        );
+      }
     }
-  } else {
-    // 3. ffprobe 不可用，使用 ffmpeg -i fallback
-    result = probeWithFfmpegI(assetId, filePath, options.ffmpegPath);
   }
 
   // 4. 写入缓存

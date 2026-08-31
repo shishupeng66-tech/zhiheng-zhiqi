@@ -1,0 +1,119 @@
+{
+  "library": "zhiheng-fonts",
+  "name": "知衡智企「智剪」字体库",
+  "version": "1.0.0",
+  "createdAt": "2026-08-30",
+  "totalFonts": 8,
+  "defaultFont": {
+    "regular": "Microsoft YaHei",
+    "bold": "Microsoft YaHei Bold",
+    "file": "C:/Windows/Fonts/msyh.ttc",
+    "boldFile": "C:/Windows/Fonts/msyhbd.ttc"
+  },
+  "fonts": [
+    {
+      "id": "font_msyh_regular",
+      "name": "微软雅黑",
+      "nameEn": "Microsoft YaHei",
+      "weight": "regular",
+      "file": "C:/Windows/Fonts/msyh.ttc",
+      "source": "Windows 系统字体",
+      "license": "Windows 系统授权，随系统使用",
+      "usage": ["正文", "字幕", "标题"],
+      "recommended": true
+    },
+    {
+      "id": "font_msyh_bold",
+      "name": "微软雅黑粗体",
+      "nameEn": "Microsoft YaHei Bold",
+      "weight": "bold",
+      "file": "C:/Windows/Fonts/msyhbd.ttc",
+      "source": "Windows 系统字体",
+      "license": "Windows 系统授权，随系统使用",
+      "usage": ["大标题", "花字", "强调"],
+      "recommended": true
+    },
+    {
+      "id": "font_msyh_light",
+      "name": "微软雅黑细体",
+      "nameEn": "Microsoft YaHei Light",
+      "weight": "light",
+      "file": "C:/Windows/Fonts/msyhl.ttc",
+      "source": "Windows 系统字体",
+      "license": "Windows 系统授权，随系统使用",
+      "usage": ["副标题", "说明文字"],
+      "recommended": false
+    },
+    {
+      "id": "font_noto_sans_sc",
+      "name": "思源黑体",
+      "nameEn": "Noto Sans SC",
+      "weight": "variable",
+      "file": "C:/Windows/Fonts/NotoSansSC-VF.ttf",
+      "bundledFile": "assets/05_字体库/NotoSansSC-VF.ttf",
+      "source": "Google / Adobe 开源字体",
+      "license": "SIL Open Font License 1.1（可自由商用、修改、分发）",
+      "usage": ["正文", "字幕", "标题", "跨平台交付"],
+      "recommended": true,
+      "note": "开源免费，推荐用于企业交付，避免系统字体版权问题"
+    },
+    {
+      "id": "font_simhei",
+      "name": "黑体",
+      "nameEn": "SimHei",
+      "weight": "regular",
+      "file": "C:/Windows/Fonts/simhei.ttf",
+      "source": "Windows 系统字体",
+      "license": "Windows 系统授权",
+      "usage": ["标题", "装饰", "大字报"],
+      "recommended": false
+    },
+    {
+      "id": "font_simsun",
+      "name": "宋体",
+      "nameEn": "SimSun",
+      "weight": "regular",
+      "file": "C:/Windows/Fonts/simsun.ttc",
+      "source": "Windows 系统字体",
+      "license": "Windows 系统授权",
+      "usage": ["正文", "传统风格", "正式文件"],
+      "recommended": false
+    },
+    {
+      "id": "font_simkai",
+      "name": "楷体",
+      "nameEn": "SimKai",
+      "weight": "regular",
+      "file": "C:/Windows/Fonts/simkai.ttf",
+      "source": "Windows 系统字体",
+      "license": "Windows 系统授权",
+      "usage": ["手写风格", "引用", "装饰"],
+      "recommended": false
+    },
+    {
+      "id": "font_simfang",
+      "name": "仿宋",
+      "nameEn": "SimFang",
+      "weight": "regular",
+      "file": "C:/Windows/Fonts/simfang.ttf",
+      "source": "Windows 系统字体",
+      "license": "Windows 系统授权",
+      "usage": ["公文风格", "正式文件", "说明"],
+      "recommended": false
+    }
+  ],
+  "fontMapping": {
+    "subtitle": "font_msyh_regular",
+    "subtitleKeyword": "font_msyh_bold",
+    "title": "font_msyh_bold",
+    "titleHook": "font_msyh_bold",
+    "titleEmphasis": "font_msyh_bold",
+    "textStyle": "font_msyh_bold",
+    "crossPlatform": "font_noto_sans_sc"
+  },
+  "rendererIntegration": {
+    "assFontName": "Microsoft YaHei",
+    "fallbackFont": "Noto Sans SC",
+    "fontDir": "assets/05_字体库"
+  }
+}

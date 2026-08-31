@@ -1,0 +1,48 @@
+{
+  "id": "textstyle_keypoint_red",
+  "name": "划重点红色式",
+  "category": "keypoint",
+  "description": "红色圆角底板+白色粗体字+弹入，用于警告/避坑/重要提醒",
+  "version": "1.0",
+  "status": "provisional",
+  "assStyle": {
+    "fontName": "Microsoft YaHei",
+    "fontSize": 64,
+    "primaryColor": "&H00FFFFFF",
+    "outlineColor": "&H00000000",
+    "backColor": "&H00000000",
+    "bold": true,
+    "borderStyle": 1,
+    "outline": 0,
+    "shadow": 0,
+    "alignment": 5,
+    "marginL": 100,
+    "marginR": 100,
+    "marginV": 450
+  },
+  "decorations": [
+    {
+      "type": "sticker",
+      "assetId": "sticker_text_keypoint_red",
+      "position": "behind_text",
+      "scale": 1.5,
+      "opacity": 1.0
+    }
+  ],
+  "animation": {
+    "in": "shake_in",
+    "inDuration": 400,
+    "out": "fade_out",
+    "outDuration": 200,
+    "shakeAmplitude": 8
+  },
+  "usage": "用于警告、避坑、重要提醒、错误示范等。红色底板+白字，有警示感。",
+  "tags": [
+    "划重点",
+    "红色",
+    "警告",
+    "避坑",
+    "重要提醒",
+    "抖动"
+  ]
+}

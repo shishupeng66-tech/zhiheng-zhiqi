@@ -1,4 +1,4 @@
-# 知衡助手 Agent V1 - Phase 2B 素材搜索实施报告
+﻿# 知衡助手 Agent V1 - Phase 2B 素材搜索实施报告
 
 ## 概述
 
@@ -77,7 +77,7 @@
 通过 `StorageService.getPath('assets')` 从数据库 `storage_configs` 表获取素材根目录。
 
 当前配置：
-- **assets 路径**：`D:\知衡智企数据库\素材资源`
+- **assets 路径**：`D:\知衡智企数据库\企业知识库\浩明饮品\素材资源\视频`
 - **索引文件**：`video-assets-detailed.json`
 
 ### 加载机制（`src/lib/agent/video-asset-index.ts`）

@@ -1,0 +1,356 @@
+{
+  "library": "zhiheng-sound-effects",
+  "name": "知衡智企「智剪」音效库",
+  "version": "1.0.0",
+  "createdAt": "2026-08-30",
+  "source": "Mixkit (免费商用，无需署名)",
+  "license": "Mixkit License - 免费商用，无需署名",
+  "totalAssets": 30,
+  "categories": {
+    "notification": {
+      "name": "提示音",
+      "dir": "01_提示音",
+      "count": 10,
+      "description": "用于重点信息出现、标题出现、按钮点击等场景的提示音"
+    },
+    "transition": {
+      "name": "转场音",
+      "dir": "02_转场音",
+      "count": 8,
+      "description": "用于镜头切换、场景转换的音效"
+    },
+    "impact": {
+      "name": "强调音",
+      "dir": "03_强调音",
+      "count": 6,
+      "description": "用于重磅信息、数据突出、情绪强调的音效"
+    },
+    "ambient": {
+      "name": "环境音",
+      "dir": "04_环境音",
+      "count": 3,
+      "description": "用于营造场景氛围的背景环境音"
+    },
+    "bgm": {
+      "name": "背景音乐",
+      "dir": "05_BGM",
+      "count": 3,
+      "description": "用于视频整体背景音乐"
+    }
+  },
+  "assets": [
+    {
+      "id": "sfx_ding_clean_01",
+      "name": "干净提示音",
+      "category": "notification",
+      "file": "01_提示音/sfx_ding_clean_01.mp3",
+      "tags": ["提示", "叮", "干净", "重点", "出现"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_ding_soft_02",
+      "name": "柔和提示音",
+      "category": "notification",
+      "file": "01_提示音/sfx_ding_soft_02.mp3",
+      "tags": ["提示", "叮", "柔和", "轻"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_notification_pop_03",
+      "name": "弹出提示音",
+      "category": "notification",
+      "file": "01_提示音/sfx_notification_pop_03.mp3",
+      "tags": ["提示", "弹出", "pop", "出现"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_chime_bell_04",
+      "name": "风铃提示音",
+      "category": "notification",
+      "file": "01_提示音/sfx_chime_bell_04.mp3",
+      "tags": ["提示", "风铃", "bell", "清脆"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_alert_simple_05",
+      "name": "简单提醒音",
+      "category": "notification",
+      "file": "01_提示音/sfx_alert_simple_05.mp3",
+      "tags": ["提醒", "alert", "简单", "注意"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_ding_modern_06",
+      "name": "现代提示音",
+      "category": "notification",
+      "file": "01_提示音/sfx_ding_modern_06.mp3",
+      "tags": ["提示", "叮", "现代", "科技"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_chime_light_07",
+      "name": "轻盈风铃音",
+      "category": "notification",
+      "file": "01_提示音/sfx_chime_light_07.mp3",
+      "tags": ["提示", "风铃", "轻盈", "chime"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_notification_click_08",
+      "name": "点击提示音",
+      "category": "notification",
+      "file": "01_提示音/sfx_notification_click_08.mp3",
+      "tags": ["提示", "点击", "click", "按钮"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_alert_quick_09",
+      "name": "快速提醒音",
+      "category": "notification",
+      "file": "01_提示音/sfx_alert_quick_09.mp3",
+      "tags": ["提醒", "快速", "alert", "短促"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_ding_minimal_10",
+      "name": "极简提示音",
+      "category": "notification",
+      "file": "01_提示音/sfx_ding_minimal_10.mp3",
+      "tags": ["提示", "叮", "极简", "minimal"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_whoosh_swish_01",
+      "name": "唰转场音",
+      "category": "transition",
+      "file": "02_转场音/sfx_whoosh_swish_01.mp3",
+      "tags": ["转场", "唰", "whoosh", "swish", "切换"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_whoosh_quick_02",
+      "name": "快速转场音",
+      "category": "transition",
+      "file": "02_转场音/sfx_whoosh_quick_02.mp3",
+      "tags": ["转场", "快速", "whoosh", "短促"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_transition_sweep_03",
+      "name": "扫过转场音",
+      "category": "transition",
+      "file": "02_转场音/sfx_transition_sweep_03.mp3",
+      "tags": ["转场", "扫过", "sweep", "切换"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_whoosh_deep_04",
+      "name": "深沉转场音",
+      "category": "transition",
+      "file": "02_转场音/sfx_whoosh_deep_04.mp3",
+      "tags": ["转场", "深沉", "whoosh", "deep", "厚重"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_transition_wind_05",
+      "name": "风声转场音",
+      "category": "transition",
+      "file": "02_转场音/sfx_transition_wind_05.mp3",
+      "tags": ["转场", "风声", "wind", "自然"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_whoosh_light_06",
+      "name": "轻盈转场音",
+      "category": "transition",
+      "file": "02_转场音/sfx_whoosh_light_06.mp3",
+      "tags": ["转场", "轻盈", "whoosh", "light"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_transition_air_07",
+      "name": "气流转场音",
+      "category": "transition",
+      "file": "02_转场音/sfx_transition_air_07.mp3",
+      "tags": ["转场", "气流", "air", "空气"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_whoosh_fast_08",
+      "name": "急速转场音",
+      "category": "transition",
+      "file": "02_转场音/sfx_whoosh_fast_08.mp3",
+      "tags": ["转场", "急速", "whoosh", "fast", "快切"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_impact_heavy_01",
+      "name": "沉重强调音",
+      "category": "impact",
+      "file": "03_强调音/sfx_impact_heavy_01.mp3",
+      "tags": ["强调", "沉重", "impact", "heavy", "重磅"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_boom_deep_02",
+      "name": "低沉轰鸣音",
+      "category": "impact",
+      "file": "03_强调音/sfx_boom_deep_02.mp3",
+      "tags": ["强调", "轰鸣", "boom", "deep", "低沉"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_impact_punch_03",
+      "name": "拳击强调音",
+      "category": "impact",
+      "file": "03_强调音/sfx_impact_punch_03.mp3",
+      "tags": ["强调", "拳击", "punch", "有力", "打击"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_riser_up_04",
+      "name": "上升铺垫音",
+      "category": "impact",
+      "file": "03_强调音/sfx_riser_up_04.mp3",
+      "tags": ["强调", "上升", "riser", "铺垫", "悬念", "up"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_impact_slam_05",
+      "name": "猛击强调音",
+      "category": "impact",
+      "file": "03_强调音/sfx_impact_slam_05.mp3",
+      "tags": ["强调", "猛击", "slam", "震撼", "重击"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "sfx_boom_drum_06",
+      "name": "鼓点强调音",
+      "category": "impact",
+      "file": "03_强调音/sfx_boom_drum_06.mp3",
+      "tags": ["强调", "鼓点", "drum", "boom", "节奏"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "ambient_factory_01",
+      "name": "工厂环境音",
+      "category": "ambient",
+      "file": "04_环境音/ambient_factory_01.mp3",
+      "tags": ["环境", "工厂", "factory", "机器", "生产", "背景"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "ambient_office_02",
+      "name": "办公室环境音",
+      "category": "ambient",
+      "file": "04_环境音/ambient_office_02.mp3",
+      "tags": ["环境", "办公室", "office", "键盘", "背景"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "ambient_crowd_03",
+      "name": "人群环境音",
+      "category": "ambient",
+      "file": "04_环境音/ambient_crowd_03.mp3",
+      "tags": ["环境", "人群", "crowd", "嘈杂", "展会", "背景"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "bgm_corporate_light_01",
+      "name": "轻快商务BGM",
+      "category": "bgm",
+      "file": "05_BGM/商务轻快/bgm_corporate_light_01.mp3",
+      "tags": ["BGM", "商务", "轻快", "corporate", "light", "企业", "宣传"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "bgm_business_upbeat_02",
+      "name": "积极商业BGM",
+      "category": "bgm",
+      "file": "05_BGM/商务轻快/bgm_business_upbeat_02.mp3",
+      "tags": ["BGM", "商业", "积极", "upbeat", "business", "活力"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    },
+    {
+      "id": "bgm_corporate_modern_03",
+      "name": "现代企业BGM",
+      "category": "bgm",
+      "file": "05_BGM/商务轻快/bgm_corporate_modern_03.mp3",
+      "tags": ["BGM", "企业", "现代", "modern", "corporate", "科技"],
+      "duration": null,
+      "source": "Mixkit",
+      "license": "免费商用"
+    }
+  ],
+  "usageGuide": {
+    "notification": "用于：标题出现、重点信息提示、关键词高亮、按钮点击、数据出现",
+    "transition": "用于：镜头切换、场景转换、段落过渡、快切节奏",
+    "impact": "用于：重磅信息、核心卖点、数据突出、情绪强调、开场冲击",
+    "ambient": "用于：营造场景氛围（工厂画面配工厂环境音等），音量建议10-20%",
+    "bgm": "用于：视频整体背景音乐，音量建议15-25%，人声出现时建议降到10%"
+  },
+  "rendererIntegration": {
+    "timelineField": "sfxTrack / bgmTrack",
+    "assetRefType": "sound_asset",
+    "resolver": "SoundAssetResolver",
+    "mixer": "AudioMixer (amix + volume + sidechaincompress)"
+  }
+}

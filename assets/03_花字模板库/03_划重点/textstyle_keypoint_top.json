@@ -1,0 +1,53 @@
+{
+  "id": "textstyle_keypoint_top",
+  "name": "关键词互动-上",
+  "category": "keypoint",
+  "description": "关键词互动包装法：上方关键词，黄色色块+黑字+弹入，与textstyle_keypoint_bottom配合使用",
+  "version": "1.0",
+  "status": "provisional",
+  "assStyle": {
+    "fontName": "Microsoft YaHei",
+    "fontSize": 64,
+    "primaryColor": "&H00000000",
+    "outlineColor": "&H00000000",
+    "backColor": "&H00000000",
+    "bold": true,
+    "borderStyle": 1,
+    "outline": 0,
+    "shadow": 0,
+    "alignment": 5,
+    "marginL": 80,
+    "marginR": 80,
+    "marginV": 480
+  },
+  "decorations": [
+    {
+      "type": "graphic",
+      "shape": "rounded_rect",
+      "position": "behind_text",
+      "backgroundColor": "#FBBF24",
+      "opacity": 0.9,
+      "paddingX": 48,
+      "paddingY": 20,
+      "cornerRadius": 16
+    }
+  ],
+  "animation": {
+    "in": "pop_in",
+    "inDuration": 350,
+    "out": "fade_out",
+    "outDuration": 200,
+    "popScale": [0, 1.2, 1.0]
+  },
+  "entrySfx": "sfx_ding_clean_01",
+  "entrySfxVolume": 0.6,
+  "usage": "用于关键词互动包装法的上方关键词。与textstyle_keypoint_bottom配合，第一个关键词用top，第二个用bottom，通过start时间差实现先后入场。",
+  "tags": [
+    "关键词",
+    "互动",
+    "上下排列",
+    "黄色",
+    "色块",
+    "弹入"
+  ]
+}

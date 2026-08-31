@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Timeline Validator —— Unified Timeline V1 的 schema + semantic 验证器。
  *
  * 本验证器只负责 Timeline 本身的结构和语义验证，不关心具体 Renderer 的能力。
@@ -138,22 +138,7 @@ export class TimelineValidator {
     // ------------------------------------------------------------------------
     // 9. 预留字段警告
     // ------------------------------------------------------------------------
-    if (timeline.overlayTrack && timeline.overlayTrack.length > 0) {
-      warnings.push(
-        `overlayTrack 已定义 ${timeline.overlayTrack.length} 条，但 V0.1 Renderer 不执行，将被忽略`
-      );
-    }
-    if (timeline.bgmTrack && timeline.bgmTrack.length > 0) {
-      warnings.push(
-        `bgmTrack 已定义 ${timeline.bgmTrack.length} 条，但 V0.1 Renderer 不执行，将被忽略`
-      );
-    }
-    if (timeline.sfxTrack && timeline.sfxTrack.length > 0) {
-      warnings.push(
-        `sfxTrack 已定义 ${timeline.sfxTrack.length} 条，但 V0.1 Renderer 不执行，将被忽略`
-      );
-    }
-
+    // overlayTrack/bgmTrack/sfxTrack 已在 Phase 2C/2D 实现，不再警告
     // ------------------------------------------------------------------------
     // 10. 视频总时长合理性警告
     // ------------------------------------------------------------------------
@@ -289,6 +274,8 @@ export class TimelineValidator {
     }
     for (let i = 0; i < timeline.titleTrack.length; i++) {
       const styleId = timeline.titleTrack[i].styleId;
+      // 花字模板（textstyle_ 开头）由 ASS Generator 运行时检查，不在 Style Registry 中
+      if (styleId.startsWith('textstyle_')) continue;
       if (!this.styleRegistry.has(styleId)) {
         errors.push({
           field: `titleTrack[${i}].styleId`,

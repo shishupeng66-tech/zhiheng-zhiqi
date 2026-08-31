@@ -1,0 +1,50 @@
+{
+  "id": "textstyle_ending_follow",
+  "name": "结尾引导式",
+  "category": "ending",
+  "description": "蓝色半透明底板+白色字+从右滑入，用于结尾关注/联系/合作引导",
+  "version": "1.0",
+  "status": "provisional",
+  "assStyle": {
+    "fontName": "Microsoft YaHei",
+    "fontSize": 68,
+    "primaryColor": "&H00FFFFFF",
+    "outlineColor": "&H00000000",
+    "backColor": "&H00000000",
+    "bold": true,
+    "borderStyle": 1,
+    "outline": 0,
+    "shadow": 0,
+    "alignment": 5,
+    "marginL": 80,
+    "marginR": 80,
+    "marginV": 600
+  },
+  "decorations": [
+    {
+      "type": "graphic",
+      "shape": "rounded_rect",
+      "position": "behind_text",
+      "backgroundColor": "#3B82F6",
+      "opacity": 0.8,
+      "paddingX": 45,
+      "paddingY": 22,
+      "cornerRadius": 30
+    }
+  ],
+  "animation": {
+    "in": "slide_right",
+    "inDuration": 500,
+    "out": "fade_out",
+    "outDuration": 400
+  },
+  "usage": "用于视频结尾的引导信息，如'关注我了解更多'、'私信咨询合作'、'评论区告诉我'等。蓝色底板+白字，专业可信。",
+  "tags": [
+    "结尾",
+    "引导",
+    "蓝色",
+    "关注",
+    "合作",
+    "滑入"
+  ]
+}

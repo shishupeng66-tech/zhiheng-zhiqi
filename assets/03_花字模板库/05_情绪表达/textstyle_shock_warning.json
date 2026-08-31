@@ -1,0 +1,59 @@
+{
+  "id": "textstyle_shock_warning",
+  "name": "震惊警告式",
+  "category": "emotion",
+  "description": "红色底板+白色粗体字+抖动入场，用于震惊/警告/没想到",
+  "version": "1.0",
+  "status": "provisional",
+  "assStyle": {
+    "fontName": "Microsoft YaHei",
+    "fontSize": 80,
+    "primaryColor": "&H00FFFFFF",
+    "outlineColor": "&H00000000",
+    "backColor": "&H00000000",
+    "bold": true,
+    "borderStyle": 1,
+    "outline": 5,
+    "shadow": 3,
+    "alignment": 5,
+    "marginL": 80,
+    "marginR": 80,
+    "marginV": 450
+  },
+  "decorations": [
+    {
+      "type": "graphic",
+      "shape": "rounded_rect",
+      "position": "behind_text",
+      "backgroundColor": "#EF4444",
+      "opacity": 0.85,
+      "paddingX": 50,
+      "paddingY": 25,
+      "cornerRadius": 12
+    },
+    {
+      "type": "sticker",
+      "assetId": "sticker_emoji_surprise",
+      "position": "right_of_text",
+      "scale": 0.4,
+      "opacity": 1.0,
+      "offsetX": 100
+    }
+  ],
+  "animation": {
+    "in": "shake_in",
+    "inDuration": 500,
+    "out": "fade_out",
+    "outDuration": 250,
+    "shakeAmplitude": 10
+  },
+  "usage": "用于'没想到'、'震惊'、'警告'、'避坑'等情绪强烈的场景。红色+抖动+惊讶表情，有冲击力。",
+  "tags": [
+    "震惊",
+    "警告",
+    "红色",
+    "抖动",
+    "情绪",
+    "避坑"
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "id": "textstyle_data_with_unit",
+  "name": "数据带单位式",
+  "category": "data",
+  "description": "白色数字+黄色单位+图标，用于带单位的数据展示",
+  "version": "1.0",
+  "status": "provisional",
+  "assStyle": {
+    "fontName": "Microsoft YaHei",
+    "fontSize": 100,
+    "primaryColor": "&H00FFFFFF",
+    "outlineColor": "&H00000000",
+    "backColor": "&H00000000",
+    "bold": true,
+    "borderStyle": 1,
+    "outline": 5,
+    "shadow": 2,
+    "alignment": 5,
+    "marginL": 80,
+    "marginR": 80,
+    "marginV": 480
+  },
+  "decorations": [
+    {
+      "type": "sticker",
+      "assetId": "sticker_icon_factory_blue",
+      "position": "left_of_text",
+      "scale": 0.5,
+      "opacity": 1.0,
+      "offsetX": -120
+    }
+  ],
+  "animation": {
+    "in": "slide_up",
+    "inDuration": 500,
+    "out": "fade_out",
+    "outDuration": 250
+  },
+  "usage": "用于带图标和单位的数据展示，如'自有工厂'+'工厂图标'，'ISO认证'+'证书图标'等。",
+  "tags": [
+    "数据",
+    "图标",
+    "单位",
+    "白色",
+    "展示",
+    "滑入"
+  ]
+}

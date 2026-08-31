@@ -30,9 +30,10 @@ import path from 'node:path';
 // ============================================================================
 
 export type EnvironmentDependencySource =
-  | 'configured_binary' // 通过配置指定的路径
+  | 'project_bundled' // 项目自带 bundled binary（bin/ffmpeg/）
+  | 'configured_binary' // 通过配置指定的路径（环境变量 FFMPEG_PATH / FFPROBE_PATH）
   | 'system_path' // 系统 PATH 中找到
-  | 'hermes_imageio' // hermes-agent imageio-ffmpeg 打包
+  | 'hermes_imageio' // hermes-agent imageio-ffmpeg 打包（仅作为最后 fallback）
   | 'not_found';
 
 export interface EnvironmentFilterInfo {
@@ -47,6 +48,8 @@ export interface EnvironmentEncoderInfo {
 
 export interface RendererEnvironmentReport {
   ready: boolean;
+  /** 当前运行模式：正式模式(false) 或 诊断/开发fallback模式(true) */
+  diagnosticMode: boolean;
   ffmpegPath: string | null;
   ffmpegSource: EnvironmentDependencySource;
   ffprobePath: string | null;
@@ -59,31 +62,70 @@ export interface RendererEnvironmentReport {
   checkedAt: string;
 }
 
+/**
+ * 环境预检选项。
+ *
+ * diagnosticMode:
+ * - false（默认，正式生产模式）：ffmpeg + ffprobe 都是必需依赖，缺失则 ENVIRONMENT_CHECK_FAILED
+ * - true（诊断/开发 fallback 模式）：允许 ffprobe 缺失，使用 ffmpeg -i 作为非生产 fallback，
+ *   但必须产生 NON_PRODUCTION_PROBE_FALLBACK warning。正式 ZhihengRenderer 不得默认启用。
+ */
+export interface PreflightOptions {
+  diagnosticMode?: boolean;
+}
+
 // 必需能力（缺失则 ready=false）
-const REQUIRED_FILTERS = ['zscale', 'tonemap'];
-const REQUIRED_ENCODERS = ['ffv1'];
-// 推荐能力（缺失则 warning，但 V0.1 仍需提前检测）
-const RECOMMENDED_FILTERS = ['ass'];
-const RECOMMENDED_ENCODERS = ['libx264'];
+// 2026-08-30：HDR→SDR 正式切换为 libplacebo 方案，zscale/tonemap 不再是正式必需
+// 但 zscale 仍保留为必需以兼容潜在 fallback；ass 为 V0.1 字幕烧录必需
+const REQUIRED_FILTERS = ['zscale', 'libplacebo', 'ass'];
+const REQUIRED_ENCODERS = ['ffv1', 'libx264'];
+// 推荐能力（缺失则 warning）
+const RECOMMENDED_FILTERS = ['tonemap'];
+const RECOMMENDED_ENCODERS: string[] = [];
 
 // ============================================================================
 // ffmpeg / ffprobe 路径解析
 // ============================================================================
 
 /**
+ * 项目 bundled FFmpeg 目录。
+ * 企业交付时使用项目自带的完整 FFmpeg distribution，不依赖系统环境。
+ */
+const PROJECT_BUNDLED_FFMPEG_DIR = path.join(process.cwd(), 'bin', 'ffmpeg');
+
+/**
  * 解析 ffmpeg 可执行文件路径。
  * 优先级：
- * 1. 环境变量 FFMPEG_PATH
- * 2. hermes-agent imageio-ffmpeg 打包的 ffmpeg（优先于系统 PATH，避免 .cmd 包装器问题）
+ * 1. 项目 bundled：<project>/bin/ffmpeg/ffmpeg.exe
+ * 2. 环境变量 FFMPEG_PATH
  * 3. 系统 PATH 中的 ffmpeg
+ * 4. hermes-agent imageio-ffmpeg（仅作为最后 fallback，正式环境不应依赖）
  */
 function resolveFfmpegPath(): { path: string | null; source: EnvironmentDependencySource } {
-  // 1. 环境变量
+  // 1. 项目 bundled
+  const bundledFfmpeg = path.join(PROJECT_BUNDLED_FFMPEG_DIR, 'ffmpeg.exe');
+  if (fs.existsSync(bundledFfmpeg)) {
+    return { path: bundledFfmpeg, source: 'project_bundled' };
+  }
+
+  // 2. 环境变量
   if (process.env.FFMPEG_PATH && fs.existsSync(process.env.FFMPEG_PATH)) {
     return { path: process.env.FFMPEG_PATH, source: 'configured_binary' };
   }
 
-  // 2. hermes-agent imageio-ffmpeg（直接返回 .exe，避免 .cmd 包装器）
+  // 3. 系统 PATH
+  const systemResult = spawnSync('where', ['ffmpeg'], { encoding: 'utf8', shell: true });
+  if (systemResult.status === 0 && systemResult.stdout) {
+    const firstLine = systemResult.stdout
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .find(Boolean);
+    if (firstLine && fs.existsSync(firstLine)) {
+      return { path: firstLine, source: 'system_path' };
+    }
+  }
+
+  // 4. hermes-agent imageio-ffmpeg（最后 fallback）
   const hermesFfmpeg = path.join(
     process.env.LOCALAPPDATA || '',
     'hermes',
@@ -99,38 +141,33 @@ function resolveFfmpegPath(): { path: string | null; source: EnvironmentDependen
     return { path: hermesFfmpeg, source: 'hermes_imageio' };
   }
 
-  // 3. 系统 PATH
-  const systemResult = spawnSync('where', ['ffmpeg'], { encoding: 'utf8', shell: true });
-  if (systemResult.status === 0 && systemResult.stdout) {
-    const firstLine = systemResult.stdout
-      .split(/\r?\n/)
-      .map((l) => l.trim())
-      .find(Boolean);
-    if (firstLine && fs.existsSync(firstLine)) {
-      return { path: firstLine, source: 'system_path' };
-    }
-  }
-
   return { path: null, source: 'not_found' };
 }
 
 /**
  * 解析 ffprobe 可执行文件路径。
  * 优先级：
- * 1. 环境变量 FFPROBE_PATH
- * 2. 系统 PATH 中的 ffprobe
- * 3. ffmpeg 同目录下的 ffprobe
+ * 1. 项目 bundled：<project>/bin/ffmpeg/ffprobe.exe
+ * 2. 环境变量 FFPROBE_PATH
+ * 3. 系统 PATH 中的 ffprobe
+ * 4. ffmpeg 同目录下的 ffprobe
  */
 function resolveFfprobePath(ffmpegPath: string | null): {
   path: string | null;
   source: EnvironmentDependencySource;
 } {
-  // 1. 环境变量
+  // 1. 项目 bundled
+  const bundledFfprobe = path.join(PROJECT_BUNDLED_FFMPEG_DIR, 'ffprobe.exe');
+  if (fs.existsSync(bundledFfprobe)) {
+    return { path: bundledFfprobe, source: 'project_bundled' };
+  }
+
+  // 2. 环境变量
   if (process.env.FFPROBE_PATH && fs.existsSync(process.env.FFPROBE_PATH)) {
     return { path: process.env.FFPROBE_PATH, source: 'configured_binary' };
   }
 
-  // 2. 系统 PATH
+  // 3. 系统 PATH
   const systemResult = spawnSync('where', ['ffprobe'], { encoding: 'utf8', shell: true });
   if (systemResult.status === 0 && systemResult.stdout) {
     const firstLine = systemResult.stdout
@@ -142,11 +179,11 @@ function resolveFfprobePath(ffmpegPath: string | null): {
     }
   }
 
-  // 3. ffmpeg 同目录
+  // 4. ffmpeg 同目录
   if (ffmpegPath) {
     const ffprobeInSameDir = path.join(path.dirname(ffmpegPath), 'ffprobe.exe');
     if (fs.existsSync(ffprobeInSameDir)) {
-      return { path: ffprobeInSameDir, source: 'system_path' };
+      return { path: ffprobeInSameDir, source: 'project_bundled' };
     }
   }
 
@@ -202,9 +239,19 @@ function checkEncoder(ffmpegPath: string, encoderName: string): boolean {
 /**
  * 执行环境预检。
  *
+ * 正式模式（diagnosticMode=false，默认）：
+ *   ffmpeg + ffprobe 都是正式运行依赖。
+ *   找不到 ffprobe → ENVIRONMENT_CHECK_FAILED，不继续 preprocess。
+ *
+ * 诊断/开发 fallback 模式（diagnosticMode=true）：
+ *   允许 ffprobe 缺失，使用 ffmpeg -i 作为非生产 fallback，
+ *   但必须产生明显 warning。正式 ZhihengRenderer 不得默认启用。
+ *
+ * @param options 预检选项
  * @returns RendererEnvironmentReport
  */
-export function runEnvironmentPreflight(): RendererEnvironmentReport {
+export function runEnvironmentPreflight(options: PreflightOptions = {}): RendererEnvironmentReport {
+  const diagnosticMode = options.diagnosticMode ?? false;
   const warnings: string[] = [];
   const errors: string[] = [];
 
@@ -219,9 +266,15 @@ export function runEnvironmentPreflight(): RendererEnvironmentReport {
   // 2. 解析 ffprobe
   const ffprobe = resolveFfprobePath(ffmpeg.path);
   if (!ffprobe.path) {
-    warnings.push(
-      '未找到 ffprobe。将使用 ffmpeg -i 作为媒体探测 fallback。建议安装完整 FFmpeg 发行版（包含 ffprobe）以获得结构化 JSON 输出。'
-    );
+    if (diagnosticMode) {
+      warnings.push(
+        'NON_PRODUCTION_PROBE_FALLBACK：未找到 ffprobe，当前为诊断/开发 fallback 模式，将使用 ffmpeg -i 正则解析作为非生产 fallback。此路径不得用于正式 Renderer 运行。请安装完整 FFmpeg 发行版（包含 ffprobe.exe）。'
+      );
+    } else {
+      errors.push(
+        'ENVIRONMENT_CHECK_FAILED：未找到 ffprobe。ffprobe 是正式 Renderer 的必需运行依赖，不得使用 ffmpeg -i 正则解析作为生产主路径。请安装完整 FFmpeg 发行版（包含 ffmpeg.exe + ffprobe.exe），或配置 FFPROBE_PATH 环境变量。'
+      );
+    }
   }
 
   // 3. ffmpeg 版本
@@ -265,6 +318,7 @@ export function runEnvironmentPreflight(): RendererEnvironmentReport {
 
   return {
     ready,
+    diagnosticMode,
     ffmpegPath: ffmpeg.path,
     ffmpegSource: ffmpeg.source,
     ffprobePath: ffprobe.path,

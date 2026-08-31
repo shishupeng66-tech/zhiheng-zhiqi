@@ -1,0 +1,55 @@
+{
+  "id": "textstyle_emphasis_block",
+  "name": "重点色块式",
+  "category": "emphasis",
+  "description": "黄色半透明底色块+黑色粗体字+放大弹入，突出核心卖点",
+  "version": "1.0",
+  "status": "provisional",
+  "assStyle": {
+    "fontName": "Microsoft YaHei",
+    "fontSize": 72,
+    "primaryColor": "&H00000000",
+    "outlineColor": "&H00000000",
+    "backColor": "&H00000000",
+    "bold": true,
+    "borderStyle": 1,
+    "outline": 0,
+    "shadow": 0,
+    "alignment": 5,
+    "marginL": 80,
+    "marginR": 80,
+    "marginV": 500
+  },
+  "decorations": [
+    {
+      "type": "graphic",
+      "shape": "rounded_rect",
+      "position": "behind_text",
+      "backgroundColor": "#FBBF24",
+      "opacity": 0.9,
+      "paddingX": 40,
+      "paddingY": 20,
+      "cornerRadius": 16
+    }
+  ],
+  "animation": {
+    "in": "pop_in",
+    "inDuration": 350,
+    "out": "fade_out",
+    "outDuration": 200,
+    "popScale": [
+      0,
+      1.2,
+      1.0
+    ]
+  },
+  "usage": "用于核心卖点、关键数据、重要结论的强调。黄色色块+黑字在任何背景上都清晰可见。",
+  "tags": [
+    "重点",
+    "色块",
+    "黄色",
+    "强调",
+    "核心卖点",
+    "弹入"
+  ]
+}

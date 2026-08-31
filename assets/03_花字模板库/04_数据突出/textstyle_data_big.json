@@ -1,0 +1,49 @@
+{
+  "id": "textstyle_data_big",
+  "name": "数据大字式",
+  "category": "data",
+  "description": "超大黄色数字+白色小单位+淡入，用于突出关键数据",
+  "version": "1.0",
+  "status": "provisional",
+  "assStyle": {
+    "fontName": "Microsoft YaHei",
+    "fontSize": 140,
+    "primaryColor": "&H0024BBFB",
+    "outlineColor": "&H00000000",
+    "backColor": "&H00000000",
+    "bold": true,
+    "borderStyle": 1,
+    "outline": 7,
+    "shadow": 3,
+    "alignment": 5,
+    "marginL": 60,
+    "marginR": 60,
+    "marginV": 450
+  },
+  "decorations": [
+    {
+      "type": "text",
+      "content": "{unit}",
+      "fontSize": 48,
+      "color": "&H00FFFFFF",
+      "position": "below_number",
+      "offsetY": 20
+    }
+  ],
+  "animation": {
+    "in": "fade_in_scale",
+    "inDuration": 600,
+    "out": "fade_out",
+    "outDuration": 300,
+    "startScale": 0.8
+  },
+  "usage": "用于关键数据展示，如'20年'、'10万+'、'99%'等。超大数字+小单位，视觉冲击力强。",
+  "tags": [
+    "数据",
+    "大字",
+    "数字",
+    "黄色",
+    "统计",
+    "淡入"
+  ]
+}

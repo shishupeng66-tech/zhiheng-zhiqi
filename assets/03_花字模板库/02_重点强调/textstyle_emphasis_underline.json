@@ -1,0 +1,49 @@
+{
+  "id": "textstyle_emphasis_underline",
+  "name": "重点下划线式",
+  "category": "emphasis",
+  "description": "白色粗体字+黄色下划线+淡入，简洁优雅的强调方式",
+  "version": "1.0",
+  "status": "provisional",
+  "assStyle": {
+    "fontName": "Microsoft YaHei",
+    "fontSize": 76,
+    "primaryColor": "&H00FFFFFF",
+    "outlineColor": "&H00000000",
+    "backColor": "&H00000000",
+    "bold": true,
+    "underline": false,
+    "borderStyle": 1,
+    "outline": 5,
+    "shadow": 2,
+    "alignment": 5,
+    "marginL": 80,
+    "marginR": 80,
+    "marginV": 500
+  },
+  "decorations": [
+    {
+      "type": "sticker",
+      "assetId": "sticker_underline_red",
+      "position": "below_text",
+      "scale": 1.0,
+      "opacity": 1.0,
+      "offsetY": 50
+    }
+  ],
+  "animation": {
+    "in": "fade_in",
+    "inDuration": 400,
+    "out": "fade_out",
+    "outDuration": 250
+  },
+  "usage": "用于需要强调但不想太花哨的场合。白色文字+下划线，简洁有力。适合B-roll画面中的重点标注。",
+  "tags": [
+    "重点",
+    "下划线",
+    "白色",
+    "简洁",
+    "强调",
+    "淡入"
+  ]
+}

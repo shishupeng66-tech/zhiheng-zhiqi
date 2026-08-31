@@ -76,7 +76,8 @@ export {
   type RendererEnvironmentReport,
   type EnvironmentFilterInfo,
   type EnvironmentEncoderInfo,
-  type EnvironmentDependencySource
+  type EnvironmentDependencySource,
+  type PreflightOptions
 } from './environment';
 
 // Asset Resolver

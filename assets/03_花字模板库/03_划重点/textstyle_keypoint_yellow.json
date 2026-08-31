@@ -1,0 +1,52 @@
+{
+  "id": "textstyle_keypoint_yellow",
+  "name": "划重点黄色式",
+  "category": "keypoint",
+  "description": "黄色圆角底板+黑色粗体字+弹入，类似'划重点'标签",
+  "version": "1.0",
+  "status": "provisional",
+  "assStyle": {
+    "fontName": "Microsoft YaHei",
+    "fontSize": 64,
+    "primaryColor": "&H00000000",
+    "outlineColor": "&H00000000",
+    "backColor": "&H00000000",
+    "bold": true,
+    "borderStyle": 1,
+    "outline": 0,
+    "shadow": 0,
+    "alignment": 5,
+    "marginL": 100,
+    "marginR": 100,
+    "marginV": 450
+  },
+  "decorations": [
+    {
+      "type": "sticker",
+      "assetId": "sticker_text_attention_yellow",
+      "position": "behind_text",
+      "scale": 1.5,
+      "opacity": 1.0
+    }
+  ],
+  "animation": {
+    "in": "pop_in",
+    "inDuration": 300,
+    "out": "fade_out",
+    "outDuration": 200,
+    "popScale": [
+      0,
+      1.15,
+      1.0
+    ]
+  },
+  "usage": "用于'划重点'、'注意'、'知识点'等标注。黄色底板+黑字，像便签纸一样醒目。",
+  "tags": [
+    "划重点",
+    "黄色",
+    "标签",
+    "注意",
+    "知识点",
+    "弹入"
+  ]
+}

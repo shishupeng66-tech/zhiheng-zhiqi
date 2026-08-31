@@ -1,0 +1,107 @@
+{
+  "library": "zhiheng-stickers",
+  "name": "知衡智企「智剪」贴纸库",
+  "version": "1.0.0",
+  "createdAt": "2026-08-30",
+  "source": "自制（Python + Pillow 生成）",
+  "license": "自有版权，可自由商用",
+  "totalAssets": 29,
+  "format": "PNG（透明背景）",
+  "categories": {
+    "arrow": {
+      "name": "指示箭头",
+      "dir": "01_指示箭头",
+      "count": 6,
+      "description": "用于指示方向、引导视线、强调下方/旁边内容"
+    },
+    "annotation": {
+      "name": "圈注标记",
+      "dir": "02_圈注标记",
+      "count": 5,
+      "description": "用于圈出重点、下划线标注、高亮文字"
+    },
+    "decoration": {
+      "name": "装饰元素",
+      "dir": "03_装饰元素",
+      "count": 5,
+      "description": "用于增加画面层次、点缀装饰、侧边条"
+    },
+    "icon": {
+      "name": "图标",
+      "dir": "04_图标",
+      "count": 5,
+      "description": "用于行业标识、认证标识、品质标识"
+    },
+    "text": {
+      "name": "文字贴纸",
+      "dir": "05_文字贴纸",
+      "count": 4,
+      "description": "用于快速标注'划重点'、'注意'、'小提示'等"
+    },
+    "emoji": {
+      "name": "Emoji风格",
+      "dir": "06_Emoji",
+      "count": 4,
+      "description": "用于增加趣味性、情绪表达"
+    }
+  },
+  "assets": [
+    {"id": "sticker_arrow_down_yellow", "name": "向下箭头(黄)", "category": "arrow", "file": "01_指示箭头/sticker_arrow_down_yellow.png", "tags": ["箭头", "向下", "黄色", "指示"], "size": [512, 512]},
+    {"id": "sticker_arrow_up_yellow", "name": "向上箭头(黄)", "category": "arrow", "file": "01_指示箭头/sticker_arrow_up_yellow.png", "tags": ["箭头", "向上", "黄色", "指示"], "size": [512, 512]},
+    {"id": "sticker_arrow_left_white", "name": "向左箭头(白)", "category": "arrow", "file": "01_指示箭头/sticker_arrow_left_white.png", "tags": ["箭头", "向左", "白色", "指示"], "size": [512, 512]},
+    {"id": "sticker_arrow_right_white", "name": "向右箭头(白)", "category": "arrow", "file": "01_指示箭头/sticker_arrow_right_white.png", "tags": ["箭头", "向右", "白色", "指示"], "size": [512, 512]},
+    {"id": "sticker_arrow_downleft_yellow", "name": "左下箭头(黄)", "category": "arrow", "file": "01_指示箭头/sticker_arrow_downleft_yellow.png", "tags": ["箭头", "左下", "黄色", "指示"], "size": [512, 512]},
+    {"id": "sticker_arrow_downright_yellow", "name": "右下箭头(黄)", "category": "arrow", "file": "01_指示箭头/sticker_arrow_downright_yellow.png", "tags": ["箭头", "右下", "黄色", "指示"], "size": [512, 512]},
+
+    {"id": "sticker_circle_red", "name": "红色圆圈", "category": "annotation", "file": "02_圈注标记/sticker_circle_red.png", "tags": ["圆圈", "红色", "圈注", "重点"], "size": [512, 512]},
+    {"id": "sticker_circle_yellow", "name": "黄色圆圈", "category": "annotation", "file": "02_圈注标记/sticker_circle_yellow.png", "tags": ["圆圈", "黄色", "圈注", "重点"], "size": [512, 512]},
+    {"id": "sticker_underline_red", "name": "红色下划线", "category": "annotation", "file": "02_圈注标记/sticker_underline_red.png", "tags": ["下划线", "红色", "标注", "重点"], "size": [512, 128]},
+    {"id": "sticker_highlight_yellow", "name": "黄色高亮条", "category": "annotation", "file": "02_圈注标记/sticker_highlight_yellow.png", "tags": ["高亮", "黄色", "半透明", "标注"], "size": [512, 160]},
+    {"id": "sticker_wavy_underline_red", "name": "红色波浪下划线", "category": "annotation", "file": "02_圈注标记/sticker_wavy_underline_red.png", "tags": ["波浪线", "下划线", "红色", "标注"], "size": [512, 128]},
+
+    {"id": "sticker_star_yellow", "name": "黄色星星", "category": "decoration", "file": "03_装饰元素/sticker_star_yellow.png", "tags": ["星星", "黄色", "装饰", "五星"], "size": [512, 512]},
+    {"id": "sticker_sparkle_white", "name": "白色四角星", "category": "decoration", "file": "03_装饰元素/sticker_sparkle_white.png", "tags": ["星光", "四角星", "白色", "闪光", "装饰"], "size": [512, 512]},
+    {"id": "sticker_explosion_red", "name": "红色爆炸框", "category": "decoration", "file": "03_装饰元素/sticker_explosion_red.png", "tags": ["爆炸", "红色", "框", "强调", "装饰"], "size": [512, 512]},
+    {"id": "sticker_dot_yellow", "name": "黄色圆点", "category": "decoration", "file": "03_装饰元素/sticker_dot_yellow.png", "tags": ["圆点", "黄色", "装饰", "列表"], "size": [256, 256]},
+    {"id": "sticker_accent_bar_yellow", "name": "黄色侧边条", "category": "decoration", "file": "03_装饰元素/sticker_accent_bar_yellow.png", "tags": ["侧边条", "黄色", "装饰", "强调", "accent"], "size": [32, 512]},
+
+    {"id": "sticker_icon_check_green", "name": "绿色对勾图标", "category": "icon", "file": "04_图标/sticker_icon_check_green.png", "tags": ["对勾", "绿色", "正确", "认证", "图标"], "size": [512, 512]},
+    {"id": "sticker_icon_factory_blue", "name": "蓝色工厂图标", "category": "icon", "file": "04_图标/sticker_icon_factory_blue.png", "tags": ["工厂", "蓝色", "生产", "制造", "图标"], "size": [512, 512]},
+    {"id": "sticker_icon_trophy_orange", "name": "橙色奖杯图标", "category": "icon", "file": "04_图标/sticker_icon_trophy_orange.png", "tags": ["奖杯", "橙色", "荣誉", "品质", "奖项", "图标"], "size": [512, 512]},
+    {"id": "sticker_icon_certificate_blue", "name": "蓝色证书图标", "category": "icon", "file": "04_图标/sticker_icon_certificate_blue.png", "tags": ["证书", "蓝色", "认证", "资质", "图标"], "size": [512, 512]},
+    {"id": "sticker_icon_gear_gray", "name": "灰色齿轮图标", "category": "icon", "file": "04_图标/sticker_icon_gear_gray.png", "tags": ["齿轮", "灰色", "设备", "工艺", "技术", "图标"], "size": [512, 512]},
+
+    {"id": "sticker_text_keypoint_red", "name": "划重点(红底白字)", "category": "text", "file": "05_文字贴纸/sticker_text_keypoint_red.png", "tags": ["划重点", "红色", "文字", "标注", "强调"], "size": [512, 200]},
+    {"id": "sticker_text_attention_yellow", "name": "注意(黄底黑字)", "category": "text", "file": "05_文字贴纸/sticker_text_attention_yellow.png", "tags": ["注意", "黄色", "文字", "提醒", "标注"], "size": [512, 200]},
+    {"id": "sticker_text_tip_blue", "name": "小提示(蓝底白字)", "category": "text", "file": "05_文字贴纸/sticker_text_tip_blue.png", "tags": ["小提示", "蓝色", "文字", "提示", "标注"], "size": [512, 180]},
+    {"id": "sticker_text_important_orange", "name": "重点(橙底白字)", "category": "text", "file": "05_文字贴纸/sticker_text_important_orange.png", "tags": ["重点", "橙色", "文字", "强调", "标注"], "size": [380, 180]},
+
+    {"id": "sticker_emoji_surprise", "name": "惊讶表情", "category": "emoji", "file": "06_Emoji/sticker_emoji_surprise.png", "tags": ["惊讶", "emoji", "表情", "震惊", "趣味"], "size": [512, 512]},
+    {"id": "sticker_emoji_thumbsup", "name": "点赞表情", "category": "emoji", "file": "06_Emoji/sticker_emoji_thumbsup.png", "tags": ["点赞", "emoji", "表情", "认可", "棒", "趣味"], "size": [512, 512]},
+    {"id": "sticker_emoji_thinking", "name": "思考表情", "category": "emoji", "file": "06_Emoji/sticker_emoji_thinking.png", "tags": ["思考", "emoji", "表情", "疑问", "想", "趣味"], "size": [512, 512]},
+    {"id": "sticker_emoji_fire", "name": "火焰", "category": "emoji", "file": "06_Emoji/sticker_emoji_fire.png", "tags": ["火焰", "火", "emoji", "热门", "火爆", "趣味"], "size": [512, 512]}
+  ],
+  "usageGuide": {
+    "arrow": "用于：指示下方内容、引导视线、强调旁边信息。建议放在画面边缘，不挡主体",
+    "annotation": "用于：圈出画面重点、给关键词加下划线、高亮文字。圆圈建议半透明叠加",
+    "decoration": "用于：增加画面层次、点缀空白区域、侧边强调条。不要过度使用",
+    "icon": "用于：行业属性标识（工厂）、认证标识（证书/对勾）、品质标识（奖杯）",
+    "text": "用于：快速标注'划重点'、'注意'等，比纯文字更有设计感",
+    "emoji": "用于：增加趣味性、情绪表达、活跃画面氛围。企业视频建议少量使用"
+  },
+  "rendererIntegration": {
+    "timelineField": "overlayTrack (type=sticker)",
+    "assetRefType": "sticker_asset",
+    "resolver": "StickerAssetResolver",
+    "compositor": "OverlayCompositor (FFmpeg overlay + alpha)"
+  },
+  "colorPalette": {
+    "yellow": "#FBBF24",
+    "red": "#EF4444",
+    "blue": "#3B82F6",
+    "orange": "#F97316",
+    "green": "#22C55E",
+    "white": "#FFFFFF",
+    "black": "#000000"
+  }
+}
