@@ -1,0 +1,63 @@
+{
+  "contractVersion": "0.1.0",
+  "jobId": "fixture-job-dissolve",
+  "timelineSchemaVersion": 2,
+  "draft": {
+    "name": "pjd-dissolve-fixture",
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "timeline": {
+    "schemaVersion": 2,
+    "timelineId": "tl-dissolve",
+    "taskId": "task-dissolve",
+    "outputProfile": {
+      "width": 1080,
+      "height": 1920,
+      "targetFps": 30,
+      "videoCodec": "h264",
+      "audioCodec": "aac",
+      "pixelFormat": "yuv420p",
+      "colorTarget": "bt709_sdr"
+    },
+    "videoTrack": [
+      {
+        "assetRef": {
+          "type": "library_asset",
+          "assetId": "fixtures/video1.mp4"
+        },
+        "sourceStart": 0.0,
+        "duration": 3.0,
+        "transition": "hard_cut",
+        "sourceAudioMuted": true
+      },
+      {
+        "assetRef": {
+          "type": "library_asset",
+          "assetId": "fixtures/video2.mp4"
+        },
+        "sourceStart": 1.0,
+        "duration": 3.0,
+        "transition": "dissolve",
+        "sourceAudioMuted": true
+      }
+    ],
+    "voiceTrack": [],
+    "subtitleTrack": [],
+    "titleTrack": [],
+    "bgmTrack": [],
+    "sfxTrack": []
+  },
+  "resourceMapRef": "zhiheng-resource-map.v0.1.0",
+  "assetRoot": "C:/test-assets",
+  "outputDraftDir": "C:/draft-root/pjd-dissolve-fixture",
+  "stagingRoot": "C:/draft-root/.staging/fixture-job-dissolve",
+  "options": {
+    "backupPlaintext": true,
+    "failOnWarning": false
+  },
+  "logDir": "C:/logs/jianying-adapter",
+  "backupRoot": "C:/draft-root/.backup",
+  "officialDraftRoot": "C:/JianyingPro/Projects/com.lveditor.draft"
+}

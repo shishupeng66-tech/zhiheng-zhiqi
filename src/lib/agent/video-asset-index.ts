@@ -127,6 +127,13 @@ export interface SearchVideoAssetsParams {
   maxClipDuration?: number;
   /** 返回结果数量上限，默认 10 */
   limit?: number;
+  /**
+   * 是否要求物理视频文件存在（默认 true）。
+   * 规划阶段（Agent 上游 / create_video_plan）只依赖索引元数据（assetId / recommendedCuts /
+   * avoidCuts），物理文件解析交给运行期 Asset Resolver，因此可置为 false 以避免「文件未挂载」
+   * 时把全部片段丢弃。渲染阶段保持 true。
+   */
+  requireFileExists?: boolean;
 }
 
 // ============================================================
@@ -234,19 +241,17 @@ export async function searchVideoClips(
   }> = [];
 
   for (const asset of assets) {
-    // 文件存在性校验
     const filePath = path.join(assetRoot, asset.relativePath);
-    let fileExists = false;
-    try {
-      await fs.access(filePath);
-      fileExists = true;
-    } catch {
-      // 文件不存在，跳过
-      console.warn(`[video-asset-index] 文件不存在，跳过: ${asset.relativePath}`);
-      continue;
+    // 默认要求物理文件存在；规划阶段（requireFileExists=false）仅依赖索引元数据，跳过此校验。
+    if (params.requireFileExists !== false) {
+      try {
+        await fs.access(filePath);
+      } catch {
+        // 文件不存在，跳过
+        console.warn(`[video-asset-index] 文件不存在，跳过: ${asset.relativePath}`);
+        continue;
+      }
     }
-
-    if (!fileExists) continue;
 
     for (const segment of asset.timelineSegments) {
       if (!segment.usable) continue;

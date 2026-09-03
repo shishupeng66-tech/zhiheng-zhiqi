@@ -13,6 +13,7 @@ import {
 } from '@/lib/db/schema';
 import type { CreateVideoPlanOutput } from '@/lib/agent/tools';
 import { getPath } from '@/lib/storage';
+import type { UnifiedTimelineV2 } from '@/engines/zhiheng-renderer/v2-types';
 
 export type AutomationVideoTaskInput = {
   title?: string;
@@ -51,12 +52,27 @@ export type AutomationVideoTaskRow = AutomationVideoTask & {
 const AGENT_PLAN_OPTION_PREFIX = 'agentPlan:';
 const CURRENT_CONFIG_OPTION_PREFIX = 'currentTaskConfig:';
 const EXECUTION_SNAPSHOT_OPTION_PREFIX = 'executionSnapshot:';
+/**
+ * Agent 上游（自动剪辑）细粒度状态标记。
+ * 与 coarse 的 automation_video_tasks.status（draft/generating/...）解耦：
+ * 本项目 Agent 上游主链停在「ready_for_jianying」，不进入 MoneyPrinter，
+ * 因此用 packagingOptions 上的 agentStage: 前缀承载细粒度阶段，无需迁移 DB。
+ */
+const AGENT_STAGE_OPTION_PREFIX = 'agentStage:';
+/** 已生成的 UnifiedTimelineV2（剪映适配器待消费），以 JSON 序列化存入 packagingOptions。 */
+const UNIFIED_TIMELINE_V2_OPTION_PREFIX = 'unifiedTimelineV2:';
+/**
+ * 剪映适配器执行结果回写（JianYing Assembly 完成后写入 packagingOptions）。
+ * 携带草稿名/路径/时长/各轨道计数/生成时间/执行引擎=jianying，避免改动 DB schema。
+ */
+const JIANYING_RESULT_OPTION_PREFIX = 'jianyingResult:';
 
 export type AutomationMaterialTimeline = Array<{
   order: number;
   timelineStart: number;
   timelineEnd: number;
   scriptText: string;
+  assetId?: string | null;
   fileName: string | null;
   relativePath: string | null;
   sourceStart: number | null;
@@ -202,6 +218,19 @@ export function getTaskExecutionSnapshot(task: Pick<AutomationVideoTask, 'packag
   return decodeOption<AutomationExecutionSnapshot>(task, EXECUTION_SNAPSHOT_OPTION_PREFIX);
 }
 
+export function getTaskAgentStage(
+  task: Pick<AutomationVideoTask, 'packagingOptions'>
+): string | null {
+  const raw = task.packagingOptions.find((option) => option.startsWith(AGENT_STAGE_OPTION_PREFIX));
+  return raw ? raw.slice(AGENT_STAGE_OPTION_PREFIX.length) : null;
+}
+
+export function getTaskUnifiedTimelineV2(
+  task: Pick<AutomationVideoTask, 'packagingOptions'>
+): UnifiedTimelineV2 | null {
+  return decodeOption<UnifiedTimelineV2>(task, UNIFIED_TIMELINE_V2_OPTION_PREFIX);
+}
+
 function normalizeVideoRatio(value: string) {
   if (value.includes('16:9')) return '横屏 16:9';
   if (value.includes('1:1')) return '方屏 1:1';
@@ -214,6 +243,7 @@ function buildMaterialTimeline(plan: CreateVideoPlanOutput): AutomationMaterialT
     timelineStart: item.timelineStart,
     timelineEnd: item.timelineEnd,
     scriptText: item.scriptText,
+    assetId: item.asset.assetId,
     fileName: item.asset.fileName,
     relativePath: item.asset.relativePath,
     sourceStart: item.asset.sourceStart,
@@ -791,6 +821,165 @@ export function regenerateAutomationVideoTask(workspaceId: string, taskId: strin
       resultSummary: '已重新提交知衡智企内置自动化剪辑引擎，正在生成视频。',
       outputVideos: [],
       errorMessage: null,
+      updatedAt: timestamp
+    })
+    .where(
+      and(eq(automationVideoTasks.workspaceId, workspaceId), eq(automationVideoTasks.id, taskId))
+    )
+    .run();
+}
+
+/**
+ * 写入 Agent 上游细粒度阶段（agentStage:）与已生成的 UnifiedTimelineV2。
+ *
+ * 设计约束（自动剪辑 Agent 上游主链）：
+ * - 不改动 coarse `status`（Agent 草稿保持 `draft`），阶段由 packagingOptions 承载，无需迁移 DB。
+ * - 保留既有 agentPlan / currentTaskConfig / executionSnapshot 编码项，仅替换旧的 agentStage / unifiedTimelineV2。
+ * - 本项目 Agent 上游停在 ready_for_jianying，不进入 MoneyPrinter，因此不触发 startMoneyPrinterTaskWorker。
+ */
+export function updateAutomationVideoTaskAgentStage(
+  workspaceId: string,
+  taskId: string,
+  stage: string,
+  unifiedTimelineV2?: UnifiedTimelineV2
+): void {
+  const existing = getAutomationVideoTask(workspaceId, taskId);
+  if (!existing) {
+    throw new Error('任务不存在');
+  }
+
+  const baseOptions = withoutEncodedOptions(existing.packagingOptions).filter(
+    (option) =>
+      !option.startsWith(AGENT_STAGE_OPTION_PREFIX) &&
+      !option.startsWith(UNIFIED_TIMELINE_V2_OPTION_PREFIX)
+  );
+
+  const merged: string[] = [...baseOptions, `${AGENT_STAGE_OPTION_PREFIX}${stage}`];
+  if (unifiedTimelineV2) {
+    merged.push(encodeOption(UNIFIED_TIMELINE_V2_OPTION_PREFIX, unifiedTimelineV2));
+  }
+
+  const originalPlan = getTaskAgentPlan(existing);
+  const currentConfig = getTaskCurrentConfig(existing);
+  const executionSnapshot = getTaskExecutionSnapshot(existing);
+  if (originalPlan) merged.push(encodeOption(AGENT_PLAN_OPTION_PREFIX, originalPlan));
+  if (currentConfig) merged.push(encodeOption(CURRENT_CONFIG_OPTION_PREFIX, currentConfig));
+  if (executionSnapshot)
+    merged.push(encodeOption(EXECUTION_SNAPSHOT_OPTION_PREFIX, executionSnapshot));
+
+  const timestamp = now();
+  getDb()
+    .update(automationVideoTasks)
+    .set({
+      packagingOptions: merged,
+      resultSummary:
+        stage === 'ready_for_jianying'
+          ? `知衡助手已完成剪辑方案与上游校验，已生成 UnifiedTimelineV2，等待剪映适配器生成草稿。`
+          : existing.resultSummary,
+      updatedAt: timestamp
+    })
+    .where(
+      and(eq(automationVideoTasks.workspaceId, workspaceId), eq(automationVideoTasks.id, taskId))
+    )
+    .run();
+}
+
+/** 剪映适配器执行结果回写结构（写入 packagingOptions 的 jianyingResult: 前缀）。 */
+export interface JianYingResultWriteback {
+  /** 剪映草稿目录名 */
+  draftName: string;
+  /** 剪映草稿完整路径 */
+  draftPath: string;
+  /** 草稿视频总时长（秒） */
+  duration: number;
+  /** 视频轨片段数 */
+  videoSegmentCount: number;
+  /** 字幕轨片段数 */
+  subtitleCount: number;
+  /** 关键词花字轨片段数 */
+  keywordCount: number;
+  /** 生成时间（ISO 字符串） */
+  generatedAt: string;
+  /** 执行引擎标记（固定 jianying） */
+  executionEngine: 'jianying';
+  /** 实际加载的 PJD commit（验证锁定来源） */
+  pjdCommit?: string;
+  /** Worker 警告 */
+  warnings?: string[];
+  /** 是否需要人工复核 */
+  manualReviewRequired?: boolean;
+}
+
+/**
+ * 剪映适配器总装结果回写 + 细粒度状态推进。
+ *
+ * 设计约束（与上游 agentStage 一致）：
+ * - 不改动 DB schema；结果以 jianyingResult: 前缀写入 packagingOptions。
+ * - 粗粒度 `status` 仅取合法枚举值：generating（生成中）/ approved（生成成功）/ failed（失败），
+ *   细粒度阶段（generating_jianying_draft / completed / failed）由 agentStage: 承载，UI 优先读取。
+ * - 保留既有 agentPlan / currentTaskConfig / executionSnapshot / unifiedTimelineV2 编码项。
+ *
+ * @param stage 推进到的细粒度阶段
+ * @param writeback 成功时回写的剪映草稿结果（completed 必填）
+ * @param errorMessage 失败时的友好错误信息（failed 时可选）
+ */
+export function updateJianYingAssemblyResult(
+  workspaceId: string,
+  taskId: string,
+  stage: 'generating_jianying_draft' | 'completed' | 'failed',
+  writeback?: JianYingResultWriteback,
+  errorMessage?: string | null
+): void {
+  const existing = getAutomationVideoTask(workspaceId, taskId);
+  if (!existing) {
+    throw new Error('任务不存在');
+  }
+
+  const baseOptions = withoutEncodedOptions(existing.packagingOptions).filter(
+    (option) =>
+      !option.startsWith(AGENT_STAGE_OPTION_PREFIX) &&
+      !option.startsWith(UNIFIED_TIMELINE_V2_OPTION_PREFIX) &&
+      !option.startsWith(JIANYING_RESULT_OPTION_PREFIX)
+  );
+
+  const merged: string[] = [...baseOptions, `${AGENT_STAGE_OPTION_PREFIX}${stage}`];
+  if (writeback) {
+    merged.push(encodeOption(JIANYING_RESULT_OPTION_PREFIX, writeback));
+  }
+
+  const originalPlan = getTaskAgentPlan(existing);
+  const currentConfig = getTaskCurrentConfig(existing);
+  const executionSnapshot = getTaskExecutionSnapshot(existing);
+  const unifiedTimelineV2 = getTaskUnifiedTimelineV2(existing);
+  if (originalPlan) merged.push(encodeOption(AGENT_PLAN_OPTION_PREFIX, originalPlan));
+  if (currentConfig) merged.push(encodeOption(CURRENT_CONFIG_OPTION_PREFIX, currentConfig));
+  if (executionSnapshot)
+    merged.push(encodeOption(EXECUTION_SNAPSHOT_OPTION_PREFIX, executionSnapshot));
+  if (unifiedTimelineV2)
+    merged.push(encodeOption(UNIFIED_TIMELINE_V2_OPTION_PREFIX, unifiedTimelineV2));
+
+  const coarseStatus: AutomationVideoTaskStatus =
+    stage === 'generating_jianying_draft'
+      ? 'generating'
+      : stage === 'completed'
+        ? 'approved'
+        : 'failed';
+
+  const resultSummary =
+    stage === 'generating_jianying_draft'
+      ? '知衡助手正在调用剪映适配器生成草稿……'
+      : stage === 'completed'
+        ? `剪映草稿已生成（${writeback?.draftName ?? ''}，时长 ${writeback?.duration?.toFixed(1) ?? '?'}s）。`
+        : existing.resultSummary;
+
+  const timestamp = now();
+  getDb()
+    .update(automationVideoTasks)
+    .set({
+      packagingOptions: merged,
+      status: coarseStatus,
+      errorMessage: stage === 'failed' ? (errorMessage ?? existing.errorMessage) : null,
+      resultSummary,
       updatedAt: timestamp
     })
     .where(

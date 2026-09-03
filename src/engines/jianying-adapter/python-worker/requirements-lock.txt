@@ -1,0 +1,37 @@
+# ============================================================================
+# zhiheng_jianying_worker 运行环境 —— 精确版本锁定（requirements-lock.txt）
+#
+# 来源：PJD PoC 环境（D:\剪映智剪测试\poc-venv）2026-09-02 核验的精确版本。
+# 约束（Phase C 已确认）：
+#   - PJD 锁定到已验证 commit c3318066（仓库 GuanYixuan/pyJianYingDraft）
+#   - 不把 venv、Cache 或 PJD 克隆仓库提交进知衡智企 Git
+#   - Python 解释器版本：3.11.x（PoC 用 3.11.15，验证通过；支持范围 3.10–3.12）
+#
+# 注意：pyJianYingDraft 通过 git commit 引用，不由本文件直接声明
+# （PyPI 可能无对应版本）；见下方重建命令。
+# ============================================================================
+
+pymediainfo==7.0.1
+imageio==2.37.4
+uiautomation==2.0.29
+numpy==2.4.6
+pillow==12.3.0
+comtypes==1.4.16
+
+# ----------------------------------------------------------------------------
+# 重建环境命令（Windows PowerShell，知衡智企仓库根目录）：
+#
+#   python -m venv .venv-jianying
+#   .\.venv-jianying\Scripts\python -m pip install --upgrade pip
+#   .\.venv-jianying\Scripts\python -m pip install -r src\engines\jianying-adapter\python-worker\requirements-lock.txt
+#
+#   # PJD：克隆到独立目录并 checkout 已验证 commit，然后本地安装：
+#   git clone https://github.com/GuanYixuan/pyJianYingDraft.git <pjd-root>
+#   git -C <pjd-root> checkout c3318066
+#   .\.venv-jianying\Scripts\python -m pip install -e <pjd-root>
+#
+#   # 验证：
+#   .\.venv-jianying\Scripts\python -c "import pyJianYingDraft; print('PJD OK')"
+#
+# Worker 运行时通过 PYTHONPATH（或环境变量 ZHIJING_PJD_ROOT）注入 PJD 根。
+# ----------------------------------------------------------------------------

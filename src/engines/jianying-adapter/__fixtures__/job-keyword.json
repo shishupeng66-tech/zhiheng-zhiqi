@@ -1,0 +1,74 @@
+{
+  "contractVersion": "0.1.0",
+  "jobId": "fixture-job-keyword",
+  "timelineSchemaVersion": 2,
+  "draft": {
+    "name": "pjd-keyword-fixture",
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "timeline": {
+    "schemaVersion": 2,
+    "timelineId": "tl-keyword",
+    "taskId": "task-keyword",
+    "outputProfile": {
+      "width": 1080,
+      "height": 1920,
+      "targetFps": 30,
+      "videoCodec": "h264",
+      "audioCodec": "aac",
+      "pixelFormat": "yuv420p",
+      "colorTarget": "bt709_sdr"
+    },
+    "videoTrack": [
+      {
+        "assetRef": {
+          "type": "library_asset",
+          "assetId": "fixtures/video1.mp4"
+        },
+        "sourceStart": 0.0,
+        "duration": 6.0,
+        "transition": "hard_cut",
+        "sourceAudioMuted": true
+      }
+    ],
+    "voiceTrack": [],
+    "subtitleTrack": [],
+    "titleTrack": [],
+    "keywordTrack": [
+      {
+        "id": "kw-1",
+        "keyword": "自有工厂",
+        "start": 0.5,
+        "duration": 1.2,
+        "styleId": "huazi.blue_outline",
+        "animationId": "typewriter_i",
+        "layer": 3
+      },
+      {
+        "id": "kw-2",
+        "keyword": "OEM/ODM",
+        "start": 2.0,
+        "duration": 1.2,
+        "styleId": "huazi.gold_outline",
+        "animationId": "fade_in",
+        "anchor": "center_right",
+        "layer": 3
+      }
+    ],
+    "bgmTrack": [],
+    "sfxTrack": []
+  },
+  "resourceMapRef": "zhiheng-resource-map.v0.1.0",
+  "assetRoot": "C:/test-assets",
+  "outputDraftDir": "C:/draft-root/pjd-keyword-fixture",
+  "stagingRoot": "C:/draft-root/.staging/fixture-job-keyword",
+  "options": {
+    "backupPlaintext": true,
+    "failOnWarning": false
+  },
+  "logDir": "C:/logs/jianying-adapter",
+  "backupRoot": "C:/draft-root/.backup",
+  "officialDraftRoot": "C:/JianyingPro/Projects/com.lveditor.draft"
+}

@@ -57,6 +57,23 @@ export {
   deriveVideoTimelineStarts
 } from './types';
 
+// Unified Timeline V2 / discriminated union / migration（Phase C）
+export {
+  VideoTransitionV2Schema,
+  type VideoTransitionV2,
+  VideoSegmentV2Schema,
+  type VideoSegmentV2,
+  KeywordSegmentSchema,
+  type KeywordSegment,
+  UnifiedTimelineV2Schema,
+  type UnifiedTimelineV2,
+  UnifiedTimelineSchema,
+  type UnifiedTimeline,
+  calculateVideoTotalDurationV2,
+  deriveVideoTimelineStartsV2
+} from './v2-types';
+export { migrateTimelineV1ToV2, isUnifiedTimelineV2, normalizeV2ToV1 } from './migration';
+
 // Style Registry
 export {
   StyleRegistry,

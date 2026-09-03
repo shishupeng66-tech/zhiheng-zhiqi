@@ -20,7 +20,7 @@ export function WorkspaceShell({ workspace, role, modules, children }: Workspace
   const statusLabel = workspace.status === 'active' ? '运行中' : '停用';
 
   return (
-    <div className='flex min-h-full flex-col'>
+    <div className='flex min-h-full w-full flex-col'>
       <div className='border-b bg-background'>
         <div className='w-full px-5 py-3 md:px-8 lg:px-10'>
           <Link
@@ -48,9 +48,6 @@ export function WorkspaceShell({ workspace, role, modules, children }: Workspace
               </div>
             </div>
             <div className='flex flex-col items-end gap-2'>
-              <Badge variant='outline' className='w-fit'>
-                企业内部工作空间
-              </Badge>
               <WorkspaceHeaderSlot />
             </div>
           </div>

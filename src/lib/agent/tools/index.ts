@@ -254,6 +254,7 @@ export type VideoPlanTimelineItem = {
   scriptText: string;
   purpose: string;
   asset: {
+    assetId: string | null;
     fileName: string | null;
     relativePath: string | null;
     sourceStart: number | null;
@@ -347,7 +348,9 @@ const createVideoPlanTool: AgentTool<
             ? 'landscape'
             : undefined,
         excludeDuplicateGroups: true,
-        limit: 5
+        limit: 5,
+        // 规划阶段仅依赖索引元数据（assetId / recommendedCuts / avoidCuts），不要求物理文件已挂载。
+        requireFileExists: false
       });
       const best = results.find((result) => !usedAssetPaths.has(result.relativePath)) ?? results[0];
       if (best?.relativePath) {
@@ -371,6 +374,7 @@ const createVideoPlanTool: AgentTool<
         scriptText,
         purpose: inferSegmentPurpose(i, scriptSegments.length, skill),
         asset: {
+          assetId: best?.assetId ?? null,
           fileName: best?.fileName ?? null,
           relativePath: best?.relativePath ?? null,
           sourceStart: best?.recommendedStart ?? null,

@@ -1,0 +1,20 @@
+{
+  "contractVersion": "0.1.0",
+  "jobId": "fixture-job-error",
+  "ok": false,
+  "warnings": [],
+  "manualReviewRequired": false,
+  "validationReport": {
+    "fileCount": 0,
+    "hasDraftContent": false,
+    "hasDraftMetaInfo": false,
+    "hasDraftInfo": false,
+    "duration": 0,
+    "passed": false,
+    "checks": []
+  },
+  "error": {
+    "code": "TARGET_ALREADY_EXISTS",
+    "message": "目标草稿目录已存在，不覆盖"
+  }
+}

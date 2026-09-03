@@ -1,15 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '@/components/ui/table';
-import { workspaceRoleLabels } from '@/lib/workspaces/permissions';
-import { listWorkspaceMembers } from '@/lib/workspaces/service';
 import { WorkspaceEmptyState } from '../components/workspace-empty-state';
 import { WorkspaceModulePage } from '../components/workspace-module-page';
 
@@ -232,56 +222,5 @@ export function AnalyticsPage() {
       emptyTitle='暂无可复盘数据'
       emptyDescription='发布数据接入后，这里会展示真实趋势和内容表现。'
     />
-  );
-}
-
-export function MembersPage({ workspaceId }: { workspaceId: string }) {
-  const members = listWorkspaceMembers(workspaceId);
-
-  return (
-    <div className='space-y-5'>
-      <div className='space-y-1'>
-        <h2 className='text-xl font-semibold tracking-tight'>成员与权限</h2>
-        <p className='max-w-3xl text-sm text-muted-foreground'>
-          当前页面真实读取 WorkspaceMember，只有 owner / admin 或企业管理员可进入。
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>成员</CardTitle>
-          <CardDescription>查看成员、角色、加入时间和权限状态。</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>成员</TableHead>
-                <TableHead>角色</TableHead>
-                <TableHead>加入时间</TableHead>
-                <TableHead>权限状态</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {members.map((member) => (
-                <TableRow key={member.id}>
-                  <TableCell>
-                    <div className='font-medium'>{member.name}</div>
-                    <div className='text-xs text-muted-foreground'>{member.username}</div>
-                  </TableCell>
-                  <TableCell>{workspaceRoleLabels[member.role]}</TableCell>
-                  <TableCell>{member.createdAt.toLocaleDateString('zh-CN')}</TableCell>
-                  <TableCell>
-                    <Badge variant={member.status === 'active' ? 'secondary' : 'destructive'}>
-                      {member.status === 'active' ? '可访问' : '已停用'}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
   );
 }

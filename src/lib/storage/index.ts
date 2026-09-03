@@ -112,11 +112,51 @@ export async function getConfig(key: StorageKey) {
 }
 
 /**
+ * 进程内存存储覆盖（测试 / 运行时依赖注入用）。
+ *
+ * 设计边界（重要）：
+ * - 仅存在于当前进程内存，不写数据库、不创建目录、进程退出即失效。
+ * - 仅用于测试 / 验证脚本把某个 key 临时指向 fixture / 本地索引目录，
+ *   绝不允许生产代码调用，也不允许用它永久修改企业正式 Storage Config。
+ * - getPath 会优先返回覆盖值；清除后恢复为数据库 / 默认配置。
+ *
+ * 实现注意：存放于 globalThis，避免 tsx / ESM 对同一别名（@/lib/storage）解析出
+ * 多个模块实例时，覆盖 Map 各自独立、互相不可见（导致 DI 失效）。
+ */
+const STORAGE_OVERRIDE_GLOBAL = Symbol.for('zhiheng.storageOverride');
+type StorageOverrideMap = Map<StorageKey, string>;
+
+function getOverrideMap(): StorageOverrideMap {
+  const g = globalThis as unknown as { [STORAGE_OVERRIDE_GLOBAL]?: StorageOverrideMap };
+  if (!g[STORAGE_OVERRIDE_GLOBAL]) {
+    g[STORAGE_OVERRIDE_GLOBAL] = new Map<StorageKey, string>();
+  }
+  return g[STORAGE_OVERRIDE_GLOBAL] as StorageOverrideMap;
+}
+
+/** 设置某 key 的进程内存覆盖路径（必须为合法绝对路径）。 */
+export function setStorageConfigOverride(key: StorageKey, absolutePath: string): void {
+  if (!isAbsolutePath(absolutePath)) {
+    throw new Error(`setStorageConfigOverride: 非合法绝对路径 ${absolutePath}`);
+  }
+  getOverrideMap().set(key, absolutePath);
+}
+
+/** 清除全部进程内存覆盖（测试清理用）。 */
+export function clearStorageConfigOverrides(): void {
+  getOverrideMap().clear();
+}
+
+/**
  * 获取某业务目录的最终生效路径：
  * - 已显式配置 → 使用配置值
  * - 未配置 → 根目录 + 默认子目录
  */
 export async function getPath(key: StorageKey): Promise<string> {
+  // 进程内存覆盖优先（测试 / DI 用，不写库；存放于 globalThis，跨模块实例共享）
+  const overridden = getOverrideMap().get(key);
+  if (overridden !== undefined) return overridden;
+
   if (key === STORAGE_ROOT_KEY) {
     const cfg = await getConfig(key);
     return cfg ? cfg.storagePath : defaultRootPath();

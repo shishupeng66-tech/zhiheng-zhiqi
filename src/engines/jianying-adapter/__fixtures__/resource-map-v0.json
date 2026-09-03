@@ -1,0 +1,111 @@
+{
+  "ref": "zhiheng-resource-map.v0.1.0",
+  "version": "0.1.0",
+  "jianyingVersion": "11.3.0.14362",
+  "entries": [
+    {
+      "styleId": "huazi.blue_outline",
+      "type": "huazi",
+      "resourceId": "7495312625169911065",
+      "verifiedJianyingVersion": "11.3.0.14362",
+      "verifiedDate": "2026-09-02",
+      "vipRequired": true,
+      "isPurchased": false,
+      "copyrightStatus": "unknown",
+      "required": true,
+      "fallbackStyleId": "huazi.gold_outline",
+      "cacheProbeRule": "text_sticker/<resourceId>/"
+    },
+    {
+      "styleId": "huazi.gold_outline",
+      "type": "huazi",
+      "resourceId": "7403676308145802522",
+      "verifiedJianyingVersion": "11.3.0.14362",
+      "verifiedDate": "2026-09-02",
+      "vipRequired": true,
+      "isPurchased": false,
+      "copyrightStatus": "unknown",
+      "required": true,
+      "fallbackStyleId": "huazi.orange_bold",
+      "cacheProbeRule": "text_sticker/<resourceId>/"
+    },
+    {
+      "styleId": "huazi.orange_bold",
+      "type": "huazi",
+      "resourceId": "7127654126997048607",
+      "verifiedJianyingVersion": "11.3.0.14362",
+      "verifiedDate": "2026-09-02",
+      "vipRequired": true,
+      "isPurchased": false,
+      "copyrightStatus": "unknown",
+      "required": false,
+      "fallbackStyleId": "huazi.white_red",
+      "cacheProbeRule": "text_sticker/<resourceId>/"
+    },
+    {
+      "styleId": "huazi.white_red",
+      "type": "huazi",
+      "resourceId": "7403679510702378278",
+      "verifiedJianyingVersion": "11.3.0.14362",
+      "verifiedDate": "2026-09-02",
+      "vipRequired": true,
+      "isPurchased": false,
+      "copyrightStatus": "unknown",
+      "required": false,
+      "fallbackStyleId": null,
+      "cacheProbeRule": "text_sticker/<resourceId>/"
+    },
+    {
+      "styleId": "transition.dissolve",
+      "type": "transition",
+      "resourceId": "6724845717472416269",
+      "verifiedJianyingVersion": "11.3.0.14362",
+      "verifiedDate": "2026-09-02",
+      "vipRequired": false,
+      "isPurchased": true,
+      "copyrightStatus": "builtin",
+      "required": true,
+      "fallbackStyleId": null,
+      "cacheProbeRule": "transition/<resourceId>/"
+    },
+    {
+      "styleId": "sfx.typewriter",
+      "type": "sfx",
+      "resourceId": "6864819399807731714",
+      "verifiedJianyingVersion": "11.3.0.14362",
+      "verifiedDate": "2026-09-02",
+      "vipRequired": false,
+      "isPurchased": true,
+      "copyrightStatus": "builtin",
+      "required": false,
+      "fallbackStyleId": null,
+      "cacheProbeRule": "audio_effect/<resourceId>/"
+    },
+    {
+      "styleId": "bgm.all_is_getting_better",
+      "type": "bgm",
+      "resourceId": "7552893524178733082",
+      "verifiedJianyingVersion": "11.3.0.14362",
+      "verifiedDate": "2026-09-02",
+      "vipRequired": true,
+      "isPurchased": false,
+      "copyrightStatus": "unknown",
+      "required": false,
+      "fallbackStyleId": null,
+      "cacheProbeRule": "music/<resourceId>/"
+    },
+    {
+      "styleId": "subtitle.default",
+      "type": "subtitle",
+      "resourceId": null,
+      "verifiedJianyingVersion": "11.3.0.14362",
+      "verifiedDate": "2026-09-02",
+      "vipRequired": false,
+      "isPurchased": true,
+      "copyrightStatus": "code_defined",
+      "required": true,
+      "fallbackStyleId": null,
+      "cacheProbeRule": null
+    }
+  ]
+}

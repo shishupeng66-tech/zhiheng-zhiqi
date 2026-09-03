@@ -10,8 +10,7 @@ export type WorkspaceModuleKey =
   | 'projects'
   | 'review'
   | 'publish'
-  | 'analytics'
-  | 'members';
+  | 'analytics';
 
 export type WorkspaceModuleDefinition = {
   key: WorkspaceModuleKey;
@@ -59,14 +58,6 @@ export const enterpriseMediaModules: WorkspaceModuleDefinition[] = [
     path: 'projects',
     description: '管理企业宣传短视频的内容定位、脚本规则和镜头规则。',
     requiredPermission: 'projects:manage'
-  },
-  {
-    key: 'members',
-    label: '成员',
-    shortLabel: '成员',
-    path: 'members',
-    description: '管理自动化剪辑空间成员、角色和权限。',
-    requiredPermission: 'members:manage'
   }
 ];
 
@@ -133,14 +124,6 @@ export const aiContentModules: WorkspaceModuleDefinition[] = [
     path: 'analytics',
     description: '查看内容数量、播放、互动和趋势复盘。',
     requiredPermission: 'analytics:view'
-  },
-  {
-    key: 'members',
-    label: '成员与权限',
-    shortLabel: '成员',
-    path: 'members',
-    description: '管理 AI 内容创作空间成员、角色和权限。',
-    requiredPermission: 'members:manage'
   }
 ];
 
@@ -214,14 +197,6 @@ export const videoProductionModules: WorkspaceModuleDefinition[] = [
     path: 'analytics',
     description: '查看内容数量、播放、互动、线索和趋势空状态。',
     requiredPermission: 'analytics:view'
-  },
-  {
-    key: 'members',
-    label: '成员与权限',
-    shortLabel: '成员',
-    path: 'members',
-    description: '查看并管理工作空间成员、角色和权限状态。',
-    requiredPermission: 'members:manage'
   }
 ];
 

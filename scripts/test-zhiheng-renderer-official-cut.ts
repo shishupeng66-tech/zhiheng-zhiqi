@@ -37,9 +37,7 @@ async function main() {
 
   // 2. 创建 Renderer
   const renderer = new ZhihengRenderer({
-    workDir,
-    ffmpegPath: 'D:\\知衡智企\\bin\\ffmpeg\\ffmpeg.exe',
-    ffprobePath: 'D:\\知衡智企\\bin\\ffmpeg\\ffprobe.exe',
+    workRoot: workDir,
   });
 
   // 3. 注册视频素材（全部竖屏）
@@ -82,7 +80,6 @@ async function main() {
     videoTrack: [
       // 1. 开场Hook（0-4s）：真人口播
       {
-        id: 'seg_01_hook',
         assetRef: { type: 'task_asset', assetId: 'vid_hook_koubo' },
         sourceStart: 1.0,
         duration: 4.0,
@@ -90,7 +87,6 @@ async function main() {
       },
       // 2. 痛点-工厂（4-6.5s）：工厂环境
       {
-        id: 'seg_02_factory',
         assetRef: { type: 'task_asset', assetId: 'vid_factory_env' },
         sourceStart: 0.0,
         duration: 2.5,
@@ -98,7 +94,6 @@ async function main() {
       },
       // 3. 痛点-品质（6.5-9.5s）：生产线
       {
-        id: 'seg_03_quality',
         assetRef: { type: 'task_asset', assetId: 'vid_production_1' },
         sourceStart: 2.0,
         duration: 3.0,
@@ -106,7 +101,6 @@ async function main() {
       },
       // 4. 解决方案-自有工厂（9.5-14.5s）：生产线
       {
-        id: 'seg_04_factory_own',
         assetRef: { type: 'task_asset', assetId: 'vid_production_2' },
         sourceStart: 1.0,
         duration: 5.0,
@@ -114,7 +108,6 @@ async function main() {
       },
       // 5. 从原料到成品-研发（14.5-17.5s）：品控
       {
-        id: 'seg_05_raw_to_finished_1',
         assetRef: { type: 'task_asset', assetId: 'vid_qc' },
         sourceStart: 1.0,
         duration: 3.0,
@@ -122,7 +115,6 @@ async function main() {
       },
       // 6. 从原料到成品-成品（17.5-19.5s）：样品陈列
       {
-        id: 'seg_06_raw_to_finished_2',
         assetRef: { type: 'task_asset', assetId: 'vid_product' },
         sourceStart: 1.0,
         duration: 2.0,
@@ -130,7 +122,6 @@ async function main() {
       },
       // 7. 核心卖点-OEM/ODM（19.5-21.5s）：包材特写
       {
-        id: 'seg_07_oem_1',
         assetRef: { type: 'task_asset', assetId: 'vid_package' },
         sourceStart: 0.0,
         duration: 2.0,
@@ -138,7 +129,6 @@ async function main() {
       },
       // 8. 核心卖点-OEM/ODM（21.5-24s）：生产线
       {
-        id: 'seg_08_oem_2',
         assetRef: { type: 'task_asset', assetId: 'vid_production_1' },
         sourceStart: 6.0,
         duration: 2.5,
@@ -146,7 +136,6 @@ async function main() {
       },
       // 9. 结尾CTA（24-28s）：真人口播
       {
-        id: 'seg_09_ending',
         assetRef: { type: 'task_asset', assetId: 'vid_ending_koubo' },
         sourceStart: 2.0,
         duration: 4.0,
@@ -218,7 +207,7 @@ async function main() {
     validation.errors.forEach(e => console.log(`  ❌ ${e.code}: ${e.message}`));
   }
   if (validation.warnings.length > 0) {
-    validation.warnings.forEach(w => console.log(`  ⚠️ ${w.code}: ${w.message}`));
+    validation.warnings.forEach(w => console.log(`  ⚠️ ${w}`));
   }
 
   if (!validation.valid) {
@@ -235,15 +224,15 @@ async function main() {
   console.log('\n=== 渲染结果 ===');
   console.log(`success: ${result.success}`);
   console.log(`output: ${result.outputPath}`);
-  console.log(`duration: ${result.duration?.toFixed(2)}s`);
+  console.log(`duration: ${(result.durationMs / 1000).toFixed(2)}s`);
   console.log(`errors: ${result.errors?.length || 0}`);
   console.log(`warnings: ${result.warnings?.length || 0}`);
 
   if (result.errors && result.errors.length > 0) {
-    result.errors.forEach(e => console.log(`  ❌ ${e.code}: ${e.message}`));
+    result.errors.forEach(e => console.log(`  ❌ ${e.stage}: ${e.message}`));
   }
   if (result.warnings && result.warnings.length > 0) {
-    result.warnings.forEach(w => console.log(`  ⚠️ ${w.code}: ${w.message}`));
+    result.warnings.forEach(w => console.log(`  ⚠️ ${w}`));
   }
 
   if (result.success && result.outputPath) {

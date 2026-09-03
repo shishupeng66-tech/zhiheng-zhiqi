@@ -5,7 +5,6 @@ import { InfoSidebar } from '@/components/layout/info-sidebar';
 import { InfobarProvider } from '@/components/ui/infobar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { UserProvider } from '@/components/auth/user-provider';
-import { ZhihengAssistant } from '@/features/assistant/zhiheng-assistant';
 import { getCurrentUser } from '@/lib/auth';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
@@ -49,7 +48,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
               <InfoSidebar side='right' />
             </InfobarProvider>
           </SidebarInset>
-          <ZhihengAssistant />
         </SidebarProvider>
       </UserProvider>
     </KBar>

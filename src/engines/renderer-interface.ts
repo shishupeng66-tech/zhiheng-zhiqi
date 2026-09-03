@@ -49,6 +49,22 @@ export interface RendererCapabilities {
   outputProfile: boolean;
   /** 支持的转场类型列表，V0.1 只有 ["hard_cut"] */
   transitions: string[];
+  /**
+   * 独立关键词包装轨道（keywordTrack，V2 引入）。
+   * 可选字段：未声明 = 不支持。支持独立花字/动态关键词轨道时设为 true。
+   */
+  keywordTrack?: boolean;
+  /**
+   * 视频原声静音能力（V2 的 sourceAudioMuted=true）。
+   * 可选字段：未声明 = 不支持。能够关闭视频素材原声时设为 true。
+   */
+  videoSourceAudioMute?: boolean;
+  /**
+   * 保留视频原声能力（V2 的 sourceAudioMuted=false）。
+   * 可选字段：未声明 = 不支持。能够保留视频素材原声时设为 true。
+   * 与 videoSourceAudioMute 语义互补，两者可同时为 true。
+   */
+  videoSourceAudioKeep?: boolean;
 }
 
 // ============================================================================

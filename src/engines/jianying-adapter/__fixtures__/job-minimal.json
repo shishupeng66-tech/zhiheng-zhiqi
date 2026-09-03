@@ -1,0 +1,98 @@
+{
+  "contractVersion": "0.1.0",
+  "jobId": "fixture-job-minimal",
+  "timelineSchemaVersion": 2,
+  "draft": {
+    "name": "pjd-minimal-fixture",
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "timeline": {
+    "schemaVersion": 2,
+    "timelineId": "tl-minimal",
+    "taskId": "task-minimal",
+    "outputProfile": {
+      "width": 1080,
+      "height": 1920,
+      "targetFps": 30,
+      "videoCodec": "h264",
+      "audioCodec": "aac",
+      "pixelFormat": "yuv420p",
+      "colorTarget": "bt709_sdr"
+    },
+    "videoTrack": [
+      {
+        "assetRef": {
+          "type": "library_asset",
+          "assetId": "fixtures/video1.mp4"
+        },
+        "sourceStart": 0.5,
+        "duration": 5.0,
+        "transition": "hard_cut",
+        "sourceAudioMuted": true
+      }
+    ],
+    "voiceTrack": [
+      {
+        "id": "voice-1",
+        "assetRef": {
+          "type": "library_asset",
+          "assetId": "fixtures/voice.mp3"
+        },
+        "start": 0.0,
+        "duration": 5.0
+      }
+    ],
+    "subtitleTrack": [
+      {
+        "id": "sub-1",
+        "start": 0.0,
+        "duration": 1.5,
+        "text": "测试字幕一",
+        "styleId": "subtitle.default"
+      },
+      {
+        "id": "sub-2",
+        "start": 1.6,
+        "duration": 1.4,
+        "text": "测试字幕二",
+        "styleId": "subtitle.default"
+      }
+    ],
+    "titleTrack": [],
+    "bgmTrack": [
+      {
+        "id": "bgm-1",
+        "assetRef": {
+          "type": "library_asset",
+          "assetId": "fixtures/bgm.mp3"
+        },
+        "start": 0.0,
+        "duration": 5.0
+      }
+    ],
+    "sfxTrack": [
+      {
+        "id": "sfx-1",
+        "assetRef": {
+          "type": "library_asset",
+          "assetId": "fixtures/sfx.wav"
+        },
+        "start": 2.0,
+        "duration": 0.6
+      }
+    ]
+  },
+  "resourceMapRef": "zhiheng-resource-map.v0.1.0",
+  "assetRoot": "C:/test-assets",
+  "outputDraftDir": "C:/draft-root/pjd-minimal-fixture",
+  "stagingRoot": "C:/draft-root/.staging/fixture-job-minimal",
+  "options": {
+    "backupPlaintext": true,
+    "failOnWarning": false
+  },
+  "logDir": "C:/logs/jianying-adapter",
+  "backupRoot": "C:/draft-root/.backup",
+  "officialDraftRoot": "C:/JianyingPro/Projects/com.lveditor.draft"
+}

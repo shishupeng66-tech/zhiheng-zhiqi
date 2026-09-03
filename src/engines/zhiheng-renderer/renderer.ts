@@ -27,6 +27,9 @@ import type {
 import { ValidationErrorCode } from '../renderer-interface';
 import type { UnifiedTimelineV1, OutputProfile } from './types';
 import { DEFAULT_OUTPUT_PROFILE, calculateVideoTotalDuration } from './types';
+import type { UnifiedTimelineV2 } from './v2-types';
+import type { UnifiedTimeline } from './v2-types';
+import { isUnifiedTimelineV2, normalizeV2ToV1 } from './migration';
 import { TimelineValidator } from './validator';
 import { runEnvironmentPreflight, type RendererEnvironmentReport } from './environment';
 import { AssetResolver, type TaskAssetManifestEntry } from './asset-resolver';
@@ -127,24 +130,35 @@ export class ZhihengRenderer implements RendererInterface {
       sfxTrack: true, // Phase 2D 实现：SFX 时间点插入
       voiceMix: true,
       outputProfile: true,
-      transitions: ['hard_cut']
+      transitions: ['hard_cut'],
+      // V2 能力声明（Phase C）：
+      // - keywordTrack：本 renderer 不执行独立关键词包装轨道（用 subtitle highlights 表达关键词）→ 不支持
+      keywordTrack: false,
+      // - 视频原声静音：compose 只取视频流，视频原声本就不进入合成 → 天然支持静音（mute=true）
+      videoSourceAudioMute: true,
+      // - 保留视频原声：compose 不消费视频音轨 → 不支持保留（keep=false）
+      videoSourceAudioKeep: false
     };
   }
 
   validate(timeline: unknown): ValidationResult {
-    // 1. Schema + semantic 验证
+    // 1. Schema + semantic 验证（discriminated union：V1 | V2）
     const result = this.validator.validate(timeline);
+    if (!result.valid) {
+      // Schema/semantic 失败则不再做能力检查（结构不可信）
+      return result;
+    }
 
     // 2. 能力声明匹配（Timeline 使用的功能必须在 capabilities 范围内）
     const caps = this.getCapabilities();
-    const tl = timeline as UnifiedTimelineV1;
+    const tl = timeline as UnifiedTimeline;
 
     // overlay/bgm/sfx 能力检查
     // overlayTrack 已在 Phase 2C 实现，不再报错
     if (tl?.bgmTrack && tl.bgmTrack.length > 0 && !caps.bgmTrack) {
       result.errors.push({
         field: 'bgmTrack',
-        message: 'ZhihengRenderer V0.1 不支持 bgmTrack，Timeline 中包含 bgmTrack。',
+        message: 'ZhihengRenderer 不支持 bgmTrack，Timeline 中包含 bgmTrack。',
         code: ValidationErrorCode.UNSUPPORTED_CAPABILITY
       });
     }
@@ -152,7 +166,51 @@ export class ZhihengRenderer implements RendererInterface {
     if (tl?.sfxTrack && tl.sfxTrack.length > 0 && !caps.sfxTrack) {
       result.errors.push({
         field: 'sfxTrack',
-        message: 'ZhihengRenderer V0.1 不支持 sfxTrack，Timeline 中包含 sfxTrack。',
+        message: 'ZhihengRenderer 不支持 sfxTrack，Timeline 中包含 sfxTrack。',
+        code: ValidationErrorCode.UNSUPPORTED_CAPABILITY
+      });
+    }
+
+    // 3. V2 语义能力检查（transition / sourceAudioMuted / keywordTrack）
+    //    禁止静默忽略语义字段：dissolve、keywordTrack、sourceAudioMuted 等
+    for (let i = 0; i < tl.videoTrack.length; i++) {
+      const seg = tl.videoTrack[i];
+      // 3a. transition 必须在 caps.transitions 内（dissolve 不得静默降级为 hard_cut）
+      if (!caps.transitions.includes(seg.transition as string)) {
+        result.errors.push({
+          field: `videoTrack[${i}].transition`,
+          message: `ZhihengRenderer 不支持转场 "${String(seg.transition)}"（支持：${caps.transitions.join(', ')}）。不得静默降级。`,
+          code: ValidationErrorCode.UNSUPPORTED_CAPABILITY
+        });
+      }
+      // 3b. sourceAudioMuted 检查（仅 V2 videoTrack 有该字段）
+      if ('sourceAudioMuted' in seg) {
+        const muted = (seg as UnifiedTimelineV2['videoTrack'][number]).sourceAudioMuted;
+        if (muted === true && !caps.videoSourceAudioMute) {
+          result.errors.push({
+            field: `videoTrack[${i}].sourceAudioMuted`,
+            message: 'ZhihengRenderer 不支持视频原声静音（sourceAudioMuted=true）。',
+            code: ValidationErrorCode.UNSUPPORTED_CAPABILITY
+          });
+        }
+        if (muted === false && !caps.videoSourceAudioKeep) {
+          result.errors.push({
+            field: `videoTrack[${i}].sourceAudioMuted`,
+            message:
+              'ZhihengRenderer 不支持保留视频原声（sourceAudioMuted=false）。本 renderer 的视频原声不进入合成。',
+            code: ValidationErrorCode.UNSUPPORTED_CAPABILITY
+          });
+        }
+      }
+    }
+
+    // 3c. keywordTrack 检查（V2 新增能力，不得静默丢弃）
+    const kw = tl as unknown as { keywordTrack?: unknown[] };
+    if (kw.keywordTrack && kw.keywordTrack.length > 0 && !caps.keywordTrack) {
+      result.errors.push({
+        field: 'keywordTrack',
+        message:
+          'ZhihengRenderer 不支持 keywordTrack（独立关键词包装轨道）。不得静默丢弃关键词包装。',
         code: ValidationErrorCode.UNSUPPORTED_CAPABILITY
       });
     }
@@ -204,7 +262,11 @@ export class ZhihengRenderer implements RendererInterface {
       warnings.push(...validation.warnings);
       logger.log('info', 'Timeline 验证通过。');
 
-      const tl = timeline as UnifiedTimelineV1;
+      // 规范化：V2 Timeline（能力校验已通过，仅含本 renderer 支持能力）→ V1 等价形态
+      const raw = timeline as UnifiedTimeline;
+      const tl: UnifiedTimelineV1 = isUnifiedTimelineV2(raw)
+        ? normalizeV2ToV1(raw)
+        : (raw as UnifiedTimelineV1);
       const outputProfile: OutputProfile = { ...DEFAULT_OUTPUT_PROFILE, ...tl.outputProfile };
       logger.setOutputProfile(
         outputProfile.width,

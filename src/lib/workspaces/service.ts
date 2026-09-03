@@ -37,8 +37,7 @@ const enterpriseMediaWorkspaceModules = [
   'analytics',
   'projects',
   'assets',
-  'scripts',
-  'members'
+  'scripts'
 ];
 
 const aiContentWorkspaceModules = [
@@ -49,8 +48,7 @@ const aiContentWorkspaceModules = [
   'projects',
   'review',
   'publish',
-  'analytics',
-  'members'
+  'analytics'
 ];
 
 const enterpriseAdminPermissions = [
@@ -278,30 +276,72 @@ export function listWorkspaceMembers(workspaceId: string) {
     .all();
 }
 
-export function listWorkspaceMemberCandidates(workspaceId: string) {
-  const members = getDb()
-    .select({ userId: workspaceMembers.userId })
-    .from(workspaceMembers)
-    .where(eq(workspaceMembers.workspaceId, workspaceId))
-    .all();
-  const memberIds = new Set(members.map((member) => member.userId));
-
+export function listAvailableWorkspaces() {
+  ensureDefaultWorkspacesSeed();
   return getDb()
     .select({
-      id: users.id,
-      name: users.name,
-      username: users.username,
-      avatar: users.avatar,
-      employeeNo: users.employeeNo,
-      department: users.department,
-      position: users.position,
-      role: users.role,
-      status: users.status
+      id: workspaces.id,
+      name: workspaces.name,
+      slug: workspaces.slug,
+      status: workspaces.status
     })
-    .from(users)
-    .where(eq(users.status, 'active'))
+    .from(workspaces)
+    .where(eq(workspaces.status, 'active'))
+    .all();
+}
+
+export function listUserWorkspaceAccess(userId: string) {
+  const availableWorkspaces = listAvailableWorkspaces();
+  const availableWorkspaceIds = new Set(availableWorkspaces.map((workspace) => workspace.id));
+  const memberships = getDb()
+    .select()
+    .from(workspaceMembers)
+    .where(eq(workspaceMembers.userId, userId))
     .all()
-    .filter((user) => !memberIds.has(user.id));
+    .filter((membership) => availableWorkspaceIds.has(membership.workspaceId));
+  const memberWorkspaceIds = new Set(memberships.map((membership) => membership.workspaceId));
+
+  return {
+    workspaces: availableWorkspaces,
+    workspaceIds: availableWorkspaces
+      .filter((workspace) => memberWorkspaceIds.has(workspace.id))
+      .map((workspace) => workspace.id)
+  };
+}
+
+export function syncUserWorkspaceAccess(
+  userId: string,
+  workspaceIds: string[],
+  defaultRole: WorkspaceMemberRole = 'viewer'
+) {
+  const availableWorkspaces = listAvailableWorkspaces();
+  const availableWorkspaceIds = new Set(availableWorkspaces.map((workspace) => workspace.id));
+  const nextWorkspaceIds = new Set(
+    workspaceIds.filter((workspaceId) => availableWorkspaceIds.has(workspaceId))
+  );
+  const existingMemberships = getDb()
+    .select()
+    .from(workspaceMembers)
+    .where(eq(workspaceMembers.userId, userId))
+    .all()
+    .filter((membership) => availableWorkspaceIds.has(membership.workspaceId));
+
+  for (const membership of existingMemberships) {
+    if (!nextWorkspaceIds.has(membership.workspaceId)) {
+      removeWorkspaceMember(membership.id);
+    }
+  }
+
+  const existingWorkspaceIds = new Set(
+    existingMemberships.map((membership) => membership.workspaceId)
+  );
+  for (const workspaceId of nextWorkspaceIds) {
+    if (!existingWorkspaceIds.has(workspaceId)) {
+      addWorkspaceMember(workspaceId, userId, defaultRole);
+    }
+  }
+
+  return listUserWorkspaceAccess(userId);
 }
 
 export function addWorkspaceMember(workspaceId: string, userId: string, role: WorkspaceMemberRole) {
@@ -323,17 +363,6 @@ export function addWorkspaceMember(workspaceId: string, userId: string, role: Wo
     .returning()
     .get();
   return row;
-}
-
-export function updateWorkspaceMemberRole(memberId: string, role: WorkspaceMemberRole) {
-  return (
-    getDb()
-      .update(workspaceMembers)
-      .set({ role, updatedAt: new Date() })
-      .where(eq(workspaceMembers.id, memberId))
-      .returning()
-      .get() ?? null
-  );
 }
 
 export function removeWorkspaceMember(memberId: string) {

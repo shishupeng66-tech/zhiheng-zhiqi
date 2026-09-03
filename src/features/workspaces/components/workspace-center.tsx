@@ -36,13 +36,13 @@ export async function WorkspaceCenter() {
           </CardHeader>
         </Card>
       ) : (
-        <div className='grid max-w-5xl gap-4 lg:grid-cols-2'>
+        <div className='grid max-w-5xl items-stretch gap-4 lg:grid-cols-2'>
           {workspaces.map(({ workspace, membership }) => {
             const members = listWorkspaceMembers(workspace.id);
             const roleLabel = membership ? workspaceRoleLabels[membership.role] : '企业管理员';
 
             return (
-              <Card key={workspace.id} className='border-border/80'>
+              <Card key={workspace.id} className='flex h-full flex-col border-border/80'>
                 <CardHeader>
                   <div className='flex items-start justify-between gap-4'>
                     <div className='flex items-start gap-3'>
@@ -75,7 +75,7 @@ export async function WorkspaceCenter() {
                     <div className='mt-1 font-medium'>0</div>
                   </div>
                 </CardContent>
-                <CardFooter className='justify-between gap-3'>
+                <CardFooter className='mt-auto justify-between gap-3'>
                   <div className='text-xs text-muted-foreground'>
                     类型：{workspace.workspaceType}
                   </div>

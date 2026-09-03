@@ -1,0 +1,31 @@
+{
+  "contractVersion": "0.1.0",
+  "jobId": "fixture-job-minimal",
+  "ok": true,
+  "draftDir": "C:/draft-root/pjd-minimal-fixture",
+  "duration": 5.0,
+  "tracks": [
+    { "type": "video", "count": 1 },
+    { "type": "voice", "count": 1 },
+    { "type": "bgm", "count": 1 },
+    { "type": "sfx", "count": 1 },
+    { "type": "subtitle", "count": 2 }
+  ],
+  "warnings": [],
+  "manualReviewRequired": false,
+  "validationReport": {
+    "fileCount": 6,
+    "hasDraftContent": true,
+    "hasDraftMetaInfo": true,
+    "hasDraftInfo": true,
+    "duration": 5.0,
+    "passed": true,
+    "checks": [
+      { "name": "file.draft_content.json", "ok": true, "detail": "存在" },
+      { "name": "file.draft_meta_info.json", "ok": true, "detail": "存在" },
+      { "name": "file.draft_info.json", "ok": true, "detail": "存在" },
+      { "name": "draft_content.parsable", "ok": true, "detail": "tracks=5 videoSegments=1" },
+      { "name": "video.segment_count", "ok": true, "detail": "期望=1 实际=1" }
+    ]
+  }
+}

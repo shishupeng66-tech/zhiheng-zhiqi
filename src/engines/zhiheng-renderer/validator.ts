@@ -1,32 +1,27 @@
-﻿/**
- * Timeline Validator —— Unified Timeline V1 的 schema + semantic 验证器。
+/**
+ * Timeline Validator —— Unified Timeline V1/V2 的 schema + semantic 验证器。
  *
  * 本验证器只负责 Timeline 本身的结构和语义验证，不关心具体 Renderer 的能力。
  * 具体 Renderer 的 validate() 应先调用本验证器，然后再做能力校验（UNSUPPORTED_CAPABILITY）。
+ *
+ * 支持：
+ * - UnifiedTimelineV1（schemaVersion=1）
+ * - UnifiedTimelineV2（schemaVersion=2，含 keywordTrack / sourceAudioMuted / dissolve）
+ * 通过 discriminated union（UnifiedTimelineSchema）按 schemaVersion 分支校验。
  *
  * 验证范围：
  * - Schema 结构有效性（类型、必填字段、枚举值）—— 由 zod schema 处理
  * - 时间精度（最多3位小数）
  * - subtitleTrack 不允许 overlap
  * - titleTrack 允许 overlap（不验证）
- * - 所有 subtitle/title/voice 不得超过 video 总 duration
- * - styleId 必须存在于 Style Registry
- * - 预留字段（overlay/bgm/sfx）存在时给出警告
- *
- * 不验证（留给后续阶段）：
- * - 素材文件真实存在性 → runtime Asset Resolver
- * - FFmpeg 环境可用性 → Environment Preflight
- * - Renderer 能力匹配 → 具体 Renderer 的 validate()
- * - voice asset 文件存在性 → runtime 检查
+ * - 所有 subtitle/title/voice/keyword 不得超过 video 总 duration
+ * - styleId 必须存在于 Style Registry（keywordTrack 的 styleId 由 ResourceMap 校验，不在本验证器范围）
  */
-
 import { ZodError } from 'zod';
 import type { ValidationResult, ValidationError } from '../renderer-interface';
-import {
-  UnifiedTimelineV1Schema,
-  calculateVideoTotalDuration,
-  type UnifiedTimelineV1
-} from './types';
+import { UnifiedTimelineSchema, type UnifiedTimeline } from './v2-types';
+import type { UnifiedTimelineV1 } from './types';
+import type { UnifiedTimelineV2 } from './v2-types';
 import { StyleRegistry } from './style-registry';
 
 // ============================================================================
@@ -41,6 +36,9 @@ const ERROR_CODE = {
   STYLE_NOT_FOUND: 'STYLE_NOT_FOUND',
   ASSET_REF_INVALID: 'ASSET_REF_INVALID'
 } as const;
+
+/** V1/V2 共有的 Timeline 结构（validator 内部只访问共同字段） */
+type CommonTimeline = UnifiedTimelineV1 | UnifiedTimelineV2;
 
 // ============================================================================
 // TimelineValidator 类
@@ -59,7 +57,7 @@ export class TimelineValidator {
   /**
    * 验证 Timeline 对象。
    *
-   * @param input 待验证的 Timeline 对象（unknown，内部做类型收窄）
+   * @param input 待验证的 Timeline 对象（unknown，内部做 discriminated union 解析）
    * @returns ValidationResult
    */
   validate(input: unknown): ValidationResult {
@@ -67,11 +65,11 @@ export class TimelineValidator {
     const warnings: string[] = [];
 
     // ------------------------------------------------------------------------
-    // 1. Schema 验证（zod）
+    // 1. Schema 验证（discriminated union：V1 | V2）
     // ------------------------------------------------------------------------
-    let timeline: UnifiedTimelineV1;
+    let timeline: UnifiedTimeline;
     try {
-      timeline = UnifiedTimelineV1Schema.parse(input);
+      timeline = UnifiedTimelineSchema.parse(input);
     } catch (err) {
       if (err instanceof ZodError) {
         for (const issue of err.issues) {
@@ -99,8 +97,8 @@ export class TimelineValidator {
 
     // ------------------------------------------------------------------------
     // 3. videoTrack 语义验证
-    //    V0.1 videoTrack 连续无 gap 无 overlap，由数组顺序保证。
-    //    zod 已保证非空、sourceStart>=0、duration>0、transition=hard_cut。
+    //    videoTrack 连续无 gap 无 overlap，由数组顺序保证。
+    //    zod 已保证非空、sourceStart>=0、duration>0、transition 枚举合法。
     //    此处不需要额外验证。
     // ------------------------------------------------------------------------
 
@@ -120,9 +118,9 @@ export class TimelineValidator {
     // ------------------------------------------------------------------------
 
     // ------------------------------------------------------------------------
-    // 6. 所有 subtitle/title/voice 不得超过 video 总 duration
+    // 6. 所有 subtitle/title/voice/keyword 不得超过 video 总 duration
     // ------------------------------------------------------------------------
-    const totalDuration = calculateVideoTotalDuration(timeline);
+    const totalDuration = this.calculateTotalDuration(timeline);
     this.validateWithinTotalDuration(timeline, totalDuration, errors);
 
     // ------------------------------------------------------------------------
@@ -136,11 +134,7 @@ export class TimelineValidator {
     // ------------------------------------------------------------------------
 
     // ------------------------------------------------------------------------
-    // 9. 预留字段警告
-    // ------------------------------------------------------------------------
-    // overlayTrack/bgmTrack/sfxTrack 已在 Phase 2C/2D 实现，不再警告
-    // ------------------------------------------------------------------------
-    // 10. 视频总时长合理性警告
+    // 9. 视频总时长合理性警告
     // ------------------------------------------------------------------------
     if (totalDuration < 1) {
       warnings.push(`视频总时长 ${totalDuration.toFixed(3)}s 过短，可能不符合短视频最低时长要求`);
@@ -153,6 +147,11 @@ export class TimelineValidator {
     };
   }
 
+  /** 计算视频总时长（V1/V2 通用）：videoTrack 所有 segment duration 之和 */
+  private calculateTotalDuration(timeline: CommonTimeline): number {
+    return timeline.videoTrack.reduce((sum, seg) => sum + seg.duration, 0);
+  }
+
   // ==========================================================================
   // 私有验证方法
   // ==========================================================================
@@ -161,7 +160,7 @@ export class TimelineValidator {
    * 验证所有时间值最多3位小数。
    * 超过3位小数会导致帧边界对齐误差。
    */
-  private validateTimePrecision(timeline: UnifiedTimelineV1, errors: ValidationError[]): void {
+  private validateTimePrecision(timeline: CommonTimeline, errors: ValidationError[]): void {
     const check = (value: number, field: string): void => {
       const rounded = Math.round(value * 1000) / 1000;
       if (Math.abs(value - rounded) > 1e-9) {
@@ -192,6 +191,12 @@ export class TimelineValidator {
       const seg = timeline.titleTrack[i];
       check(seg.start, `titleTrack[${i}].start`);
       check(seg.duration, `titleTrack[${i}].duration`);
+    }
+    const keywords = this.getKeywordTrack(timeline);
+    for (let i = 0; i < keywords.length; i++) {
+      const seg = keywords[i];
+      check(seg.start, `keywordTrack[${i}].start`);
+      check(seg.duration, `keywordTrack[${i}].duration`);
     }
   }
 
@@ -230,7 +235,7 @@ export class TimelineValidator {
    * 视频总时长 = videoTrack 所有 segment duration 之和。
    */
   private validateWithinTotalDuration(
-    timeline: UnifiedTimelineV1,
+    timeline: CommonTimeline,
     totalDuration: number,
     errors: ValidationError[]
   ): void {
@@ -255,13 +260,26 @@ export class TimelineValidator {
     for (let i = 0; i < timeline.titleTrack.length; i++) {
       check(timeline.titleTrack[i], `titleTrack[${i}]`);
     }
+    const keywords = this.getKeywordTrack(timeline);
+    for (let i = 0; i < keywords.length; i++) {
+      check(keywords[i], `keywordTrack[${i}]`);
+    }
   }
 
   /**
    * 验证所有 styleId 存在于 Style Registry。
-   * Timeline 只写 styleId，具体样式由 Style Registry 决定。
+   *
+   * - V1：zhiheng 自家 schema，样式必须来自自家 Style Registry。
+   * - V2：跨执行器 schema，styleId 语义由各执行器的 ResourceMap/Registry 校验
+   *   （jianying adapter 用 ResourceMap；本 validator 不做 StyleRegistry 存在性检查，
+   *   避免把 jianying 专用样式如 "subtitle.default" / "huazi.*" 误报为不存在）。
+   *
+   * Timeline 只写 styleId，具体样式由执行器层决定。
    */
-  private validateStyleIds(timeline: UnifiedTimelineV1, errors: ValidationError[]): void {
+  private validateStyleIds(timeline: CommonTimeline, errors: ValidationError[]): void {
+    // V2 样式语义归 ResourceMap（执行器层），不在本 validator 范围
+    if (timeline.schemaVersion !== 1) return;
+
     for (let i = 0; i < timeline.subtitleTrack.length; i++) {
       const styleId = timeline.subtitleTrack[i].styleId;
       if (!this.styleRegistry.has(styleId)) {
@@ -284,6 +302,16 @@ export class TimelineValidator {
         });
       }
     }
+  }
+
+  /** 获取 keywordTrack（仅 V2 存在；V1 返回空数组） */
+  private getKeywordTrack(
+    timeline: CommonTimeline
+  ): Array<{ id: string; start: number; duration: number }> {
+    if ('keywordTrack' in timeline && timeline.keywordTrack) {
+      return timeline.keywordTrack as Array<{ id: string; start: number; duration: number }>;
+    }
+    return [];
   }
 }
 

@@ -20,6 +20,10 @@ import type { PublicUser } from '@/lib/auth/types';
 import type { Role } from '@/lib/db/schema';
 import { ASSIGNABLE_ROLES, ROLE_LABELS } from '@/constants/rbac';
 import { cn } from '@/lib/utils';
+import {
+  WorkspaceAccessMultiselect,
+  type EmployeeWorkspaceOption
+} from './workspace-access-multiselect';
 
 const DEPARTMENTS = [
   '管理层',
@@ -104,7 +108,11 @@ export default function EmployeeFormDialog({
   const [avatarPreview, setAvatarPreview] = React.useState<string>('');
   const [saving, setSaving] = React.useState(false);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
+  const [workspaceOptions, setWorkspaceOptions] = React.useState<EmployeeWorkspaceOption[]>([]);
+  const [selectedWorkspaceIds, setSelectedWorkspaceIds] = React.useState<string[]>([]);
+  const [workspaceAccessLoading, setWorkspaceAccessLoading] = React.useState(false);
 
+  // oxlint-disable react/set-state-in-effect
   React.useEffect(() => {
     if (open) {
       setForm({
@@ -121,7 +129,47 @@ export default function EmployeeFormDialog({
       setAvatarFile(null);
       setAvatarPreview(editing?.avatar ?? '');
       setErrors({});
+      setWorkspaceOptions([]);
+      setSelectedWorkspaceIds([]);
     }
+  }, [open, editing]);
+  // oxlint-enable react/set-state-in-effect
+
+  React.useEffect(() => {
+    if (!open || !editing) return;
+
+    let cancelled = false;
+    const editingId = editing.id;
+    async function loadWorkspaceAccess() {
+      setWorkspaceAccessLoading(true);
+      try {
+        const res = await fetch(`/api/system/employees/${editingId}/workspaces`, {
+          cache: 'no-store'
+        });
+        const body = (await res.json().catch(() => ({}))) as {
+          workspaces?: EmployeeWorkspaceOption[];
+          workspaceIds?: string[];
+          message?: string;
+        };
+        if (cancelled) return;
+        if (!res.ok) {
+          toast.error(body.message ?? '加载工作空间访问权限失败');
+          return;
+        }
+        setWorkspaceOptions(Array.isArray(body.workspaces) ? body.workspaces : []);
+        setSelectedWorkspaceIds(Array.isArray(body.workspaceIds) ? body.workspaceIds : []);
+      } catch {
+        if (!cancelled) toast.error('加载工作空间访问权限失败');
+      } finally {
+        if (!cancelled) setWorkspaceAccessLoading(false);
+      }
+    }
+
+    void loadWorkspaceAccess();
+
+    return () => {
+      cancelled = true;
+    };
   }, [open, editing]);
 
   React.useEffect(() => {
@@ -223,6 +271,16 @@ export default function EmployeeFormDialog({
             toast.error(rd.message ?? '角色调整失败');
             return;
           }
+        }
+        const workspaceRes = await fetch(`/api/system/employees/${editing.id}/workspaces`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ workspaceIds: selectedWorkspaceIds })
+        });
+        const workspaceBody = await workspaceRes.json().catch(() => ({}));
+        if (!workspaceRes.ok) {
+          toast.error(workspaceBody.message ?? '工作空间访问权限保存失败');
+          return;
         }
         toast.success('已保存员工资料');
       } else {
@@ -440,6 +498,18 @@ export default function EmployeeFormDialog({
               </SelectContent>
             </Select>
           </div>
+
+          {isEdit ? (
+            <div className='space-y-2 sm:col-span-2'>
+              <WorkspaceAccessMultiselect
+                workspaces={workspaceOptions}
+                selectedIds={selectedWorkspaceIds}
+                loading={workspaceAccessLoading}
+                disabled={saving}
+                onChange={setSelectedWorkspaceIds}
+              />
+            </div>
+          ) : null}
 
           <DialogFooter className='sm:col-span-2'>
             <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
