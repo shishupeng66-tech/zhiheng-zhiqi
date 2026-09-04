@@ -841,7 +841,9 @@ export function updateAutomationVideoTaskAgentStage(
   workspaceId: string,
   taskId: string,
   stage: string,
-  unifiedTimelineV2?: UnifiedTimelineV2
+  unifiedTimelineV2?: UnifiedTimelineV2,
+  /** 失败时的可读原因（写入 error_message 字段，UI 据此给出具体提示） */
+  errorMessage?: string | null
 ): void {
   const existing = getAutomationVideoTask(workspaceId, taskId);
   if (!existing) {
@@ -876,6 +878,7 @@ export function updateAutomationVideoTaskAgentStage(
         stage === 'ready_for_jianying'
           ? `知衡助手已完成剪辑方案与上游校验，已生成 UnifiedTimelineV2，等待剪映适配器生成草稿。`
           : existing.resultSummary,
+      errorMessage: stage === 'failed' ? (errorMessage ?? existing.errorMessage) : null,
       updatedAt: timestamp
     })
     .where(

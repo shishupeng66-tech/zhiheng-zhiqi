@@ -50,14 +50,16 @@ type MenuItem = {
   label: string;
   description?: string;
   icon?: React.ReactNode;
-  onClick?: () => void;
+  /** 触发时可拿到当前输入框内容（例如作为脚本生成主题） */
+  onClick?: (currentInput?: string) => void;
 };
 
 type QuickAction = {
   label: string;
   icon?: React.ReactNode;
   variant?: 'default' | 'primary';
-  onClick?: () => void;
+  /** 触发时可拿到当前输入框内容（例如作为脚本生成主题） */
+  onClick?: (currentInput?: string) => void;
   menuItems?: MenuItem[];
 };
 
@@ -173,7 +175,14 @@ function toAttachment(file: File): V0ChatAttachment {
   };
 }
 
-function ActionButton({ icon, label, variant = 'default', menuItems, onClick }: QuickAction) {
+function ActionButton({
+  icon,
+  label,
+  variant = 'default',
+  menuItems,
+  onClick,
+  currentInput
+}: QuickAction & { currentInput?: string }) {
   const [open, setOpen] = React.useState(false);
   const className = cn(
     'flex items-center gap-2 rounded-full border px-4 py-2 text-xs transition-colors',
@@ -189,7 +198,7 @@ function ActionButton({ icon, label, variant = 'default', menuItems, onClick }: 
           type='button'
           className={className}
           onClick={() => {
-            onClick?.();
+            onClick?.(currentInput);
             setOpen((current) => !current);
           }}
         >
@@ -208,7 +217,7 @@ function ActionButton({ icon, label, variant = 'default', menuItems, onClick }: 
                 type='button'
                 className='flex w-full items-start gap-2 rounded-md px-2 py-2 text-left text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground'
                 onClick={() => {
-                  item.onClick?.();
+                  item.onClick?.(currentInput);
                   setOpen(false);
                 }}
               >
@@ -228,7 +237,7 @@ function ActionButton({ icon, label, variant = 'default', menuItems, onClick }: 
   }
 
   return (
-    <button type='button' className={className} onClick={onClick}>
+    <button type='button' className={className} onClick={() => onClick?.(currentInput)}>
       {icon}
       <span>{label}</span>
     </button>
@@ -667,6 +676,7 @@ export function V0AiChat({
                 variant={action.variant}
                 menuItems={action.menuItems}
                 onClick={action.onClick}
+                currentInput={value}
               />
             ))}
           </div>

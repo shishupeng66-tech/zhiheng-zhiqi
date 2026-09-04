@@ -15,7 +15,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { CreateVideoPlanOutput, VideoPlanTimelineItem } from '@/lib/agent/tools';
 import { createVideoPlanTool, saveVideoPlanAsDraftTool } from '@/lib/agent/tools';
-import { searchVideoClips } from '@/lib/agent/video-asset-index';
+import { searchVideoClips, loadVideoAssetIndex } from '@/lib/agent/video-asset-index';
 import type { ToolExecutionContext } from '@/lib/agent/tool-registry';
 import { chat, getResolvedLlmConfig } from '@/lib/ai';
 import type { ChatMessage } from '@/lib/ai';
@@ -32,12 +32,34 @@ import {
 import type { UnifiedTimelineV2 } from '@/engines/zhiheng-renderer/v2-types';
 import {
   deriveVideoTimelineStartsV2,
+  calculateVideoTotalDurationV2,
   type VideoSegmentV2,
   type KeywordSegment
 } from '@/engines/zhiheng-renderer/v2-types';
 import { generateVoiceAudio } from '@/lib/voice-service/client';
 
 const round3 = (value: number): number => Math.round(value * 1000) / 1000;
+
+/** 素材时长表缓存：relativePath → 素材总时长（秒）。 */
+let cachedAssetDurations: Record<string, number> | null = null;
+
+/** 查询某素材（relativePath）的总时长；未知返回 null。 */
+async function assetDurationsOfPath(relativePath: string): Promise<number | null> {
+  if (!cachedAssetDurations) {
+    cachedAssetDurations = {};
+    try {
+      const assets = await loadVideoAssetIndex();
+      for (const asset of assets) {
+        if (asset.relativePath && typeof asset.durationSeconds === 'number') {
+          cachedAssetDurations[asset.relativePath] = asset.durationSeconds;
+        }
+      }
+    } catch {
+      // 索引不可用时按未知处理
+    }
+  }
+  return cachedAssetDurations[relativePath] ?? null;
+}
 
 export type AgentAutoEditParams = {
   /** 工作空间 slug，例如 enterprise-media */
@@ -304,23 +326,38 @@ export async function runAgentAutoEditPipeline(
   });
   const candidateCount = candidateSearch.length;
 
-  // 3) planning_edit + loading_assets：create_video_plan（内部按段调用 searchVideoClips）
+  // 3) 【先配音】真实 1.3x 最终音频（Voice Service，作为时间基准）。
+  //    素材规划必须发生在最终音频生成之后：拿到真实 duration 后再决定目标视频时长。
+  const assetRoot = await getPath('assets');
+  const voiceId = `voice-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  let voice;
+  try {
+    voice = await generateRealVoice(script, voiceId, assetRoot);
+  } catch (voiceErr) {
+    const reason = voiceErr instanceof Error ? voiceErr.message : 'Voice Service 不可用';
+    throw new Error(`配音生成失败：${reason}`);
+  }
+  const finalVoiceDuration = voice.duration;
+
+  // 4) 【后规划】把最终配音时长作为目标视频时长传给素材规划（createVideoPlanTool 按时长预算选素材）。
   const plan = await createVideoPlanTool.execute(
     {
       userRequest: userMessage,
       script,
       platform: '抖音',
-      targetDuration: 30,
+      targetDuration: finalVoiceDuration,
       videoRatio: '9:16'
     },
     ctx
   );
 
-  // 4) loading_assets 完成 → save_video_plan_as_draft（写入真实草稿任务，status='draft'）
+  // 5) loading_assets 完成 → save_video_plan_as_draft（写入真实草稿任务，status='draft'）
   const draft = await saveVideoPlanAsDraftTool.execute({ workspaceSlug, plan }, ctx);
+  updateAutomationVideoTaskAgentStage(workspace.id, draft.taskId, 'generating_voice');
 
-  // 5) 生成 UnifiedTimelineV2 + 真实 1.3x 配音（Voice Service 作为时间基准）
+  // 6) 构建 UnifiedTimelineV2（无后处理拉伸；plan 已按配音时长对齐）
   const timeline = buildUnifiedTimelineFromAutomationDraft(plan, draft.taskId);
+  timeline.voiceTrack = [voice];
 
   // recommendedCuts 使用数 / avoidCuts 数（方案 source 即来自 recommendedStart/End；avoidCuts 由搜索阶段排除）
   const recommendedCutsUsed = plan.timeline.filter(
@@ -328,27 +365,43 @@ export async function runAgentAutoEditPipeline(
   ).length;
   const avoidCutsCount = 0;
 
-  updateAutomationVideoTaskAgentStage(workspace.id, draft.taskId, 'generating_voice');
-  const assetRoot = await getPath('assets');
-  try {
-    const voice = await generateRealVoice(script, draft.taskId, assetRoot);
-    timeline.voiceTrack = [voice];
-  } catch (voiceErr) {
-    // 配音是 V1 产品链的硬性前置（真实 1.3x 音频）；失败转人性化失败（可重试）
-    updateAutomationVideoTaskAgentStage(workspace.id, draft.taskId, 'failed');
-    throw new Error(
-      `配音生成失败：${voiceErr instanceof Error ? voiceErr.message : 'Voice Service 不可用'}`
-    );
+  // 7) 时长对齐校验：sum(videoSegments.duration) 必须达到 finalVoiceDuration ± 300ms。
+  //    轻微不足（≤300ms）：最后一帧保持（源容量允许时）。
+  //    明显不足：问题在 Plan 层解决，直接明确报错，不生成短于配音的 Timeline。
+  const videoTotal = calculateVideoTotalDurationV2(timeline);
+  const shortfall = finalVoiceDuration - videoTotal;
+  if (shortfall > 0.3) {
+    const reason = `配音时长约 ${Math.round(finalVoiceDuration)} 秒，但素材最多覆盖约 ${Math.round(
+      videoTotal
+    )} 秒。请缩短脚本或更换脚本风格后重试。`;
+    updateAutomationVideoTaskAgentStage(workspace.id, draft.taskId, 'failed', undefined, reason);
+    throw new Error(reason);
+  }
+  if (shortfall > 0) {
+    // ≤300ms：把最后一帧补足（源容量允许时）
+    const last = timeline.videoTrack[timeline.videoTrack.length - 1];
+    const maxEnd = await assetDurationsOfPath(last.assetRef.assetId);
+    const canHold = maxEnd != null ? maxEnd - last.sourceStart : last.duration + shortfall;
+    if (canHold >= last.duration + shortfall - 0.01) {
+      last.duration = round3(last.duration + shortfall);
+    }
   }
 
   const validation = validateTimeline(timeline);
 
-  // 6) 写入阶段：validating_timeline → ready_for_jianying（或 failed）
+  // 8) 写入阶段：validating_timeline → ready_for_jianying（或 failed，带可读原因）
   updateAutomationVideoTaskAgentStage(workspace.id, draft.taskId, 'validating_timeline');
   if (validation.valid) {
     updateAutomationVideoTaskAgentStage(workspace.id, draft.taskId, 'ready_for_jianying', timeline);
   } else {
-    updateAutomationVideoTaskAgentStage(workspace.id, draft.taskId, 'failed');
+    const firstError = validation.errors?.[0];
+    updateAutomationVideoTaskAgentStage(
+      workspace.id,
+      draft.taskId,
+      'failed',
+      undefined,
+      firstError ? `剪辑方案校验未通过：${firstError.message}` : '剪辑方案校验未通过，请重试'
+    );
   }
 
   return {

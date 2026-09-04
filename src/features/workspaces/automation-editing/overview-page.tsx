@@ -8,6 +8,15 @@ import { V0AiChat, type V0ChatAttachment, type V0ChatMessage } from '@/component
 import { Icons } from '@/components/icons';
 import { WorkspaceHeaderActions } from '@/features/workspaces/components/workspace-header-actions';
 import { AutoEditTaskCard } from '@/features/workspaces/automation-editing/auto-edit-task-card';
+import { ScriptDraftCard } from '@/features/workspaces/automation-editing/script-draft-card';
+import {
+  MaterialPreviewCard,
+  type MaterialPreviewSegment
+} from '@/features/workspaces/automation-editing/material-preview-card';
+import {
+  VIDEO_SCRIPT_STYLES,
+  type VideoScriptStyle
+} from '@/features/workspaces/automation-editing/script-styles';
 import { toast } from 'sonner';
 
 type AutomationEditingOverviewPageProps = {
@@ -19,14 +28,6 @@ type UploadedAsset = {
   name: string;
   fileUrl: string;
   fileType: string;
-};
-
-type VideoStyle = {
-  id: string;
-  name: string;
-  description: string;
-  sampleScript: string;
-  keywords: string[];
 };
 
 type ProductionVoiceOption = {
@@ -42,41 +43,6 @@ type VoiceCatalogItem = {
   scene?: string | null;
   enabledForProduction?: boolean;
 };
-
-const videoStyles: VideoStyle[] = [
-  {
-    id: 'knowledge',
-    name: '知识科普型',
-    description: '解释工艺、原理和客户关心的问题。',
-    sampleScript:
-      '这条视频可以从一个客户常见疑问切入：为什么企业宣传视频不能只拍设备，还要讲清楚生产流程、质检节点和交付标准。系统会围绕问题、原因和解决方式生成一版短视频脚本。',
-    keywords: ['知识科普', '生产流程', '质检节点', '交付标准']
-  },
-  {
-    id: 'factory',
-    name: '工厂实力展示型',
-    description: '突出设备、产线、工艺、质检与交付能力。',
-    sampleScript:
-      '这条视频会按工厂实力展示思路展开：先展示生产现场，再说明关键工艺和质检环节，最后回到企业稳定交付能力，让客户快速建立信任。',
-    keywords: ['工厂实力', '生产线', '工艺流程', '质量控制']
-  },
-  {
-    id: 'boss-ip',
-    name: '老板观点型',
-    description: '用负责人视角表达行业判断和经营理念。',
-    sampleScript:
-      '这条视频会采用负责人观点表达：从一个行业判断开场，再结合真实生产或服务场景说明为什么企业要重视长期稳定的内容生产。',
-    keywords: ['老板观点', '行业判断', '企业经营', '客户信任']
-  },
-  {
-    id: 'case',
-    name: '产品案例型',
-    description: '围绕产品、应用场景和客户需求组织内容。',
-    sampleScript:
-      '这条视频会从产品应用场景切入，展示客户需求、产品特点和落地过程，适合用来生成案例展示或产品宣传内容。',
-    keywords: ['产品案例', '应用场景', '客户需求', '产品展示']
-  }
-];
 
 const RATIO_LABELS: Record<string, string> = {
   '9:16': '竖屏 9:16',
@@ -120,7 +86,10 @@ function fileToAttachment(file: File): V0ChatAttachment {
 }
 
 function pickRandomStyle() {
-  return videoStyles[Math.floor(Math.random() * videoStyles.length)] ?? videoStyles[0];
+  return (
+    VIDEO_SCRIPT_STYLES[Math.floor(Math.random() * VIDEO_SCRIPT_STYLES.length)] ??
+    VIDEO_SCRIPT_STYLES[0]
+  );
 }
 
 export function AutomationEditingOverviewPage({
@@ -129,8 +98,9 @@ export function AutomationEditingOverviewPage({
   const router = useRouter();
   const [messages, setMessages] = React.useState<V0ChatMessage[]>([]);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [selectedStyle, setSelectedStyle] = React.useState<VideoStyle | null>(null);
+  const [selectedStyle, setSelectedStyle] = React.useState<VideoScriptStyle | null>(null);
   const [draftScript, setDraftScript] = React.useState('');
+  const [confirmedScript, setConfirmedScript] = React.useState('');
   const [productionVoices, setProductionVoices] = React.useState<ProductionVoiceOption[]>([]);
   const [selectedVoiceId, setSelectedVoiceId] = React.useState('auto');
   const [selectedRatio, setSelectedRatio] = React.useState('9:16');
@@ -260,46 +230,168 @@ export function AutomationEditingOverviewPage({
     ]);
   }
 
-  function generateScript(style: VideoStyle) {
+  /**
+   * 选择脚本风格 → 调用项目配置模型生成【真实完整脚本】草案（不进入正式剪辑链路）。
+   * topic 来自当前输入框（V0AiChat 透传）；为空时回退到最近一条用户消息。
+   */
+  async function generateScript(style: VideoScriptStyle, topic?: string) {
     setSelectedStyle(style);
-    setDraftScript(style.sampleScript);
+    const assistantId = crypto.randomUUID();
+    setMessages((current) => [
+      ...current,
+      {
+        id: assistantId,
+        role: 'assistant',
+        content: `正在按「${style.name}」风格生成视频脚本草案…`
+      }
+    ]);
+
+    const fallbackTopic = [...messages]
+      .reverse()
+      .find((message) => message.role === 'user')?.content;
+
+    try {
+      const response = await fetch(`/api/workspaces/${workspaceSlug}/automation/script-draft`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          styleId: style.id,
+          topic: topic?.trim() || fallbackTopic || ''
+        })
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        ok?: boolean;
+        script?: string;
+        styleName?: string;
+        keywords?: string[];
+        charCount?: number;
+        estimatedDurationSec?: number;
+        message?: string;
+      };
+      if (!response.ok || !payload.ok || !payload.script) {
+        throw new Error(payload.message || '脚本生成失败，请稍后重试');
+      }
+
+      const script = payload.script;
+      setDraftScript(script);
+      setMessages((current) =>
+        current.map((item) =>
+          item.id === assistantId
+            ? {
+                ...item,
+                content: `已按「${style.name}」生成视频脚本草案。`,
+                contentNode: (
+                  <ScriptDraftCard
+                    styleName={payload.styleName ?? style.name}
+                    keywords={payload.keywords ?? style.keywords}
+                    initialScript={script}
+                    charCount={payload.charCount ?? script.length}
+                    estimatedDurationSec={payload.estimatedDurationSec ?? 0}
+                    onRegenerate={() => void generateScript(style, topic)}
+                    onConfirm={(editedScript) => handleConfirmScript(editedScript, style)}
+                  />
+                )
+              }
+            : item
+        )
+      );
+    } catch (error) {
+      const content = error instanceof Error ? error.message : '脚本生成失败，请稍后重试。';
+      setMessages((current) =>
+        current.map((item) => (item.id === assistantId ? { ...item, content } : item))
+      );
+      toast.error(content);
+    }
+  }
+
+  /** 确认使用脚本草案：记录为「最终采用脚本」，供一键生成/正式链路使用。 */
+  function handleConfirmScript(script: string, style: VideoScriptStyle) {
+    const finalScript = script.trim();
+    if (!finalScript) return;
+    setConfirmedScript(finalScript);
+    setDraftScript(finalScript);
     appendAssistantMessage(
       [
-        `已按「${style.name}」生成视频脚本草案。`,
+        `已确认使用「${style.name}」风格的脚本。`,
         '',
-        style.sampleScript,
-        '',
-        `关键词：${style.keywords.join('、')}`,
-        '',
-        '如果不满意，可以重新选择风格生成。'
+        '点击「一键生成」即可使用该脚本正式制作视频（配音 / 素材匹配 / 时间线 / 剪映草稿）。'
       ].join('\n')
     );
   }
 
-  function autoAddMaterials() {
+  /** 自动添加素材：真实执行素材匹配，并展示用户可读的素材列表（不进入正式剪辑链路）。 */
+  async function autoAddMaterials() {
     const style = selectedStyle ?? pickRandomStyle();
     if (!selectedStyle) {
       setSelectedStyle(style);
-      setDraftScript(style.sampleScript);
     }
-    appendAssistantMessage(
-      [
-        selectedStyle
-          ? `已根据「${style.name}」自动匹配素材。`
-          : `未选择风格，系统已随机采用「${style.name}」并生成脚本与素材匹配方案。`,
-        '',
-        draftScript || style.sampleScript,
-        '',
-        '素材会在后台按脚本内容自动选择，不在当前页面展开。'
-      ].join('\n')
-    );
+    const lastUserTopic =
+      [...messages].reverse().find((message) => message.role === 'user')?.content ?? '';
+    const script = confirmedScript || draftScript || lastUserTopic || '';
+
+    if (!script) {
+      appendAssistantMessage(
+        '请先输入视频主题或生成脚本，再点击「自动添加素材」，以便系统按脚本匹配企业素材。'
+      );
+      return;
+    }
+
+    const assistantId = crypto.randomUUID();
+    setMessages((current) => [
+      ...current,
+      {
+        id: assistantId,
+        role: 'assistant',
+        content: '正在按脚本匹配企业素材…'
+      }
+    ]);
+
+    try {
+      const response = await fetch(`/api/workspaces/${workspaceSlug}/automation/material-preview`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ script })
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        ok?: boolean;
+        total?: number;
+        segments?: MaterialPreviewSegment[];
+        message?: string;
+      };
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.message || '素材匹配失败，请稍后重试');
+      }
+
+      const segments = payload.segments ?? [];
+      setMessages((current) =>
+        current.map((item) =>
+          item.id === assistantId
+            ? {
+                ...item,
+                content: `已按脚本匹配到 ${payload.total ?? segments.length} 段企业素材。`,
+                contentNode: (
+                  <MaterialPreviewCard
+                    total={payload.total ?? segments.length}
+                    segments={segments}
+                  />
+                )
+              }
+            : item
+        )
+      );
+    } catch (error) {
+      const content = error instanceof Error ? error.message : '素材匹配失败，请稍后重试。';
+      setMessages((current) =>
+        current.map((item) => (item.id === assistantId ? { ...item, content } : item))
+      );
+      toast.error(content);
+    }
   }
 
   async function createAutomationTask(message: string, files: File[]) {
     const prompt = message.trim();
     const userAttachments = files.map(fileToAttachment);
-    const userText =
-      prompt || draftScript || selectedStyle?.sampleScript || '请自动生成一条企业宣传短视频。';
+    const userText = prompt || draftScript || confirmedScript || '请自动生成一条企业宣传短视频。';
     const userMessage: V0ChatMessage = {
       id: crypto.randomUUID(),
       role: 'user',
@@ -401,7 +493,11 @@ export function AutomationEditingOverviewPage({
   }
 
   async function handleOneClickGenerate() {
-    await createAutomationTask(draftScript || selectedStyle?.sampleScript || '', []);
+    // 优先使用用户确认的脚本；其次使用最近生成的脚本草案；再回退到最近用户消息。
+    const lastUserTopic =
+      [...messages].reverse().find((message) => message.role === 'user')?.content ?? '';
+    const message = confirmedScript || draftScript || lastUserTopic || '';
+    await createAutomationTask(message, []);
   }
 
   return (
@@ -464,11 +560,11 @@ export function AutomationEditingOverviewPage({
               label: '自动生成视频脚本',
               icon: <Icons.sparkles className='size-4' />,
               menuItems: [
-                ...videoStyles.map((style) => ({
+                ...VIDEO_SCRIPT_STYLES.map((style) => ({
                   label: style.name,
                   description: style.description,
                   icon: <Icons.video className='size-4' />,
-                  onClick: () => generateScript(style)
+                  onClick: (topic?: string) => void generateScript(style, topic)
                 })),
                 {
                   label: '添加视频风格',

@@ -8,7 +8,7 @@ import {
 } from '../skill-loader';
 import { loadCompanyContext } from '../company-context';
 import type { CompanyContext } from '../types';
-import { searchVideoClips, type VideoClipResult } from '../video-asset-index';
+import { searchVideoClips, loadVideoAssetIndex, type VideoClipResult } from '../video-asset-index';
 import {
   createDraftTaskFromVideoPlan,
   executeAutomationVideoDraftTask,
@@ -331,6 +331,19 @@ const createVideoPlanTool: AgentTool<
       Math.round((targetDuration / scriptSegments.length) * 10) / 10
     );
 
+    // 素材时长表（relativePath → 素材总时长秒）：用于把 source range 扩展到时长的容量上限。
+    const assetDurations: Record<string, number> = {};
+    try {
+      const assets = await loadVideoAssetIndex();
+      for (const asset of assets) {
+        if (asset.relativePath && typeof asset.durationSeconds === 'number') {
+          assetDurations[asset.relativePath] = asset.durationSeconds;
+        }
+      }
+    } catch {
+      // 索引不可用时按未知处理（不扩展超出 recommendedEnd 的范围）
+    }
+
     const timeline: VideoPlanTimelineItem[] = [];
     const warnings: string[] = [];
     const usedAssetPaths = new Set<string>();
@@ -353,19 +366,115 @@ const createVideoPlanTool: AgentTool<
         requireFileExists: false
       });
       const best = results.find((result) => !usedAssetPaths.has(result.relativePath)) ?? results[0];
-      if (best?.relativePath) {
-        usedAssetPaths.add(best.relativePath);
-      }
-      const matchLevel = getMatchLevel(best?.matchScore ?? 0);
-      if (!best || matchLevel === 'no_match') {
-        warnings.push(`第 ${i + 1} 段素材不足：${scriptText}`);
-      }
 
       const timelineStart = Math.round(i * secondsPerSegment * 10) / 10;
       const timelineEnd =
         i === scriptSegments.length - 1
           ? targetDuration
           : Math.round((i + 1) * secondsPerSegment * 10) / 10;
+      // 该段时间预算（最后一段吸收取整余量，保证各段 slot 之和 === targetDuration）
+      const slotDuration = Math.max(0.1, Math.round((timelineEnd - timelineStart) * 10) / 10);
+
+      // 时间感知选片：若内容最优素材容量不足以覆盖该段时间预算，
+      // 优先从结果中选一个容量足够的素材；仍不足则二次搜索更多候选，
+      // 找可覆盖该时段的安全 source range（避免产出明显短于配音的片段）。
+      let chosen = best;
+      if (chosen?.relativePath) {
+        const capacity = assetDurations[chosen.relativePath] ?? 0;
+        if (capacity < slotDuration) {
+          const timeCapable = results.find(
+            (result) =>
+              result.relativePath !== chosen!.relativePath &&
+              !usedAssetPaths.has(result.relativePath) &&
+              (assetDurations[result.relativePath] ?? 0) >= slotDuration
+          );
+          if (timeCapable) {
+            chosen = timeCapable;
+          } else {
+            // 二次搜索：为这段时间预算继续找容量足够的素材
+            const wider = await searchVideoClips({
+              query,
+              contentType: skill?.content.contentType || input.contentType,
+              orientation: videoRatio.includes('9:16')
+                ? 'portrait'
+                : videoRatio.includes('16:9')
+                  ? 'landscape'
+                  : undefined,
+              excludeDuplicateGroups: true,
+              limit: 30,
+              requireFileExists: false
+            });
+            const widerCapable = wider.find(
+              (result) =>
+                result.relativePath !== chosen!.relativePath &&
+                !usedAssetPaths.has(result.relativePath) &&
+                (assetDurations[result.relativePath] ?? 0) >= slotDuration
+            );
+            if (widerCapable) {
+              chosen = widerCapable;
+            } else {
+              // 仍无够长素材：从全库找「未使用且容量足够」的素材兜底填充，
+              // 优先分类/关键词粗匹配，其次取时长最长者（保证 sum(duration) 覆盖配音时长）。
+              const allAssets = await loadVideoAssetIndex();
+              const fillCandidates = allAssets.filter(
+                (asset) =>
+                  asset.relativePath &&
+                  !usedAssetPaths.has(asset.relativePath) &&
+                  typeof asset.durationSeconds === 'number' &&
+                  asset.durationSeconds >= slotDuration
+              );
+              const keywords = query
+                .split(/[\s,，、：:]+/)
+                .map((word) => word.trim())
+                .filter((word) => word.length >= 2);
+              const scored = fillCandidates
+                .map((asset) => {
+                  const hay = `${asset.normalizedCategory || asset.sourceCategory || ''} ${asset.fileName || ''} ${asset.overallContent || ''}`;
+                  const hits = keywords.filter((keyword) => hay.includes(keyword)).length;
+                  return { asset, hits };
+                })
+                .sort(
+                  (a, b) =>
+                    b.hits - a.hits ||
+                    (b.asset.durationSeconds ?? 0) - (a.asset.durationSeconds ?? 0)
+                );
+              const fill = scored[0]?.asset;
+              if (fill && fill.relativePath) {
+                const fillEnd = Math.min(
+                  fill.durationSeconds ?? slotDuration,
+                  Math.round(slotDuration * 10) / 10
+                );
+                chosen = {
+                  ...(best ?? (results[0] as VideoClipResult)),
+                  assetId: fill.id,
+                  fileName: fill.fileName,
+                  relativePath: fill.relativePath,
+                  recommendedStart: 0,
+                  recommendedEnd: fillEnd
+                };
+              }
+            }
+          }
+        }
+      }
+
+      if (chosen?.relativePath) {
+        usedAssetPaths.add(chosen.relativePath);
+      }
+      const matchLevel = getMatchLevel(chosen?.matchScore ?? 0);
+      if (!chosen || matchLevel === 'no_match') {
+        warnings.push(`第 ${i + 1} 段素材不足：${scriptText}`);
+      }
+
+      // source range 覆盖该段时间预算（素材总时长封顶；未知时长则不扩展）
+      const srcStart = Math.max(0, chosen?.recommendedStart ?? 0);
+      const knownDuration = chosen?.relativePath
+        ? (assetDurations[chosen.relativePath] ?? null)
+        : null;
+      const srcEnd =
+        knownDuration != null
+          ? Math.min(knownDuration, Math.round((srcStart + slotDuration) * 10) / 10)
+          : (chosen?.recommendedEnd ?? Math.round((srcStart + slotDuration) * 10) / 10);
 
       timeline.push({
         order: i + 1,
@@ -374,17 +483,17 @@ const createVideoPlanTool: AgentTool<
         scriptText,
         purpose: inferSegmentPurpose(i, scriptSegments.length, skill),
         asset: {
-          assetId: best?.assetId ?? null,
-          fileName: best?.fileName ?? null,
-          relativePath: best?.relativePath ?? null,
-          sourceStart: best?.recommendedStart ?? null,
-          sourceEnd: best?.recommendedEnd ?? null
+          assetId: chosen?.assetId ?? null,
+          fileName: chosen?.fileName ?? null,
+          relativePath: chosen?.relativePath ?? null,
+          sourceStart: Math.round(srcStart * 10) / 10,
+          sourceEnd: srcEnd
         },
         usageRole,
         matchLevel,
-        matchScore: best?.matchScore ?? 0,
-        matchReasons: best?.matchReasons ?? [],
-        cropSafety: best?.cropSafety ?? null,
+        matchScore: chosen?.matchScore ?? 0,
+        matchReasons: chosen?.matchReasons ?? [],
+        cropSafety: chosen?.cropSafety ?? null,
         transitionOut: i === scriptSegments.length - 1 ? 'none' : 'cut'
       });
     }
@@ -597,7 +706,7 @@ function buildScriptSegments(
   skill: VideoEditingSkill | null
 ): string[] {
   const existing = splitScript(input.script);
-  if (existing.length > 0) return existing.slice(0, 8);
+  if (existing.length > 0) return existing.slice(0, 18);
 
   const audience = companyContext?.audience?.primary || '目标客户';
   const tone = companyContext?.brand?.tone || companyContext?.voiceStyle?.tone || '专业可信';
@@ -613,12 +722,35 @@ function buildScriptSegments(
   ];
 }
 
+/**
+ * 把脚本切成语义段：
+ * - 先按句号/问号/叹号/换行切句；
+ * - 长句（≥24 字）再按逗号/顿号/分号切为短句（每段 ≥6 字，保持语义完整），
+ *   让每段时间预算落在单条素材可覆盖的容量内（对齐 PJD 基准约 18 段粒度）。
+ * - 上限 18 段。
+ */
 function splitScript(script?: string): string[] {
   if (!script?.trim()) return [];
-  return script
+  const sentences = script
     .split(/[\n。！？!?]+/)
     .map((item) => item.trim())
     .filter(Boolean);
+
+  const segments: string[] = [];
+  for (const sentence of sentences) {
+    if (sentence.length >= 24) {
+      const clauses = sentence
+        .split(/[、，；:：]+/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+      if (clauses.length >= 2 && clauses.every((item) => item.length >= 6)) {
+        segments.push(...clauses);
+        continue;
+      }
+    }
+    segments.push(sentence);
+  }
+  return segments.slice(0, 18);
 }
 
 function inferUsageRole(index: number, total: number): string {

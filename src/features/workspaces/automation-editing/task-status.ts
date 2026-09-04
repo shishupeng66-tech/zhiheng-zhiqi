@@ -155,6 +155,10 @@ export function mapAutoEditStatus(rawStatus: string | undefined | null): AutoEdi
  * 命中关键词给针对性提示，否则给通用重试提示。
  */
 const FRIENDLY_FAIL_RULES: ReadonlyArray<{ test: RegExp; reason: string }> = [
+  {
+    test: /时长|EXCEEDS_TOTAL|校验|时间线|timeline|秒，但/i,
+    reason: '脚本文案或配音时长与素材不匹配，请缩短脚本、更换脚本风格或重新生成。'
+  },
   { test: /voice|配音|tts|语音|音色/i, reason: '配音生成失败，请稍后重试，或换一个音色再试。' },
   {
     test: /素材|asset|material|企业素材|库存/i,

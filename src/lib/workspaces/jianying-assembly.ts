@@ -63,16 +63,18 @@ export type JianYingAssemblyResult =
 /**
  * 根据任务派生剪映草稿目录名（唯一、不含剪映非法字符）。
  *
- * 产品端验收命名：ZHIHENG-PRODUCT-E2E-V1-<yyyymmdd-hhmmss>（自动由页面任务生成，见验收规格）。
+ * 命名：<prefix>-<yyyymmdd-hhmmss>；prefix 默认 ZHIHENG-PRODUCT-E2E-V1，
+ * 可通过环境变量 ZHIHENG_DRAFT_NAME_PREFIX 覆盖（如黄金链路验证 ZHIHENG-GOLDEN-EDIT-TEST）。
  */
 function buildDraftName(task: Pick<AutomationVideoTask, 'title' | 'id'>): string {
   void task;
+  const prefix = process.env.ZHIHENG_DRAFT_NAME_PREFIX || 'ZHIHENG-PRODUCT-E2E-V1';
   const now = new Date();
   const pad = (n: number): string => String(n).padStart(2, '0');
   const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(
     now.getHours()
   )}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-  return `ZHIHENG-PRODUCT-E2E-V1-${ts}`;
+  return `${prefix}-${ts}`;
 }
 
 /** 解析剪映适配器运行配置（仅来自环境变量与本地约定，不读取 Worker/PJD 内部）。 */
