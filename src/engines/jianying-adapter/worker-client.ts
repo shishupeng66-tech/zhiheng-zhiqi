@@ -89,9 +89,10 @@ export function callWorker(
   options: WorkerClientOptions = {}
 ): Promise<WorkerCallResult> {
   const pythonCommand = options.pythonCommand ?? process.env.ZHIJING_PYTHON ?? 'python';
-  // Next.js Turbopack 打包下 __dirname 为虚拟 \ROOT\，按 __dirname 找不到 worker 时回退到进程工作目录
-  let workerRoot = options.workerRoot ?? '';
+  // 桌面自包含模式：Worker 根由桌面层注入（bundled EXE 所在目录，cwd 必须真实存在）
+  let workerRoot = options.workerRoot ?? process.env.ZHIHENG_WORKER_ROOT ?? '';
   if (!workerRoot) {
+    // Next.js Turbopack 打包下 __dirname 为虚拟 \ROOT\，按 __dirname 找不到 worker 时回退到进程工作目录
     const viaDirname = path.resolve(__dirname, 'python-worker');
     workerRoot = fs.existsSync(viaDirname)
       ? viaDirname
@@ -115,6 +116,9 @@ export function callWorker(
           ...process.env,
           PYTHONPATH: pythonpath,
           PYTHONIOENCODING: 'utf-8',
+          // 桌面自包含模式：禁止 Python 在 bundled PJD/Worker 目录写 __pycache__，
+          // 避免运行时污染安装目录并破坏 PJD 源码树指纹
+          PYTHONDONTWRITEBYTECODE: process.env.ZHIHENG_WORKER_MODE === 'desktop' ? '1' : '',
           ZHIJING_JOB_STDIN: '1'
         },
         cwd: workerRoot,

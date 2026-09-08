@@ -66,6 +66,12 @@ const UNIFIED_TIMELINE_V2_OPTION_PREFIX = 'unifiedTimelineV2:';
  * 携带草稿名/路径/时长/各轨道计数/生成时间/执行引擎=jianying，避免改动 DB schema。
  */
 const JIANYING_RESULT_OPTION_PREFIX = 'jianyingResult:';
+/** 字幕对齐记录（真实音频对齐结果，供对齐报告与后续诊断）。 */
+const SUBTITLE_ALIGNMENT_OPTION_PREFIX = 'subtitleAlignment:';
+/** 节内重点词强调组记录（供重点词报告与后续诊断）。 */
+const EMPHASIS_GROUPS_OPTION_PREFIX = 'emphasisGroups:';
+/** 全篇视觉包装规划（LLM 逐节判断结果，供人工验收与诊断）。 */
+const VISUAL_PACKAGING_PLAN_OPTION_PREFIX = 'visualPackagingPlan:';
 
 export type AutomationMaterialTimeline = Array<{
   order: number;
@@ -558,7 +564,7 @@ export async function buildExecutionSnapshotForTask(
     throw new Error('任务缺少知衡助手剪辑方案，无法按秒级素材方案执行');
   }
 
-  const assetRoot = await getPath('assets');
+  const assetRoot = await getPath('videos');
   const resolvedAssetRoot = path.resolve(assetRoot);
   const seenFiles = new Set<string>();
   const warnings: string[] = [];
@@ -985,6 +991,203 @@ export function updateJianYingAssemblyResult(
       resultSummary,
       updatedAt: timestamp
     })
+    .where(
+      and(eq(automationVideoTasks.workspaceId, workspaceId), eq(automationVideoTasks.id, taskId))
+    )
+    .run();
+}
+
+/** 字幕对齐记录条目。 */
+export type SubtitleAlignmentItemRecord = {
+  text: string;
+  start: number;
+  end: number;
+  duration: number;
+  source: 'TTS_NATIVE' | 'VAD_ALIGNED' | 'FALLBACK_ESTIMATE';
+};
+
+/**
+ * 把字幕对齐结果写入 packagingOptions（subtitleAlignment: 前缀），
+ * 供对齐报告与后续诊断；保留其余编码项（agentPlan / currentConfig / snapshot / timeline / agentStage）。
+ */
+export function writeSubtitleAlignment(
+  workspaceId: string,
+  taskId: string,
+  alignment: SubtitleAlignmentItemRecord[]
+): void {
+  const existing = getAutomationVideoTask(workspaceId, taskId);
+  if (!existing) {
+    throw new Error('任务不存在');
+  }
+
+  const baseOptions = withoutEncodedOptions(existing.packagingOptions).filter(
+    (option) =>
+      !option.startsWith(AGENT_STAGE_OPTION_PREFIX) &&
+      !option.startsWith(UNIFIED_TIMELINE_V2_OPTION_PREFIX) &&
+      !option.startsWith(JIANYING_RESULT_OPTION_PREFIX) &&
+      !option.startsWith(SUBTITLE_ALIGNMENT_OPTION_PREFIX)
+  );
+
+  const merged: string[] = [
+    ...baseOptions,
+    encodeOption(SUBTITLE_ALIGNMENT_OPTION_PREFIX, alignment)
+  ];
+  const originalPlan = getTaskAgentPlan(existing);
+  const currentConfig = getTaskCurrentConfig(existing);
+  const executionSnapshot = getTaskExecutionSnapshot(existing);
+  const unifiedTimelineV2 = getTaskUnifiedTimelineV2(existing);
+  if (originalPlan) merged.push(encodeOption(AGENT_PLAN_OPTION_PREFIX, originalPlan));
+  if (currentConfig) merged.push(encodeOption(CURRENT_CONFIG_OPTION_PREFIX, currentConfig));
+  if (executionSnapshot)
+    merged.push(encodeOption(EXECUTION_SNAPSHOT_OPTION_PREFIX, executionSnapshot));
+  if (unifiedTimelineV2)
+    merged.push(encodeOption(UNIFIED_TIMELINE_V2_OPTION_PREFIX, unifiedTimelineV2));
+
+  getDb()
+    .update(automationVideoTasks)
+    .set({ packagingOptions: merged, updatedAt: now() })
+    .where(
+      and(eq(automationVideoTasks.workspaceId, workspaceId), eq(automationVideoTasks.id, taskId))
+    )
+    .run();
+}
+
+/** 节内重点词强调组记录条目。 */
+export type EmphasisGroupRecord = {
+  id: string;
+  sentenceIndex: number;
+  items: Array<{ word: string; start: number; end: number; anchor: string }>;
+  groupStart: number;
+  groupEnd: number;
+};
+
+/**
+ * 把节内重点词强调组写入 packagingOptions（emphasisGroups: 前缀），供重点词报告与后续诊断；
+ * 保留其余编码项（agentPlan / currentConfig / snapshot / timeline / agentStage / subtitleAlignment 等）。
+ */
+export function writeEmphasisGroups(
+  workspaceId: string,
+  taskId: string,
+  groups: EmphasisGroupRecord[]
+): void {
+  const existing = getAutomationVideoTask(workspaceId, taskId);
+  if (!existing) {
+    throw new Error('任务不存在');
+  }
+
+  const baseOptions = withoutEncodedOptions(existing.packagingOptions).filter(
+    (option) =>
+      !option.startsWith(AGENT_STAGE_OPTION_PREFIX) &&
+      !option.startsWith(UNIFIED_TIMELINE_V2_OPTION_PREFIX) &&
+      !option.startsWith(JIANYING_RESULT_OPTION_PREFIX) &&
+      // 注意：subtitleAlignment 不在此处过滤 —— writeEmphasisGroups 不重写它，
+      // 必须保留在 baseOptions 中，否则会把 writeSubtitleAlignment 刚写入的对齐记录丢弃。
+      !option.startsWith(EMPHASIS_GROUPS_OPTION_PREFIX)
+  );
+
+  const merged: string[] = [...baseOptions, encodeOption(EMPHASIS_GROUPS_OPTION_PREFIX, groups)];
+  const originalPlan = getTaskAgentPlan(existing);
+  const currentConfig = getTaskCurrentConfig(existing);
+  const executionSnapshot = getTaskExecutionSnapshot(existing);
+  const unifiedTimelineV2 = getTaskUnifiedTimelineV2(existing);
+  if (originalPlan) merged.push(encodeOption(AGENT_PLAN_OPTION_PREFIX, originalPlan));
+  if (currentConfig) merged.push(encodeOption(CURRENT_CONFIG_OPTION_PREFIX, currentConfig));
+  if (executionSnapshot)
+    merged.push(encodeOption(EXECUTION_SNAPSHOT_OPTION_PREFIX, executionSnapshot));
+  if (unifiedTimelineV2)
+    merged.push(encodeOption(UNIFIED_TIMELINE_V2_OPTION_PREFIX, unifiedTimelineV2));
+
+  getDb()
+    .update(automationVideoTasks)
+    .set({ packagingOptions: merged, updatedAt: now() })
+    .where(
+      and(eq(automationVideoTasks.workspaceId, workspaceId), eq(automationVideoTasks.id, taskId))
+    )
+    .run();
+}
+
+/** 全篇视觉包装规划记录条目（LLM 逐节判断 + 资源导演选择，供人工验收与诊断）。 */
+export type VisualPackagingPlanRecord = {
+  titleHook?: {
+    sourceText?: string;
+    displayText: string;
+    reason: string;
+    durationMs?: number;
+    resourceSelection?: {
+      visualType: 'text' | 'sticker';
+      resourceKey?: string;
+      templateKeys?: string[];
+      sfxKey?: string;
+    };
+  };
+  sections: Array<{
+    sectionId: number;
+    sectionText: string;
+    layoutMode: 'none' | 'small_emphasis' | 'dense_info_wall';
+    packaging: Array<{
+      type: 'text_single' | 'text_group' | 'sticker' | 'none';
+      /** 原文连续子串（TTS_NATIVE 定位用） */
+      sourceText?: string;
+      /** 画面显示关键词（2-6 字，≤8 硬门禁） */
+      displayText?: string;
+      /** 兼容旧字段 */
+      targetText?: string;
+      groupItems?: Array<{ sourceText: string; displayText: string } | string>;
+      resourceSelection?: {
+        visualType: 'text' | 'sticker';
+        resourceKey?: string;
+        templateKeys?: string[];
+        sfxKey?: string;
+      };
+      reason: string;
+      priority: number;
+      visualIntent?: string;
+      preferredPosition?: string;
+    }>;
+  }>;
+};
+
+/**
+ * 把 LLM 的全篇视觉包装规划写入 packagingOptions（visualPackagingPlan: 前缀），
+ * 供人工逐节验收与后续诊断；保留其余编码项（emphasisGroups / subtitleAlignment / timeline / agentStage 等）。
+ */
+export function writeVisualPackagingPlan(
+  workspaceId: string,
+  taskId: string,
+  plan: VisualPackagingPlanRecord
+): void {
+  const existing = getAutomationVideoTask(workspaceId, taskId);
+  if (!existing) {
+    throw new Error('任务不存在');
+  }
+
+  const baseOptions = withoutEncodedOptions(existing.packagingOptions).filter(
+    (option) =>
+      !option.startsWith(AGENT_STAGE_OPTION_PREFIX) &&
+      !option.startsWith(UNIFIED_TIMELINE_V2_OPTION_PREFIX) &&
+      !option.startsWith(JIANYING_RESULT_OPTION_PREFIX) &&
+      // subtitleAlignment / emphasisGroups 均不在此过滤（不重写，需保留）
+      !option.startsWith(VISUAL_PACKAGING_PLAN_OPTION_PREFIX)
+  );
+
+  const merged: string[] = [
+    ...baseOptions,
+    encodeOption(VISUAL_PACKAGING_PLAN_OPTION_PREFIX, plan)
+  ];
+  const originalPlan = getTaskAgentPlan(existing);
+  const currentConfig = getTaskCurrentConfig(existing);
+  const executionSnapshot = getTaskExecutionSnapshot(existing);
+  const unifiedTimelineV2 = getTaskUnifiedTimelineV2(existing);
+  if (originalPlan) merged.push(encodeOption(AGENT_PLAN_OPTION_PREFIX, originalPlan));
+  if (currentConfig) merged.push(encodeOption(CURRENT_CONFIG_OPTION_PREFIX, currentConfig));
+  if (executionSnapshot)
+    merged.push(encodeOption(EXECUTION_SNAPSHOT_OPTION_PREFIX, executionSnapshot));
+  if (unifiedTimelineV2)
+    merged.push(encodeOption(UNIFIED_TIMELINE_V2_OPTION_PREFIX, unifiedTimelineV2));
+
+  getDb()
+    .update(automationVideoTasks)
+    .set({ packagingOptions: merged, updatedAt: now() })
     .where(
       and(eq(automationVideoTasks.workspaceId, workspaceId), eq(automationVideoTasks.id, taskId))
     )

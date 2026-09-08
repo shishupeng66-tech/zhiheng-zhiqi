@@ -54,9 +54,9 @@ export const enterpriseMediaModules: WorkspaceModuleDefinition[] = [
   },
   {
     key: 'projects',
-    label: '风格库',
+    label: '模板库',
     path: 'projects',
-    description: '管理企业宣传短视频的内容定位、脚本规则和镜头规则。',
+    description: '管理已经制作、测试和验收的剪映模板，供 Agent 自动剪辑时复用。',
     requiredPermission: 'projects:manage'
   }
 ];

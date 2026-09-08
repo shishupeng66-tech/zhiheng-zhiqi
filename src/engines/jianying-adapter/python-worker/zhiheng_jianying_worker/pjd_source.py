@@ -249,3 +249,97 @@ def pjd_loaded_meta():
         return verify_pjd_source()
     except WorkerError:
         return None
+
+
+# ============================================================================
+# 桌面 Runtime 模式（Phase Desktop）：Build-time 固化 provenance + SHA256 指纹
+# ============================================================================
+# 客户运行时无 Git / 无 GitHub。桌面模式不调用任何 git 子进程，改为：
+#   1) ZHIHENG_PJD_ROOT 指向安装包内 bundled PJD 源码目录（无 .git）
+#   2) ZHIHENG_PJD_FINGERPRINT = 构建期记录的 PJD 源码树 SHA256（desktop-runtime-manifest）
+#   3) 运行时对目录内全部文件（排除 .git）做确定性 SHA256，与预期指纹全量比较
+#   4) 实际导入的 pyJianYingDraft 模块 __file__ 必须位于 ZHIHENG_PJD_ROOT 内
+# 剪辑语义不变：仅 provenance 校验通道替换（git → 指纹）。
+
+PJD_FINGERPRINT_ENV = "ZHIHENG_PJD_FINGERPRINT"
+
+
+def _desktop_fingerprint(root):
+    """确定性 PJD 源码树指纹：相对路径（/ 分隔）+ 文件内容，按路径排序后整体 SHA256。"""
+    import hashlib
+
+    h = hashlib.sha256()
+    files = []
+    for base, dirs, names in os.walk(root):
+        dirs[:] = [d for d in dirs if d != ".git"]
+        for n in names:
+            full = os.path.join(base, n)
+            rel = os.path.relpath(full, root).replace(os.sep, "/")
+            if rel.startswith(".git/"):
+                continue
+            files.append((rel, full))
+    for rel, full in sorted(files, key=lambda x: x[0]):
+        h.update(rel.encode("utf-8"))
+        h.update(b"\x00")
+        with open(full, "rb") as f:
+            for chunk in iter(lambda: f.read(65536), b""):
+                h.update(chunk)
+    return h.hexdigest()
+
+
+def verify_pjd_source_desktop():
+    """桌面模式 PJD 来源验证：bundled 目录 + SHA256 指纹（不依赖 Git/GitHub）。
+
+    返回结构兼容 verify_pjd_source()（git 模式）的字段，便于 Result/validationReport
+    统一写入；repositoryRemote 固定为 "bundled@<expectedCommit>"。
+    失败抛 WorkerError（PJD_VERSION_MISMATCH）。
+    """
+    root = os.environ.get(PJD_ROOT_ENV, "").strip()
+    if not root:
+        raise WorkerError(
+            "PJD_VERSION_MISMATCH",
+            "环境变量 %s 未设置（桌面模式必须指向 bundled PJD 目录）" % PJD_ROOT_ENV,
+        )
+    if not os.path.isdir(root):
+        raise WorkerError(
+            "PJD_VERSION_MISMATCH",
+            "ZHIHENG_PJD_ROOT 不是目录: %s" % root,
+        )
+
+    expected = os.environ.get(PJD_FINGERPRINT_ENV, "").strip()
+    if not expected:
+        raise WorkerError(
+            "PJD_VERSION_MISMATCH",
+            "桌面模式必须设置 %s（构建期固化的 PJD 源码指纹）" % PJD_FINGERPRINT_ENV,
+        )
+
+    actual = _desktop_fingerprint(root)
+    if actual.lower() != expected.lower():
+        raise WorkerError(
+            "PJD_VERSION_MISMATCH",
+            "PJD 源码指纹不匹配：expected=%s actual=%s（bundled PJD 与构建期固化版本不一致）"
+            % (expected, actual),
+        )
+
+    # 实际导入模块必须位于 ZHIHENG_PJD_ROOT 内（防止从其他 site-packages 加载另一份 PJD）
+    module_file = _check_module_file(root)
+
+    return {
+        "expectedCommit": PJD_EXPECTED_COMMIT,
+        "actualCommit": PJD_EXPECTED_COMMIT,
+        "repositoryRemote": "bundled@%s" % PJD_EXPECTED_COMMIT[:8],
+        "moduleFile": module_file,
+        "sourceDirty": False,
+        "packageVersion": PJD_PACKAGE_VERSION,
+        "pythonVersion": "%s.%s.%s" % sys.version_info[:3],
+        "verificationMode": "desktop-fingerprint",
+        "fingerprint": actual,
+        "warnings": [],
+    }
+
+
+def verify_pjd_source_runtime():
+    """运行期统一入口：桌面模式（环境变量开关）走指纹，否则走开发 git 校验。"""
+    if os.environ.get("ZHIHENG_WORKER_MODE", "").strip() == "desktop":
+        return verify_pjd_source_desktop()
+    return verify_pjd_source()

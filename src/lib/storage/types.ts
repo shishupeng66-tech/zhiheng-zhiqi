@@ -14,9 +14,12 @@ export const STORAGE_KEYS = [
   'customers',
   'products',
   'assets',
+  'images',
+  'chats',
   'videos',
   'voices',
-  'knowledge'
+  'knowledge',
+  'templates'
 ] as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[number];
@@ -53,14 +56,26 @@ export const STORAGE_KEY_META: Record<StorageKey, StorageKeyMeta> = {
   assets: {
     key: 'assets',
     label: '素材资源',
-    description: '视频生产用素材（Pexels 等来源的本地副本）',
+    description: '系统上传素材与历史素材目录（剪辑用视频素材请统一放在“视频素材库”）',
     defaultSubdir: '素材资源'
+  },
+  images: {
+    key: 'images',
+    label: '素材图片库',
+    description: '客户企业图片素材（剪辑用），对应知识库 30_素材资源/图片库',
+    defaultSubdir: '图片库'
+  },
+  chats: {
+    key: 'chats',
+    label: 'AI 助手聊天记录',
+    description: '知衡智企 AI 助手与用户的聊天记录存档（客户企业数据）',
+    defaultSubdir: 'AI聊天记录'
   },
   videos: {
     key: 'videos',
-    label: '视频文件',
-    description: 'AI 生成 / 生产的视频成品',
-    defaultSubdir: '视频文件'
+    label: '视频素材库',
+    description: '企业视频素材（剪辑用）：视频库页面与 Agent 素材检索统一从这里读取',
+    defaultSubdir: '视频素材库'
   },
   voices: {
     key: 'voices',
@@ -73,6 +88,13 @@ export const STORAGE_KEY_META: Record<StorageKey, StorageKeyMeta> = {
     label: '知识文件',
     description: '企业知识库、文档、检索语料',
     defaultSubdir: '知识文件'
+  },
+  templates: {
+    key: 'templates',
+    label: '模板库',
+    description:
+      '企业人工母版解析后的剪映模板资产（template-asset.json），Agent 蒸馏与套模板时统一从这里读取',
+    defaultSubdir: '剪辑模板'
   }
 };
 

@@ -1,5 +1,5 @@
 import { WorkspaceAccessDenied } from '@/features/workspaces/components/workspace-access-denied';
-import { AutomationEditingStyleLibraryPage } from '@/features/workspaces/automation-editing/style-library-page';
+import { AutomationEditingTemplateLibraryPage } from '@/features/workspaces/automation-editing/template-library-page';
 import { ProjectsPage } from '@/features/workspaces/video-production/module-pages';
 import { requireWorkspacePermission } from '@/lib/workspaces/service';
 
@@ -10,7 +10,7 @@ export default async function ProjectsRoute({ params }: PageProps) {
   const result = await requireWorkspacePermission(workspaceSlug, 'projects:manage');
   if (!result.ok) return <WorkspaceAccessDenied />;
   if (result.context.workspace.workspaceType === 'enterprise-media') {
-    return <AutomationEditingStyleLibraryPage />;
+    return <AutomationEditingTemplateLibraryPage />;
   }
   return <ProjectsPage />;
 }

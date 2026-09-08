@@ -1,0 +1,70 @@
+{
+  "name": "zhiheng-zhiqi-desktop",
+  "version": "0.1.0-fieldtest",
+  "private": true,
+  "description": "知衡智企 Windows 桌面端（Electron 壳 + Next 生产 UI + 自包含 Worker/PJD Runtime）",
+  "main": "main/index.cjs",
+  "scripts": {
+    "prepare:runtime": "node scripts/prepare-runtime.mjs",
+    "pack:dir": "electron-builder --win dir",
+    "dist": "electron-builder --win nsis"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "electron": "^35.7.5",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.zhiheng.zhiqi",
+    "productName": "知衡智企",
+    "copyright": "Copyright © 2026 知衡智企",
+    "directories": {
+      "output": "dist",
+      "buildResources": "installer"
+    },
+    "files": [
+      "main/**/*",
+      "preload/**/*",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "runtime",
+        "to": "runtime",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "asar": true,
+    "asarUnpack": [],
+    "win": {
+      "icon": "installer/icon.ico",
+      "signAndEditExecutable": false,
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "知衡智企-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "知衡智企",
+      "uninstallDisplayName": "知衡智企",
+      "deleteAppDataOnUninstall": false
+    },
+    "electronDownload": {
+      "cache": "C:\\Users\\Administrator\\AppData\\Local\\Doubao\\User Data\\Default\\.doubao\\agent_mode\\workspace\\.electron-cache"
+    }
+  }
+}

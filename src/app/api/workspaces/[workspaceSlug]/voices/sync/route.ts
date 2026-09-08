@@ -9,7 +9,7 @@ export const runtime = 'nodejs';
 
 type Ctx = { params: Promise<Record<string, string>> };
 
-/** 9 个推荐音色（产品侧 id 对应的 provider voice_type），首次同步默认启用。 */
+/** 9 个推荐音色（provider voice_type，即豆包真实 speaker ID），首次同步默认启用。 */
 const RECOMMENDED_VOICE_TYPES = speechVoiceCatalog.map((voice) => voice.providerVoiceId);
 
 export async function POST(_request: NextRequest, { params }: Ctx) {

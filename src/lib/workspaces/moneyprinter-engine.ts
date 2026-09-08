@@ -74,7 +74,7 @@ function getPythonCommand() {
     return { command: venvPython, argsPrefix: [] as string[] };
   }
 
-  const python312 = 'C:\\Python312\\python.exe';
+  const python312 = path.join('C:' + path.sep, 'Python312', 'python.exe');
   if (process.platform === 'win32' && fs.existsSync(python312)) {
     return { command: python312, argsPrefix: [] as string[] };
   }

@@ -1,0 +1,34 @@
+{
+ "id": "zhiheng-template-parser",
+ "name": "模板解析器",
+ "description": "第一层 Skill：把人工验收的剪映母版草稿解析为可复用模板资产（template-asset.json）。一次性解析，解析后 Agent 直接用资产，不需要重复解析浪费时间。输入：人工剪映母版草稿目录；输出：模板资产（文字槽/视频槽/轨道结构/约束）。",
+ "category": "semantic-template",
+ "status": "testing",
+ "version": "0.1.0",
+ "pipeline": {
+  "scriptsDir": "D:\\知衡智企\\scripts\\template-pipeline",
+  "steps": [
+   "step1_decrypt.py: 母版草稿解密（剪映 DLL staging 硬链接 + PJD codec）",
+   "step2_reverse.py: 母版结构逆向（文字槽/视频槽/轨道）",
+   "step3_build_asset.py: 生成模板资产（slot map + 约束 + 素材映射骨架）"
+  ]
+ },
+ "output": {
+  "assetPath": "<企业Obsidian>\\剪辑模板\\<templateId>\\template-asset.json",
+  "requiredFields": [
+   "templateId",
+   "templateName",
+   "templateInfo",
+   "textSlots",
+   "mediaSlots",
+   "constraintMode",
+   "replacementPlan"
+  ]
+ },
+ "rules": [
+  "原母版草稿只读，解析过程不修改原草稿",
+  "解析失败（解密失败/结构异常）必须明确报错，不允许产出残缺资产",
+  "母版视频素材离线（MEDIA_OFFLINE）不阻塞解析，但要记录 offlineAssets",
+  "新母版解析后必须人工确认资产完整性（文字槽数量/视频槽数量/画幅/时长）"
+ ]
+}

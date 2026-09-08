@@ -2,7 +2,7 @@
  * 知衡智企「智剪」正式成片测试 - 使用新包装素材库
  * 
  * 素材来源：
- * - 企业视频素材：D:\知衡智企数据库\企业知识库\浩明饮品\素材资源\视频\（全部竖屏）
+ * - 企业视频素材：D:\知衡智企数据库\知识库\30_素材资源\视频库\（全部竖屏）
  * - BGM：新包装素材库 downloaded-v1/07_BGM
  * - 花字模板：assets/03_花字模板库
  * - 贴纸：assets/02_贴纸库
@@ -22,7 +22,7 @@ import * as fs from 'fs';
 import { ZhihengRenderer } from '../src/engines/zhiheng-renderer';
 import type { UnifiedTimelineV1 } from '../src/engines/zhiheng-renderer/types';
 
-const VIDEO_ASSETS_ROOT = 'D:\\知衡智企数据库\\企业知识库\\浩明饮品\\素材资源\\视频';
+const VIDEO_ASSETS_ROOT = 'D:\\知衡智企数据库\\知识库\\30_素材资源\\视频库';
 const NEW_PACKAGING_ROOT = 'D:\\知衡智企数据库\\包装素材库\\候选库\\downloaded-v1';
 const OUTPUT_ROOT = 'D:\\知衡智企\\tmp\\zhiheng-renderer\\official-cut-test';
 

@@ -1,0 +1,2677 @@
+{
+  "version": 1,
+  "generatedAt": "2026-09-06T00:00:00.000Z",
+  "assetsRoot": "D:\\知衡智企\\desktop\\runtime-src\\assets\\golden-test",
+  "sourceIndex": "golden-test-synthetic",
+  "count": 8,
+  "assets": [
+    {
+      "id": "36b276c092a2",
+      "fileName": "01_aseptic_filling.mp4",
+      "relativePath": "videos/01_aseptic_filling.mp4",
+      "absolutePath": "D:\\知衡智企\\desktop\\runtime-src\\assets\\golden-test\\videos\\01_aseptic_filling.mp4",
+      "sourceCategory": "黄金测试素材",
+      "normalizedCategory": "总目录精选",
+      "durationSeconds": 12.0,
+      "width": 1920,
+      "height": 1080,
+      "orientation": "landscape",
+      "fps": 25.0,
+      "fileSize": 160406,
+      "hash": "05113ddc44c3f54995a57c08a1cd7d3149271c14e34f207db9a198209673f503",
+      "overallContent": "无菌灌装车间运转画面",
+      "overallCameraAngle": "车间全景",
+      "overallScene": "无菌灌装车间",
+      "people": [],
+      "products": [
+        "饮料"
+      ],
+      "equipment": [
+        "无菌灌装设备",
+        "灌装线"
+      ],
+      "actions": [
+        "灌装"
+      ],
+      "environment": [
+        "工厂车间",
+        "生产环境"
+      ],
+      "sceneTags": [
+        "饮料",
+        "饮品",
+        "工厂",
+        "生产",
+        "食品饮料",
+        "企业宣传",
+        "B-roll素材",
+        "无菌灌装",
+        "生产车间",
+        "灌装线",
+        "饮料生产",
+        "工厂实拍"
+      ],
+      "topicTags": [
+        "饮料",
+        "饮品",
+        "工厂",
+        "生产",
+        "食品饮料",
+        "企业宣传",
+        "B-roll素材",
+        "无菌灌装",
+        "生产车间",
+        "灌装线",
+        "饮料生产",
+        "工厂实拍"
+      ],
+      "recommendedSkills": [
+        "企业宣传混剪",
+        "综合实力展示"
+      ],
+      "usageRoles": [
+        "Hook",
+        "正文B-roll",
+        "转场"
+      ],
+      "qualityLevel": "good",
+      "preferred": false,
+      "duplicateGroup": "dup-01",
+      "cropSafety": "good",
+      "verticalCropSuitability": "good",
+      "notes": "黄金测试合成素材",
+      "timelineSegments": [
+        {
+          "start": 0.0,
+          "end": 4.0,
+          "content": "开头段：无菌灌装车间运转画面",
+          "action": "灌装",
+          "subjects": [],
+          "shotType": "全景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "车间全景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "Hook",
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "无菌灌装",
+            "生产车间",
+            "灌装线",
+            "饮料生产",
+            "工厂实拍"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "无菌灌装生产线运作",
+            "饮料灌装环节展示",
+            "生产车间实拍",
+            "高温灭菌与无菌灌装"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.5
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        },
+        {
+          "start": 4.0,
+          "end": 8.0,
+          "content": "中段1：无菌灌装车间运转画面",
+          "action": "灌装",
+          "subjects": [],
+          "shotType": "全景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "车间全景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "无菌灌装",
+            "生产车间",
+            "灌装线",
+            "饮料生产",
+            "工厂实拍"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "无菌灌装生产线运作",
+            "饮料灌装环节展示",
+            "生产车间实拍",
+            "高温灭菌与无菌灌装"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.5
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        },
+        {
+          "start": 8.0,
+          "end": 12.0,
+          "content": "收尾段：无菌灌装车间运转画面",
+          "action": "灌装",
+          "subjects": [],
+          "shotType": "中景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "车间全景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "无菌灌装",
+            "生产车间",
+            "灌装线",
+            "饮料生产",
+            "工厂实拍"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "无菌灌装生产线运作",
+            "饮料灌装环节展示",
+            "生产车间实拍",
+            "高温灭菌与无菌灌装"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.5
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        }
+      ],
+      "recommendedCuts": [
+        {
+          "start": 0.0,
+          "end": 4.0,
+          "reason": "无菌灌装车间运转画面，适合Hook、正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "无菌灌装生产线运作",
+            "饮料灌装环节展示",
+            "生产车间实拍",
+            "高温灭菌与无菌灌装"
+          ],
+          "usageRoles": [
+            "Hook",
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        },
+        {
+          "start": 4.0,
+          "end": 8.0,
+          "reason": "无菌灌装车间运转画面，适合正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "无菌灌装生产线运作",
+            "饮料灌装环节展示",
+            "生产车间实拍",
+            "高温灭菌与无菌灌装"
+          ],
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        },
+        {
+          "start": 8.0,
+          "end": 12.0,
+          "reason": "无菌灌装车间运转画面，适合正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "无菌灌装生产线运作",
+            "饮料灌装环节展示",
+            "生产车间实拍",
+            "高温灭菌与无菌灌装"
+          ],
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        }
+      ],
+      "avoidCuts": [],
+      "semanticMatches": [
+        "饮料工厂生产场景",
+        "食品饮料企业生产实力",
+        "饮料代加工工厂",
+        "无菌灌装生产线运作",
+        "饮料灌装环节展示",
+        "生产车间实拍",
+        "高温灭菌与无菌灌装"
+      ],
+      "storyPotential": [
+        {
+          "topic": "饮料工厂生产场景",
+          "contentType": "企业宣传混剪"
+        },
+        {
+          "topic": "食品饮料企业生产实力",
+          "contentType": "企业宣传混剪"
+        },
+        {
+          "topic": "饮料代加工工厂",
+          "contentType": "企业宣传混剪"
+        }
+      ],
+      "audit": {
+        "sceneChangePoints": [],
+        "indexDurationSeconds": 12.0,
+        "durationDiffSeconds": 0.0
+      }
+    },
+    {
+      "id": "6f316ad7ad86",
+      "fileName": "02_bottling_line.mp4",
+      "relativePath": "videos/02_bottling_line.mp4",
+      "absolutePath": "D:\\知衡智企\\desktop\\runtime-src\\assets\\golden-test\\videos\\02_bottling_line.mp4",
+      "sourceCategory": "黄金测试素材",
+      "normalizedCategory": "总目录精选",
+      "durationSeconds": 14.0,
+      "width": 1920,
+      "height": 1080,
+      "orientation": "landscape",
+      "fps": 25.0,
+      "fileSize": 181087,
+      "hash": "116ae53712e0a67799c426a2431ec9a7c4834785fbfd6d5d7b01650e329f42e1",
+      "overallContent": "瓶装饮料生产线高速运转画面",
+      "overallCameraAngle": "生产线侧景",
+      "overallScene": "瓶装生产线",
+      "people": [],
+      "products": [
+        "饮料"
+      ],
+      "equipment": [
+        "输送带",
+        "瓶装设备"
+      ],
+      "actions": [
+        "输送",
+        "生产"
+      ],
+      "environment": [
+        "工厂车间",
+        "生产线"
+      ],
+      "sceneTags": [
+        "饮料",
+        "饮品",
+        "工厂",
+        "生产",
+        "食品饮料",
+        "企业宣传",
+        "B-roll素材",
+        "瓶装生产线",
+        "自动化生产",
+        "灌装",
+        "饮料生产",
+        "工厂实拍"
+      ],
+      "topicTags": [
+        "饮料",
+        "饮品",
+        "工厂",
+        "生产",
+        "食品饮料",
+        "企业宣传",
+        "B-roll素材",
+        "瓶装生产线",
+        "自动化生产",
+        "灌装",
+        "饮料生产",
+        "工厂实拍"
+      ],
+      "recommendedSkills": [
+        "企业宣传混剪",
+        "综合实力展示"
+      ],
+      "usageRoles": [
+        "Hook",
+        "正文B-roll",
+        "转场"
+      ],
+      "qualityLevel": "good",
+      "preferred": false,
+      "duplicateGroup": "dup-02",
+      "cropSafety": "good",
+      "verticalCropSuitability": "good",
+      "notes": "黄金测试合成素材",
+      "timelineSegments": [
+        {
+          "start": 0.0,
+          "end": 4.67,
+          "content": "开头段：瓶装饮料生产线高速运转画面",
+          "action": "输送",
+          "subjects": [],
+          "shotType": "全景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "生产线侧景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "Hook",
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "瓶装生产线",
+            "自动化生产",
+            "灌装",
+            "饮料生产",
+            "工厂实拍"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "自动化生产线运作",
+            "瓶子输送环节",
+            "高速瓶装生产",
+            "饮料生产线实拍"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.5
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        },
+        {
+          "start": 4.67,
+          "end": 9.33,
+          "content": "中段1：瓶装饮料生产线高速运转画面",
+          "action": "输送",
+          "subjects": [],
+          "shotType": "全景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "生产线侧景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "瓶装生产线",
+            "自动化生产",
+            "灌装",
+            "饮料生产",
+            "工厂实拍"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "自动化生产线运作",
+            "瓶子输送环节",
+            "高速瓶装生产",
+            "饮料生产线实拍"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.5
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        },
+        {
+          "start": 9.33,
+          "end": 14.0,
+          "content": "收尾段：瓶装饮料生产线高速运转画面",
+          "action": "输送",
+          "subjects": [],
+          "shotType": "中景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "生产线侧景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "瓶装生产线",
+            "自动化生产",
+            "灌装",
+            "饮料生产",
+            "工厂实拍"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "自动化生产线运作",
+            "瓶子输送环节",
+            "高速瓶装生产",
+            "饮料生产线实拍"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.5
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        }
+      ],
+      "recommendedCuts": [
+        {
+          "start": 0.0,
+          "end": 4.67,
+          "reason": "瓶装饮料生产线高速运转画面，适合Hook、正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "自动化生产线运作",
+            "瓶子输送环节",
+            "高速瓶装生产",
+            "饮料生产线实拍"
+          ],
+          "usageRoles": [
+            "Hook",
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        },
+        {
+          "start": 4.67,
+          "end": 9.33,
+          "reason": "瓶装饮料生产线高速运转画面，适合正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "自动化生产线运作",
+            "瓶子输送环节",
+            "高速瓶装生产",
+            "饮料生产线实拍"
+          ],
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        },
+        {
+          "start": 9.33,
+          "end": 14.0,
+          "reason": "瓶装饮料生产线高速运转画面，适合正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "自动化生产线运作",
+            "瓶子输送环节",
+            "高速瓶装生产",
+            "饮料生产线实拍"
+          ],
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        }
+      ],
+      "avoidCuts": [],
+      "semanticMatches": [
+        "饮料工厂生产场景",
+        "食品饮料企业生产实力",
+        "饮料代加工工厂",
+        "自动化生产线运作",
+        "瓶子输送环节",
+        "高速瓶装生产",
+        "饮料生产线实拍"
+      ],
+      "storyPotential": [
+        {
+          "topic": "饮料工厂生产场景",
+          "contentType": "企业宣传混剪"
+        },
+        {
+          "topic": "食品饮料企业生产实力",
+          "contentType": "企业宣传混剪"
+        },
+        {
+          "topic": "饮料代加工工厂",
+          "contentType": "企业宣传混剪"
+        }
+      ],
+      "audit": {
+        "sceneChangePoints": [],
+        "indexDurationSeconds": 14.0,
+        "durationDiffSeconds": 0.0
+      }
+    },
+    {
+      "id": "288cad44f59f",
+      "fileName": "03_warehouse.mp4",
+      "relativePath": "videos/03_warehouse.mp4",
+      "absolutePath": "D:\\知衡智企\\desktop\\runtime-src\\assets\\golden-test\\videos\\03_warehouse.mp4",
+      "sourceCategory": "黄金测试素材",
+      "normalizedCategory": "总目录精选",
+      "durationSeconds": 12.0,
+      "width": 1920,
+      "height": 1080,
+      "orientation": "landscape",
+      "fps": 25.0,
+      "fileSize": 156945,
+      "hash": "00b1ddd441fee65e254f337f25e53fe1acebb7d21b7af1960a3e4f37421005bd",
+      "overallContent": "成品饮料仓储码放画面",
+      "overallCameraAngle": "仓库全景",
+      "overallScene": "成品仓库",
+      "people": [],
+      "products": [
+        "饮料"
+      ],
+      "equipment": [
+        "货架",
+        "叉车"
+      ],
+      "actions": [
+        "码放",
+        "存储"
+      ],
+      "environment": [
+        "仓库"
+      ],
+      "sceneTags": [
+        "饮料",
+        "饮品",
+        "工厂",
+        "生产",
+        "食品饮料",
+        "企业宣传",
+        "B-roll素材",
+        "成品仓储",
+        "仓库",
+        "物流",
+        "饮料成品",
+        "仓储管理"
+      ],
+      "topicTags": [
+        "饮料",
+        "饮品",
+        "工厂",
+        "生产",
+        "食品饮料",
+        "企业宣传",
+        "B-roll素材",
+        "成品仓储",
+        "仓库",
+        "物流",
+        "饮料成品",
+        "仓储管理"
+      ],
+      "recommendedSkills": [
+        "企业宣传混剪",
+        "综合实力展示"
+      ],
+      "usageRoles": [
+        "Hook",
+        "正文B-roll",
+        "转场"
+      ],
+      "qualityLevel": "good",
+      "preferred": false,
+      "duplicateGroup": "dup-03",
+      "cropSafety": "good",
+      "verticalCropSuitability": "good",
+      "notes": "黄金测试合成素材",
+      "timelineSegments": [
+        {
+          "start": 0.0,
+          "end": 4.0,
+          "content": "开头段：成品饮料仓储码放画面",
+          "action": "码放",
+          "subjects": [],
+          "shotType": "全景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "仓库全景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "Hook",
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "成品仓储",
+            "仓库",
+            "物流",
+            "饮料成品",
+            "仓储管理"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "成品仓库存储场景",
+            "仓储物流",
+            "饮料成品码放",
+            "仓库管理"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.5
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        },
+        {
+          "start": 4.0,
+          "end": 8.0,
+          "content": "中段1：成品饮料仓储码放画面",
+          "action": "码放",
+          "subjects": [],
+          "shotType": "全景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "仓库全景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "成品仓储",
+            "仓库",
+            "物流",
+            "饮料成品",
+            "仓储管理"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "成品仓库存储场景",
+            "仓储物流",
+            "饮料成品码放",
+            "仓库管理"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.5
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        },
+        {
+          "start": 8.0,
+          "end": 12.0,
+          "content": "收尾段：成品饮料仓储码放画面",
+          "action": "码放",
+          "subjects": [],
+          "shotType": "中景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "仓库全景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "成品仓储",
+            "仓库",
+            "物流",
+            "饮料成品",
+            "仓储管理"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "成品仓库存储场景",
+            "仓储物流",
+            "饮料成品码放",
+            "仓库管理"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.5
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        }
+      ],
+      "recommendedCuts": [
+        {
+          "start": 0.0,
+          "end": 4.0,
+          "reason": "成品饮料仓储码放画面，适合Hook、正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "成品仓库存储场景",
+            "仓储物流",
+            "饮料成品码放",
+            "仓库管理"
+          ],
+          "usageRoles": [
+            "Hook",
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        },
+        {
+          "start": 4.0,
+          "end": 8.0,
+          "reason": "成品饮料仓储码放画面，适合正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "成品仓库存储场景",
+            "仓储物流",
+            "饮料成品码放",
+            "仓库管理"
+          ],
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        },
+        {
+          "start": 8.0,
+          "end": 12.0,
+          "reason": "成品饮料仓储码放画面，适合正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "成品仓库存储场景",
+            "仓储物流",
+            "饮料成品码放",
+            "仓库管理"
+          ],
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        }
+      ],
+      "avoidCuts": [],
+      "semanticMatches": [
+        "饮料工厂生产场景",
+        "食品饮料企业生产实力",
+        "饮料代加工工厂",
+        "成品仓库存储场景",
+        "仓储物流",
+        "饮料成品码放",
+        "仓库管理"
+      ],
+      "storyPotential": [
+        {
+          "topic": "饮料工厂生产场景",
+          "contentType": "企业宣传混剪"
+        },
+        {
+          "topic": "食品饮料企业生产实力",
+          "contentType": "企业宣传混剪"
+        },
+        {
+          "topic": "饮料代加工工厂",
+          "contentType": "企业宣传混剪"
+        }
+      ],
+      "audit": {
+        "sceneChangePoints": [],
+        "indexDurationSeconds": 12.0,
+        "durationDiffSeconds": 0.0
+      }
+    },
+    {
+      "id": "b72c2b5b9612",
+      "fileName": "04_quality_check.mp4",
+      "relativePath": "videos/04_quality_check.mp4",
+      "absolutePath": "D:\\知衡智企\\desktop\\runtime-src\\assets\\golden-test\\videos\\04_quality_check.mp4",
+      "sourceCategory": "黄金测试素材",
+      "normalizedCategory": "总目录精选",
+      "durationSeconds": 10.0,
+      "width": 1920,
+      "height": 1080,
+      "orientation": "landscape",
+      "fps": 25.0,
+      "fileSize": 121888,
+      "hash": "e44a84b96e11851fdf48e7b4e2e07c86846169055821fa77d02d4b4379d80674",
+      "overallContent": "质检人员检测饮料样品画面",
+      "overallCameraAngle": "检测台近景",
+      "overallScene": "质量检测",
+      "people": [],
+      "products": [
+        "饮料"
+      ],
+      "equipment": [
+        "检测仪器"
+      ],
+      "actions": [
+        "检测",
+        "化验"
+      ],
+      "environment": [
+        "实验室",
+        "质检区"
+      ],
+      "sceneTags": [
+        "饮料",
+        "饮品",
+        "工厂",
+        "生产",
+        "食品饮料",
+        "企业宣传",
+        "B-roll素材",
+        "质量检测",
+        "质检",
+        "品控",
+        "实验室",
+        "食品安全"
+      ],
+      "topicTags": [
+        "饮料",
+        "饮品",
+        "工厂",
+        "生产",
+        "食品饮料",
+        "企业宣传",
+        "B-roll素材",
+        "质量检测",
+        "质检",
+        "品控",
+        "实验室",
+        "食品安全"
+      ],
+      "recommendedSkills": [
+        "企业宣传混剪",
+        "综合实力展示"
+      ],
+      "usageRoles": [
+        "Hook",
+        "正文B-roll",
+        "转场"
+      ],
+      "qualityLevel": "good",
+      "preferred": false,
+      "duplicateGroup": "dup-04",
+      "cropSafety": "good",
+      "verticalCropSuitability": "good",
+      "notes": "黄金测试合成素材",
+      "timelineSegments": [
+        {
+          "start": 0.0,
+          "end": 3.33,
+          "content": "开头段：质检人员检测饮料样品画面",
+          "action": "检测",
+          "subjects": [],
+          "shotType": "全景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "检测台近景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "Hook",
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "质量检测",
+            "质检",
+            "品控",
+            "实验室",
+            "食品安全"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "质检环节展示",
+            "实验室检测",
+            "质量把控",
+            "抽样检测"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.1
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        },
+        {
+          "start": 3.33,
+          "end": 6.67,
+          "content": "中段1：质检人员检测饮料样品画面",
+          "action": "检测",
+          "subjects": [],
+          "shotType": "全景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "检测台近景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "质量检测",
+            "质检",
+            "品控",
+            "实验室",
+            "食品安全"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "质检环节展示",
+            "实验室检测",
+            "质量把控",
+            "抽样检测"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.1
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        },
+        {
+          "start": 6.67,
+          "end": 10.0,
+          "content": "收尾段：质检人员检测饮料样品画面",
+          "action": "检测",
+          "subjects": [],
+          "shotType": "中景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "检测台近景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "质量检测",
+            "质检",
+            "品控",
+            "实验室",
+            "食品安全"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "质检环节展示",
+            "实验室检测",
+            "质量把控",
+            "抽样检测"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.1
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        }
+      ],
+      "recommendedCuts": [
+        {
+          "start": 0.0,
+          "end": 3.33,
+          "reason": "质检人员检测饮料样品画面，适合Hook、正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "质检环节展示",
+            "实验室检测",
+            "质量把控",
+            "抽样检测"
+          ],
+          "usageRoles": [
+            "Hook",
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        },
+        {
+          "start": 3.33,
+          "end": 6.67,
+          "reason": "质检人员检测饮料样品画面，适合正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "质检环节展示",
+            "实验室检测",
+            "质量把控",
+            "抽样检测"
+          ],
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        },
+        {
+          "start": 6.67,
+          "end": 10.0,
+          "reason": "质检人员检测饮料样品画面，适合正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "质检环节展示",
+            "实验室检测",
+            "质量把控",
+            "抽样检测"
+          ],
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        }
+      ],
+      "avoidCuts": [],
+      "semanticMatches": [
+        "饮料工厂生产场景",
+        "食品饮料企业生产实力",
+        "饮料代加工工厂",
+        "质检环节展示",
+        "实验室检测",
+        "质量把控",
+        "抽样检测"
+      ],
+      "storyPotential": [
+        {
+          "topic": "饮料工厂生产场景",
+          "contentType": "企业宣传混剪"
+        },
+        {
+          "topic": "食品饮料企业生产实力",
+          "contentType": "企业宣传混剪"
+        },
+        {
+          "topic": "饮料代加工工厂",
+          "contentType": "企业宣传混剪"
+        }
+      ],
+      "audit": {
+        "sceneChangePoints": [],
+        "indexDurationSeconds": 10.0,
+        "durationDiffSeconds": 0.0
+      }
+    },
+    {
+      "id": "bfe931230c53",
+      "fileName": "05_labeling_pack.mp4",
+      "relativePath": "videos/05_labeling_pack.mp4",
+      "absolutePath": "D:\\知衡智企\\desktop\\runtime-src\\assets\\golden-test\\videos\\05_labeling_pack.mp4",
+      "sourceCategory": "黄金测试素材",
+      "normalizedCategory": "总目录精选",
+      "durationSeconds": 12.0,
+      "width": 1920,
+      "height": 1080,
+      "orientation": "landscape",
+      "fps": 25.0,
+      "fileSize": 159281,
+      "hash": "4fb707b98b2c745251cdc56bb2a1d0279fe7073730cf74d869d92dc5e11a18a2",
+      "overallContent": "自动贴标与包装工序画面",
+      "overallCameraAngle": "包装线侧景",
+      "overallScene": "包装贴标",
+      "people": [],
+      "products": [
+        "饮料"
+      ],
+      "equipment": [
+        "贴标机",
+        "包装机"
+      ],
+      "actions": [
+        "贴标",
+        "包装"
+      ],
+      "environment": [
+        "工厂车间",
+        "包装线"
+      ],
+      "sceneTags": [
+        "饮料",
+        "饮品",
+        "工厂",
+        "生产",
+        "食品饮料",
+        "企业宣传",
+        "B-roll素材",
+        "包装贴标",
+        "自动包装",
+        "贴标",
+        "成品包装",
+        "工厂实拍"
+      ],
+      "topicTags": [
+        "饮料",
+        "饮品",
+        "工厂",
+        "生产",
+        "食品饮料",
+        "企业宣传",
+        "B-roll素材",
+        "包装贴标",
+        "自动包装",
+        "贴标",
+        "成品包装",
+        "工厂实拍"
+      ],
+      "recommendedSkills": [
+        "企业宣传混剪",
+        "综合实力展示"
+      ],
+      "usageRoles": [
+        "Hook",
+        "正文B-roll",
+        "转场"
+      ],
+      "qualityLevel": "good",
+      "preferred": false,
+      "duplicateGroup": "dup-05",
+      "cropSafety": "good",
+      "verticalCropSuitability": "good",
+      "notes": "黄金测试合成素材",
+      "timelineSegments": [
+        {
+          "start": 0.0,
+          "end": 4.0,
+          "content": "开头段：自动贴标与包装工序画面",
+          "action": "贴标",
+          "subjects": [],
+          "shotType": "全景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "包装线侧景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "Hook",
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "包装贴标",
+            "自动包装",
+            "贴标",
+            "成品包装",
+            "工厂实拍"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "自动贴标包装",
+            "成品包装环节",
+            "贴标机作业",
+            "包装工序"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.5
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        },
+        {
+          "start": 4.0,
+          "end": 8.0,
+          "content": "中段1：自动贴标与包装工序画面",
+          "action": "贴标",
+          "subjects": [],
+          "shotType": "全景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "包装线侧景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "包装贴标",
+            "自动包装",
+            "贴标",
+            "成品包装",
+            "工厂实拍"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "自动贴标包装",
+            "成品包装环节",
+            "贴标机作业",
+            "包装工序"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.5
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        },
+        {
+          "start": 8.0,
+          "end": 12.0,
+          "content": "收尾段：自动贴标与包装工序画面",
+          "action": "贴标",
+          "subjects": [],
+          "shotType": "中景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "包装线侧景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "包装贴标",
+            "自动包装",
+            "贴标",
+            "成品包装",
+            "工厂实拍"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "自动贴标包装",
+            "成品包装环节",
+            "贴标机作业",
+            "包装工序"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.5
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        }
+      ],
+      "recommendedCuts": [
+        {
+          "start": 0.0,
+          "end": 4.0,
+          "reason": "自动贴标与包装工序画面，适合Hook、正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "自动贴标包装",
+            "成品包装环节",
+            "贴标机作业",
+            "包装工序"
+          ],
+          "usageRoles": [
+            "Hook",
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        },
+        {
+          "start": 4.0,
+          "end": 8.0,
+          "reason": "自动贴标与包装工序画面，适合正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "自动贴标包装",
+            "成品包装环节",
+            "贴标机作业",
+            "包装工序"
+          ],
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        },
+        {
+          "start": 8.0,
+          "end": 12.0,
+          "reason": "自动贴标与包装工序画面，适合正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "自动贴标包装",
+            "成品包装环节",
+            "贴标机作业",
+            "包装工序"
+          ],
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        }
+      ],
+      "avoidCuts": [],
+      "semanticMatches": [
+        "饮料工厂生产场景",
+        "食品饮料企业生产实力",
+        "饮料代加工工厂",
+        "自动贴标包装",
+        "成品包装环节",
+        "贴标机作业",
+        "包装工序"
+      ],
+      "storyPotential": [
+        {
+          "topic": "饮料工厂生产场景",
+          "contentType": "企业宣传混剪"
+        },
+        {
+          "topic": "食品饮料企业生产实力",
+          "contentType": "企业宣传混剪"
+        },
+        {
+          "topic": "饮料代加工工厂",
+          "contentType": "企业宣传混剪"
+        }
+      ],
+      "audit": {
+        "sceneChangePoints": [],
+        "indexDurationSeconds": 12.0,
+        "durationDiffSeconds": 0.0
+      }
+    },
+    {
+      "id": "14c8751b5e4f",
+      "fileName": "06_raw_material.mp4",
+      "relativePath": "videos/06_raw_material.mp4",
+      "absolutePath": "D:\\知衡智企\\desktop\\runtime-src\\assets\\golden-test\\videos\\06_raw_material.mp4",
+      "sourceCategory": "黄金测试素材",
+      "normalizedCategory": "总目录精选",
+      "durationSeconds": 10.0,
+      "width": 1920,
+      "height": 1080,
+      "orientation": "landscape",
+      "fps": 25.0,
+      "fileSize": 123650,
+      "hash": "308b813bedeef5cda1eb7d06eaf0da7b63bfaf60ae137cd1b0ae4578a81e1ac2",
+      "overallContent": "饮料原料仓库存放画面",
+      "overallCameraAngle": "原料区全景",
+      "overallScene": "原料仓库",
+      "people": [],
+      "products": [
+        "饮料"
+      ],
+      "equipment": [
+        "原料桶",
+        "货架"
+      ],
+      "actions": [
+        "存放",
+        "管理"
+      ],
+      "environment": [
+        "仓库",
+        "原料区"
+      ],
+      "sceneTags": [
+        "饮料",
+        "饮品",
+        "工厂",
+        "生产",
+        "食品饮料",
+        "企业宣传",
+        "B-roll素材",
+        "原料仓库",
+        "原料",
+        "供应链",
+        "仓储",
+        "饮料生产"
+      ],
+      "topicTags": [
+        "饮料",
+        "饮品",
+        "工厂",
+        "生产",
+        "食品饮料",
+        "企业宣传",
+        "B-roll素材",
+        "原料仓库",
+        "原料",
+        "供应链",
+        "仓储",
+        "饮料生产"
+      ],
+      "recommendedSkills": [
+        "企业宣传混剪",
+        "综合实力展示"
+      ],
+      "usageRoles": [
+        "Hook",
+        "正文B-roll",
+        "转场"
+      ],
+      "qualityLevel": "good",
+      "preferred": false,
+      "duplicateGroup": "dup-06",
+      "cropSafety": "good",
+      "verticalCropSuitability": "good",
+      "notes": "黄金测试合成素材",
+      "timelineSegments": [
+        {
+          "start": 0.0,
+          "end": 3.33,
+          "content": "开头段：饮料原料仓库存放画面",
+          "action": "存放",
+          "subjects": [],
+          "shotType": "全景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "原料区全景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "Hook",
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "原料仓库",
+            "原料",
+            "供应链",
+            "仓储",
+            "饮料生产"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "原料存放管理",
+            "原料仓库存放",
+            "供应链原料",
+            "原料管理"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.1
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        },
+        {
+          "start": 3.33,
+          "end": 6.67,
+          "content": "中段1：饮料原料仓库存放画面",
+          "action": "存放",
+          "subjects": [],
+          "shotType": "全景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "原料区全景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "原料仓库",
+            "原料",
+            "供应链",
+            "仓储",
+            "饮料生产"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "原料存放管理",
+            "原料仓库存放",
+            "供应链原料",
+            "原料管理"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.1
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        },
+        {
+          "start": 6.67,
+          "end": 10.0,
+          "content": "收尾段：饮料原料仓库存放画面",
+          "action": "存放",
+          "subjects": [],
+          "shotType": "中景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "原料区全景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "原料仓库",
+            "原料",
+            "供应链",
+            "仓储",
+            "饮料生产"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "原料存放管理",
+            "原料仓库存放",
+            "供应链原料",
+            "原料管理"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.1
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        }
+      ],
+      "recommendedCuts": [
+        {
+          "start": 0.0,
+          "end": 3.33,
+          "reason": "饮料原料仓库存放画面，适合Hook、正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "原料存放管理",
+            "原料仓库存放",
+            "供应链原料",
+            "原料管理"
+          ],
+          "usageRoles": [
+            "Hook",
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        },
+        {
+          "start": 3.33,
+          "end": 6.67,
+          "reason": "饮料原料仓库存放画面，适合正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "原料存放管理",
+            "原料仓库存放",
+            "供应链原料",
+            "原料管理"
+          ],
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        },
+        {
+          "start": 6.67,
+          "end": 10.0,
+          "reason": "饮料原料仓库存放画面，适合正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "原料存放管理",
+            "原料仓库存放",
+            "供应链原料",
+            "原料管理"
+          ],
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        }
+      ],
+      "avoidCuts": [],
+      "semanticMatches": [
+        "饮料工厂生产场景",
+        "食品饮料企业生产实力",
+        "饮料代加工工厂",
+        "原料存放管理",
+        "原料仓库存放",
+        "供应链原料",
+        "原料管理"
+      ],
+      "storyPotential": [
+        {
+          "topic": "饮料工厂生产场景",
+          "contentType": "企业宣传混剪"
+        },
+        {
+          "topic": "食品饮料企业生产实力",
+          "contentType": "企业宣传混剪"
+        },
+        {
+          "topic": "饮料代加工工厂",
+          "contentType": "企业宣传混剪"
+        }
+      ],
+      "audit": {
+        "sceneChangePoints": [],
+        "indexDurationSeconds": 10.0,
+        "durationDiffSeconds": 0.0
+      }
+    },
+    {
+      "id": "023a51543539",
+      "fileName": "07_shipping.mp4",
+      "relativePath": "videos/07_shipping.mp4",
+      "absolutePath": "D:\\知衡智企\\desktop\\runtime-src\\assets\\golden-test\\videos\\07_shipping.mp4",
+      "sourceCategory": "黄金测试素材",
+      "normalizedCategory": "总目录精选",
+      "durationSeconds": 12.0,
+      "width": 1920,
+      "height": 1080,
+      "orientation": "landscape",
+      "fps": 25.0,
+      "fileSize": 156156,
+      "hash": "19e8e56616471bd755137a662f11cbb882d62563cbeae741fc3ceea9d03913b2",
+      "overallContent": "成品饮料发货装车画面",
+      "overallCameraAngle": "装车区全景",
+      "overallScene": "发货装车",
+      "people": [],
+      "products": [
+        "饮料"
+      ],
+      "equipment": [
+        "运输车",
+        "叉车"
+      ],
+      "actions": [
+        "装车",
+        "发货"
+      ],
+      "environment": [
+        "装车区",
+        "物流区"
+      ],
+      "sceneTags": [
+        "饮料",
+        "饮品",
+        "工厂",
+        "生产",
+        "食品饮料",
+        "企业宣传",
+        "B-roll素材",
+        "发货装车",
+        "物流",
+        "出货",
+        "运输",
+        "饮料成品"
+      ],
+      "topicTags": [
+        "饮料",
+        "饮品",
+        "工厂",
+        "生产",
+        "食品饮料",
+        "企业宣传",
+        "B-roll素材",
+        "发货装车",
+        "物流",
+        "出货",
+        "运输",
+        "饮料成品"
+      ],
+      "recommendedSkills": [
+        "企业宣传混剪",
+        "综合实力展示"
+      ],
+      "usageRoles": [
+        "Hook",
+        "正文B-roll",
+        "转场"
+      ],
+      "qualityLevel": "good",
+      "preferred": false,
+      "duplicateGroup": "dup-07",
+      "cropSafety": "good",
+      "verticalCropSuitability": "good",
+      "notes": "黄金测试合成素材",
+      "timelineSegments": [
+        {
+          "start": 0.0,
+          "end": 4.0,
+          "content": "开头段：成品饮料发货装车画面",
+          "action": "装车",
+          "subjects": [],
+          "shotType": "全景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "装车区全景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "Hook",
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "发货装车",
+            "物流",
+            "出货",
+            "运输",
+            "饮料成品"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "成品发货装车",
+            "物流运输",
+            "出货环节",
+            "成品出库"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.5
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        },
+        {
+          "start": 4.0,
+          "end": 8.0,
+          "content": "中段1：成品饮料发货装车画面",
+          "action": "装车",
+          "subjects": [],
+          "shotType": "全景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "装车区全景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "发货装车",
+            "物流",
+            "出货",
+            "运输",
+            "饮料成品"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "成品发货装车",
+            "物流运输",
+            "出货环节",
+            "成品出库"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.5
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        },
+        {
+          "start": 8.0,
+          "end": 12.0,
+          "content": "收尾段：成品饮料发货装车画面",
+          "action": "装车",
+          "subjects": [],
+          "shotType": "中景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "装车区全景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "发货装车",
+            "物流",
+            "出货",
+            "运输",
+            "饮料成品"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "成品发货装车",
+            "物流运输",
+            "出货环节",
+            "成品出库"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.5
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        }
+      ],
+      "recommendedCuts": [
+        {
+          "start": 0.0,
+          "end": 4.0,
+          "reason": "成品饮料发货装车画面，适合Hook、正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "成品发货装车",
+            "物流运输",
+            "出货环节",
+            "成品出库"
+          ],
+          "usageRoles": [
+            "Hook",
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        },
+        {
+          "start": 4.0,
+          "end": 8.0,
+          "reason": "成品饮料发货装车画面，适合正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "成品发货装车",
+            "物流运输",
+            "出货环节",
+            "成品出库"
+          ],
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        },
+        {
+          "start": 8.0,
+          "end": 12.0,
+          "reason": "成品饮料发货装车画面，适合正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "成品发货装车",
+            "物流运输",
+            "出货环节",
+            "成品出库"
+          ],
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        }
+      ],
+      "avoidCuts": [],
+      "semanticMatches": [
+        "饮料工厂生产场景",
+        "食品饮料企业生产实力",
+        "饮料代加工工厂",
+        "成品发货装车",
+        "物流运输",
+        "出货环节",
+        "成品出库"
+      ],
+      "storyPotential": [
+        {
+          "topic": "饮料工厂生产场景",
+          "contentType": "企业宣传混剪"
+        },
+        {
+          "topic": "食品饮料企业生产实力",
+          "contentType": "企业宣传混剪"
+        },
+        {
+          "topic": "饮料代加工工厂",
+          "contentType": "企业宣传混剪"
+        }
+      ],
+      "audit": {
+        "sceneChangePoints": [],
+        "indexDurationSeconds": 12.0,
+        "durationDiffSeconds": 0.0
+      }
+    },
+    {
+      "id": "7c454d8eb904",
+      "fileName": "08_rd_sampling.mp4",
+      "relativePath": "videos/08_rd_sampling.mp4",
+      "absolutePath": "D:\\知衡智企\\desktop\\runtime-src\\assets\\golden-test\\videos\\08_rd_sampling.mp4",
+      "sourceCategory": "黄金测试素材",
+      "normalizedCategory": "总目录精选",
+      "durationSeconds": 14.0,
+      "width": 1920,
+      "height": 1080,
+      "orientation": "landscape",
+      "fps": 25.0,
+      "fileSize": 177213,
+      "hash": "b06bb3cb1194d576683b13d9ce3ef0883267a95f259396a6ac7da477caf21241",
+      "overallContent": "研发实验室配方打样画面",
+      "overallCameraAngle": "实验台近景",
+      "overallScene": "研发打样",
+      "people": [],
+      "products": [
+        "饮料"
+      ],
+      "equipment": [
+        "实验器具",
+        "样品瓶"
+      ],
+      "actions": [
+        "调配",
+        "研发"
+      ],
+      "environment": [
+        "研发实验室"
+      ],
+      "sceneTags": [
+        "饮料",
+        "饮品",
+        "工厂",
+        "生产",
+        "食品饮料",
+        "企业宣传",
+        "B-roll素材",
+        "研发打样",
+        "配方研发",
+        "实验室",
+        "产品开发",
+        "饮料研发"
+      ],
+      "topicTags": [
+        "饮料",
+        "饮品",
+        "工厂",
+        "生产",
+        "食品饮料",
+        "企业宣传",
+        "B-roll素材",
+        "研发打样",
+        "配方研发",
+        "实验室",
+        "产品开发",
+        "饮料研发"
+      ],
+      "recommendedSkills": [
+        "企业宣传混剪",
+        "综合实力展示"
+      ],
+      "usageRoles": [
+        "Hook",
+        "正文B-roll",
+        "转场"
+      ],
+      "qualityLevel": "good",
+      "preferred": false,
+      "duplicateGroup": "dup-08",
+      "cropSafety": "good",
+      "verticalCropSuitability": "good",
+      "notes": "黄金测试合成素材",
+      "timelineSegments": [
+        {
+          "start": 0.0,
+          "end": 4.67,
+          "content": "开头段：研发实验室配方打样画面",
+          "action": "调配",
+          "subjects": [],
+          "shotType": "全景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "实验台近景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "Hook",
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "研发打样",
+            "配方研发",
+            "实验室",
+            "产品开发",
+            "饮料研发"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "配方研发",
+            "产品打样",
+            "饮料配方开发",
+            "研发实验室"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.5
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        },
+        {
+          "start": 4.67,
+          "end": 9.33,
+          "content": "中段1：研发实验室配方打样画面",
+          "action": "调配",
+          "subjects": [],
+          "shotType": "全景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "实验台近景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "研发打样",
+            "配方研发",
+            "实验室",
+            "产品开发",
+            "饮料研发"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "配方研发",
+            "产品打样",
+            "饮料配方开发",
+            "研发实验室"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.5
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        },
+        {
+          "start": 9.33,
+          "end": 14.0,
+          "content": "收尾段：研发实验室配方打样画面",
+          "action": "调配",
+          "subjects": [],
+          "shotType": "中景",
+          "cameraMovement": "基本固定",
+          "cameraAngle": "实验台近景",
+          "visualQuality": "good",
+          "stability": "good",
+          "clarity": "good",
+          "subjectCompleteness": "good",
+          "usable": true,
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "topicTags": [
+            "饮料",
+            "饮品",
+            "工厂",
+            "生产",
+            "食品饮料",
+            "企业宣传",
+            "B-roll素材",
+            "研发打样",
+            "配方研发",
+            "实验室",
+            "产品开发",
+            "饮料研发"
+          ],
+          "semanticMatches": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "配方研发",
+            "产品打样",
+            "饮料配方开发",
+            "研发实验室"
+          ],
+          "recommendedClipLength": {
+            "min": 1.2,
+            "max": 3.5
+          },
+          "recommendedSkills": [
+            "企业宣传混剪",
+            "综合实力展示"
+          ],
+          "avoidUses": [],
+          "subjectPosition": "center",
+          "cropSafety": "good",
+          "verticalCropSuitability": "good",
+          "notes": "黄金测试合成素材（构建期生成）"
+        }
+      ],
+      "recommendedCuts": [
+        {
+          "start": 0.0,
+          "end": 4.67,
+          "reason": "研发实验室配方打样画面，适合Hook、正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "配方研发",
+            "产品打样",
+            "饮料配方开发",
+            "研发实验室"
+          ],
+          "usageRoles": [
+            "Hook",
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        },
+        {
+          "start": 4.67,
+          "end": 9.33,
+          "reason": "研发实验室配方打样画面，适合正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "配方研发",
+            "产品打样",
+            "饮料配方开发",
+            "研发实验室"
+          ],
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        },
+        {
+          "start": 9.33,
+          "end": 14.0,
+          "reason": "研发实验室配方打样画面，适合正文B-roll、转场",
+          "bestFor": [
+            "饮料工厂生产场景",
+            "食品饮料企业生产实力",
+            "饮料代加工工厂",
+            "配方研发",
+            "产品打样",
+            "饮料配方开发",
+            "研发实验室"
+          ],
+          "usageRoles": [
+            "正文B-roll",
+            "转场"
+          ],
+          "priority": "medium"
+        }
+      ],
+      "avoidCuts": [],
+      "semanticMatches": [
+        "饮料工厂生产场景",
+        "食品饮料企业生产实力",
+        "饮料代加工工厂",
+        "配方研发",
+        "产品打样",
+        "饮料配方开发",
+        "研发实验室"
+      ],
+      "storyPotential": [
+        {
+          "topic": "饮料工厂生产场景",
+          "contentType": "企业宣传混剪"
+        },
+        {
+          "topic": "食品饮料企业生产实力",
+          "contentType": "企业宣传混剪"
+        },
+        {
+          "topic": "饮料代加工工厂",
+          "contentType": "企业宣传混剪"
+        }
+      ],
+      "audit": {
+        "sceneChangePoints": [],
+        "indexDurationSeconds": 14.0,
+        "durationDiffSeconds": 0.0
+      }
+    }
+  ]
+}

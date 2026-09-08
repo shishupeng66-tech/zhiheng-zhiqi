@@ -16,6 +16,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { resolveSystemAsset } from '@/lib/system-assets';
 
 // ============================================================================
 // 类型定义
@@ -133,6 +134,27 @@ export class PackagingAssetResolver {
   constructor(assetsRoot?: string) {
     this.assetsRoot = assetsRoot || path.join(process.cwd(), 'assets');
     this.loadAllIndexes();
+  }
+
+  /**
+   * 异步工厂：优先通过 System Asset Registry 解析视觉资源库根目录。
+   * 解析路径存在且含预期子目录（01_音效库/02_贴纸库/03_花字模板库）时采用；
+   * 否则回退 process.cwd()/assets，保证不破坏现有加载。
+   */
+  static async create(): Promise<PackagingAssetResolver> {
+    try {
+      const r = await resolveSystemAsset('visualResourceRegistryRoot');
+      if (r.exists) {
+        const expected = ['01_音效库', '02_贴纸库', '03_花字模板库'];
+        const hasSubdirs = expected.every((d) => fs.existsSync(path.join(r.path, d)));
+        if (hasSubdirs) {
+          return new PackagingAssetResolver(r.path);
+        }
+      }
+    } catch {
+      /* 忽略，回退默认 */
+    }
+    return new PackagingAssetResolver();
   }
 
   /**

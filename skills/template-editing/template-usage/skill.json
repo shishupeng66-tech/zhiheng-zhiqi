@@ -1,0 +1,24 @@
+{
+ "id": "zhiheng-template-usage",
+ "name": "模板使用器",
+ "description": "第二层 Skill：读取已解析的模板资产，把新业务文案与素材填入模板，生成新剪映草稿。输入：templateId + 新业务文案 + 素材映射；输出：新剪映草稿 + 验收清单。所有操作必须遵守第三层 template-editing-rules 的约束。",
+ "category": "semantic-template",
+ "status": "testing",
+ "version": "0.1.0",
+ "pipeline": {
+  "scriptsDir": "D:\\知衡智企\\scripts\\template-pipeline",
+  "steps": [
+   "step4_fill.py: 按资产替换（文字等字数 + 视频素材）→ 新草稿明文写回",
+   "step5_verify.py: 结构 diff 验证"
+  ]
+ },
+ "templatesRoot": "<企业Obsidian>\\剪辑模板",
+ "rules": [
+  "使用模板前必须先加载 template-editing-rules（第三层），所有操作受其约束",
+  "先解析用户任务 → 决定用哪个模板（用户指定 or 模板库检索）",
+  "LLM 按 textSlots + constraint 生成替换文本（等字数）",
+  "按 mediaSlots 语义从素材索引检索素材，优先竖屏",
+  "替换后必须 step5 结构 diff PASS 才能交付",
+  "视觉验收必须人工（PENDING_USER_REVIEW），程序不自动宣布 PASS"
+ ]
+}

@@ -1,10 +1,7 @@
 import Link from 'next/link';
 import PageContainer from '@/components/layout/page-container';
 import { WorkspaceAccessDenied } from '@/features/workspaces/components/workspace-access-denied';
-import {
-  listAutomationVideoAssets,
-  listAutomationVideoTasks
-} from '@/lib/workspaces/automation-editing';
+import { listAutomationVideoAssets } from '@/lib/workspaces/automation-editing';
 import { requireWorkspacePermission } from '@/lib/workspaces/service';
 import { Icons } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
@@ -129,19 +126,6 @@ async function scanVideos(
   return out.sort(sortByModifiedAt);
 }
 
-async function getFileMeta(filePath: string) {
-  try {
-    if (!path.isAbsolute(filePath)) return null;
-    const stat = await fs.stat(filePath);
-    return {
-      size: stat.size,
-      modifiedAt: stat.mtime.toISOString()
-    };
-  } catch {
-    return null;
-  }
-}
-
 async function listMaterialCategories(
   assetsDir: string,
   uploadedAssets: LibraryVideo[]
@@ -200,40 +184,16 @@ function viewHref(view: VideoLibraryView, category?: string) {
   return `/dashboard/voices/videos?${params.toString()}`;
 }
 
-function ViewSwitch({
-  activeView,
-  materialCount,
-  outputCount
-}: {
-  activeView: VideoLibraryView;
-  materialCount: number;
-  outputCount: number;
-}) {
+function ViewSwitch({ materialCount }: { materialCount: number }) {
   return (
     <div className='flex flex-wrap items-center gap-2'>
       <Link
         href={viewHref('materials')}
-        className={cn(
-          buttonVariants({ variant: activeView === 'materials' ? 'default' : 'outline' }),
-          'h-9'
-        )}
+        className={cn(buttonVariants({ variant: 'default' }), 'h-9')}
       >
         <Icons.video className='size-4' />
         视频素材库
-        <Badge variant={activeView === 'materials' ? 'secondary' : 'outline'}>
-          {materialCount}
-        </Badge>
-      </Link>
-      <Link
-        href={viewHref('outputs')}
-        className={cn(
-          buttonVariants({ variant: activeView === 'outputs' ? 'default' : 'outline' }),
-          'h-9'
-        )}
-      >
-        <Icons.library className='size-4' />
-        自动剪辑成品库
-        <Badge variant={activeView === 'outputs' ? 'secondary' : 'outline'}>{outputCount}</Badge>
+        <Badge variant='secondary'>{materialCount}</Badge>
       </Link>
     </div>
   );
@@ -394,8 +354,8 @@ function MaterialLibrary({
       <CardContent className={selectedCategory ? 'p-0' : 'p-4'}>
         {assetsProbe.status !== 'normal' ? (
           <EmptyState
-            title='素材资源目录暂不可用'
-            description='请在“系统管理 / 数据存储”中把“素材资源”路径设置到真实目录。'
+            title='视频素材库目录暂不可用'
+            description='请在“系统管理 / 数据存储”中把“视频素材库”路径设置到真实目录。'
           />
         ) : selectedCategory ? (
           selectedCategory.videos.length === 0 ? (
@@ -414,56 +374,6 @@ function MaterialLibrary({
   );
 }
 
-function OutputLibrary({
-  videosDir,
-  videosProbe,
-  finishedVideos
-}: {
-  videosDir: string;
-  videosProbe: DirProbe;
-  finishedVideos: LibraryVideo[];
-}) {
-  return (
-    <Card>
-      <CardHeader className='border-b'>
-        <div className='flex flex-col gap-3 md:flex-row md:items-start md:justify-between'>
-          <div>
-            <CardTitle className='flex items-center gap-2'>
-              <Icons.library className='size-5 text-blue-500' />
-              自动剪辑成品库
-            </CardTitle>
-            <p className='mt-1 text-sm text-muted-foreground'>
-              专门展示自动化剪辑空间生成的成品视频，便于复查、交付和后续管理。
-            </p>
-            <p className='mt-2 text-xs text-muted-foreground'>
-              当前目录：<span className='font-mono'>{videosDir}</span>
-            </p>
-          </div>
-          <div className='flex items-center gap-2'>
-            <Badge variant='outline'>{finishedVideos.length} 个视频</Badge>
-            <Badge variant={probeBadgeVariant(videosProbe.status)}>{videosProbe.label}</Badge>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className='p-0'>
-        {videosProbe.status !== 'normal' ? (
-          <EmptyState
-            title='视频文件目录暂不可用'
-            description='请在“系统管理 / 数据存储”中把“视频文件”路径设置到真实目录。'
-          />
-        ) : finishedVideos.length === 0 ? (
-          <EmptyState
-            title='还没有自动剪辑成品'
-            description='完成一次自动化剪辑任务后，任务输出的视频会在这里汇总展示。也可以把已产出的成品视频放入视频文件目录。'
-          />
-        ) : (
-          <VideoRows videos={finishedVideos} />
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
 export default async function VideoLibraryRoute({
   searchParams
 }: {
@@ -473,12 +383,10 @@ export default async function VideoLibraryRoute({
   if (!result.ok) return <WorkspaceAccessDenied />;
 
   const params = (await searchParams) ?? {};
-  const activeView: VideoLibraryView =
-    firstParam(params.view) === 'outputs' ? 'outputs' : 'materials';
   const selectedCategoryId = firstParam(params.category) ?? null;
 
-  const [assetsDir, videosDir] = await Promise.all([getPath('assets'), getPath('videos')]);
-  const [assetsProbe, videosProbe] = [probeDir(assetsDir), probeDir(videosDir)];
+  const assetsDir = await getPath('videos');
+  const assetsProbe = probeDir(assetsDir);
 
   const workspaceId = result.context.workspace.id;
 
@@ -514,67 +422,25 @@ export default async function VideoLibraryRoute({
   const materialCategories =
     assetsProbe.status === 'normal' ? await listMaterialCategories(assetsDir, uploadedAssets) : [];
 
-  const outputDirVideos =
-    videosProbe.status === 'normal' ? await scanVideos(videosDir, '成品目录') : [];
-
-  const tasks = listAutomationVideoTasks(workspaceId);
-  const taskOutputVideos = (
-    await Promise.all(
-      tasks.flatMap((task) =>
-        (Array.isArray(task.outputVideos) ? task.outputVideos : []).map(
-          async (outputPath, index) => {
-            const meta = await getFileMeta(outputPath);
-            // 文件不存在 → 从视频库过滤掉（任务记录本身保留在任务历史中）
-            if (!meta) return null;
-            return {
-              id: `task:${task.id}:${index}`,
-              name: path.basename(outputPath) || `${task.title}-${index + 1}`,
-              pathLabel: task.title,
-              sourceLabel: '剪辑成品',
-              extension: extensionFromName(outputPath),
-              size: meta.size,
-              modifiedAt: meta.modifiedAt
-            } as LibraryVideo;
-          }
-        )
-      )
-    )
-  )
-    .filter((item): item is LibraryVideo => item !== null)
-    .sort(sortByModifiedAt);
-
   const materialCount = materialCategories.reduce(
     (total, category) => total + category.videos.length,
     0
   );
-  const finishedVideos = [...taskOutputVideos, ...outputDirVideos].sort(sortByModifiedAt);
 
   return (
     <PageContainer
       pageTitle='视频库'
-      pageDescription='视频素材和自动剪辑成品分开管理；素材按本地文件夹场景分类。'
+      pageDescription='企业视频素材库（数据存储在“系统管理 / 数据存储”中配置），按本地文件夹场景分类。'
     >
       <div className='space-y-6'>
-        <ViewSwitch
-          activeView={activeView}
-          materialCount={materialCount}
-          outputCount={finishedVideos.length}
-        />
+        <ViewSwitch materialCount={materialCount} />
 
-        {activeView === 'materials' ? (
-          <MaterialLibrary
-            assetsDir={assetsDir}
-            assetsProbe={assetsProbe}
-            categories={materialCategories}
-            selectedCategoryId={selectedCategoryId}
-          />
-        ) : (
-          <OutputLibrary
-            videosDir={videosDir}
-            videosProbe={videosProbe}
-            finishedVideos={finishedVideos}
-          />
-        )}
+        <MaterialLibrary
+          assetsDir={assetsDir}
+          assetsProbe={assetsProbe}
+          categories={materialCategories}
+          selectedCategoryId={selectedCategoryId}
+        />
       </div>
     </PageContainer>
   );

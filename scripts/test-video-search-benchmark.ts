@@ -4,7 +4,7 @@
  * 用法：npx tsx scripts/test-video-search-benchmark.ts
  *
  * 直接调用 searchVideoClips，不经过 LLM，纯测试搜索器本身的质量。
- * 测试集：D:\知衡智企数据库\企业知识库\浩明饮品\内容资料\知识文件\视频内容策略\05-测试基准\video-search-benchmark-v1.json
+ * 测试集：D:\知衡智企数据库\知识库\09_素材知识\90_测试基准\video-search-benchmark-v1.json
  */
 
 import { loadEnvConfig } from '@next/env';
@@ -111,9 +111,9 @@ function loadBenchmark(): BenchmarkData {
   const benchmarkPath = path.join(
     'D:',
     '知衡智企数据库',
-    '知识文件',
-    '视频内容策略',
-    '05-测试基准',
+    '知识库',
+    '09_素材知识',
+    '90_测试基准',
     'video-search-benchmark-v1.json'
   );
   const raw = fs.readFileSync(benchmarkPath, 'utf-8');

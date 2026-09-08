@@ -8,8 +8,9 @@ let cachedContext: CompanyContext | null = null;
 let cachedMtime: number = 0;
 let cachePromise: Promise<CompanyContext | null> | null = null;
 
-const JSON_RELATIVE_PATH = ['视频内容策略', '01-企业定位', 'agent-company-context.json'];
-const MARKDOWN_RELATIVE_DIR = ['视频内容策略', '01-企业定位'];
+// 企业定位上下文：Obsidian 知识库 01_企业总览/01_企业定位（2026-09-07 目录重组后）
+const JSON_RELATIVE_PATH = ['01_企业总览', '01_企业定位', 'agent-company-context.json'];
+const MARKDOWN_RELATIVE_DIR = ['01_企业总览', '01_企业定位'];
 
 /**
  * 获取企业定位上下文（JSON 优先，Markdown 兜底）

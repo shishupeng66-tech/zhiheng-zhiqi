@@ -16,10 +16,251 @@
 
 import json
 import os
+import uuid
 
 from .errors import WorkerError
 from .contract import load_production_resource_map
 from .path_safety import resolve_asset_path
+
+
+# ---------------------------------------------------------------------------
+# 独立文本覆盖轨（Text Overlay）—— MANUAL_TEMPLATE_REFERENCE
+#
+# 结构克隆自用户手工真值草稿（ZHIHENG-GOLDEN-EMPHASIS-STACKED-20260904-162931，解密后精确提取）：
+# - 一个信息词 = 一个独立文本对象 = 一条独立 text 轨（不同轨之间允许时间重叠）；
+# - 新花字：国庆黄红立体字效 effect_id=7546423084874599705（替代 huazi.blue_outline，光晕过重）；
+# - 入场动画：向上弹入 7123116334677758501（0.5s）；出场动画：烟雾消散 7678658611601493258（0.5s）；
+# - 文本样式：文轩体(7290445778273702455)、字号 26、加粗、金色渐变填充 + effectStyle。
+# ---------------------------------------------------------------------------
+
+_OVERLAY_EFFECT = {
+    "effect_id": "7546423084874599705",
+    "resource_id": "7546423084874599705",
+    "name": "国庆黄红立体字效",
+    "cache_path": "C:/Users/Administrator/AppData/Local/JianyingPro/User Data/Cache/artistEffect/7546423084874599705/922f89ae7ba42340cb81fe8332875bc3",
+}
+_OVERLAY_ANIM_IN = {
+    "id": "7123116334677758501",
+    "name": "向上弹入",
+    "category_id": "ruchang",
+    "category_name": "入场",
+    "cache_path": "C:/Users/Administrator/AppData/Local/JianyingPro/User Data/Cache/effect/7123116334677758501/28d9145ead32c23742082a37e511370e",
+}
+_OVERLAY_ANIM_OUT = {
+    "id": "7678658611601493258",
+    "name": "烟雾消散",
+    "category_id": "chuchang",
+    "category_name": "出场",
+    "cache_path": "C:/Users/Administrator/AppData/Local/JianyingPro/User Data/Cache/effect/7678658611601493258/8421b2d31bae4a9474005608cdb05996",
+}
+_OVERLAY_FONT_ID = "7290445778273702455"
+_OVERLAY_FONT_PATH = "C:/Users/Administrator/AppData/Local/JianyingPro/User Data/Cache/effect/25998976/d5ea95d6a862335c917a93b4fc741c89/文轩体.otf"
+# 金色渐变填充（克隆自用户手工真值）
+_OVERLAY_GRADIENT = {
+    "angle": 39,
+    "color": [
+        [1, 0.92549020051956177, 0.57647061347961426],
+        [1, 0.92156863212585449, 0.560784339904785],
+        [1, 0.972549021244049, 0.82352942228317261],
+    ],
+    "alpha": [1, 1, 1],
+    "percent": [0.14380531013011932, 0.89601767063140869, 0.47787609696388245],
+    "mode": "character",
+}
+
+
+def _inject_text_overlays(draft_dir, timeline):
+    """在 PJD 明文草稿中后处理注入独立文本覆盖轨（textOverlayTrack）。
+
+    每个 item = 一条独立 text 轨 + 独立 text material / text_effect material /
+    material_animation（in 向上弹入 + out 烟雾消散）。结构克隆自用户手工真值。
+    返回 track_summary 增量（[{type:'text_overlay', text, count}]）。
+    """
+    overlays = timeline.get("textOverlayTrack") or []
+    if not overlays:
+        return []
+
+    content_path = os.path.join(draft_dir, "draft_content.json")
+    with open(content_path, encoding="utf-8") as f:
+        content = json.load(f)
+
+    tracks = content.setdefault("tracks", [])
+    materials = content.setdefault("materials", {})
+    texts = materials.setdefault("texts", [])
+    effects = materials.setdefault("effects", [])
+    animations = materials.setdefault("material_animations", [])
+
+    def _uuid32():
+        return uuid.uuid4().hex
+
+    def _uuid_upper():
+        return str(uuid.uuid4()).upper()
+
+    summary = []
+    track_render_index = len(tracks)
+
+    # 第一遍：为每个 overlay 生成 text material / effect material / animation material / segment 数据，
+    # 并按 laneIndex 归组（同一 lane 内多个非重叠 segment 写入同一条 text 轨 —— 固定轨道池复用）。
+    lane_segments = {}  # laneIndex -> [segment_dict, ...]
+    for idx, item in enumerate(overlays):
+        text = item["text"]
+        start_us = int(round(float(item["start"]) * 1e6))
+        end_us = int(round(float(item["end"]) * 1e6))
+        dur_us = max(100_000, end_us - start_us)
+        pos_y = float(item.get("positionY", 0.0))
+        pos_x = float(item.get("positionX", 0.0))
+        anim_dur = int(item.get("animationDurationUs") or 500_000)
+        lane = int(item.get("laneIndex", 0))
+        # 花字/文字模板：使用 overlay 携带的 effectResourceId（Resource Director 选择），默认 7546423084874599705
+        effect_resource_id = str(item.get("effectResourceId") or _OVERLAY_EFFECT["resource_id"])
+        effect_cache_path = _OVERLAY_EFFECT["cache_path"]
+        if effect_resource_id != _OVERLAY_EFFECT["resource_id"]:
+            # 其他资源（如用户新增文字模板）：剪映缓存路径按资源 id 探测，取不到则保留默认缓存路径（best-effort）
+            effect_cache_path = "C:/Users/Administrator/AppData/Local/JianyingPro/User Data/Cache/artistEffect/%s/1" % effect_resource_id
+
+        # 1) 文本 material（金色渐变 + effectStyle，克隆手工结构；effectStyle.id 随资源变化）
+        text_material_id = _uuid32()
+        style_inner = {
+            "fill": {
+                "content": {
+                    "render_type": "gradient",
+                    "gradient": dict(_OVERLAY_GRADIENT),
+                }
+            },
+            "font": {"path": _OVERLAY_FONT_PATH, "id": _OVERLAY_FONT_ID},
+            "size": 26,
+            "bold": True,
+            "effectStyle": {
+                "path": effect_cache_path,
+                "id": effect_resource_id,
+            },
+            "range": [0, len(text)],
+        }
+        content_json = {"text": text, "styles": [style_inner]}
+        texts.append(
+            {
+                "id": text_material_id,
+                "type": "text",
+                "content": json.dumps(content_json, ensure_ascii=False),
+                "words": {},
+                "current_words": {},
+                "combo_info": {},
+                "caption_template_info": {"resource_id": "", "path": ""},
+                "line_spacing": 0.02,
+                "shadow_point": {"x": 0.0, "y": 0.0},
+                "border_color": "#000000",
+                "font_path": "D:/JianyingPro/11.3.0.14362/Resources/Font/SystemFont/zh-hans.ttf",
+                "alignment": 0,
+                "lyrics_template": {"resource_id": "", "path": ""},
+            }
+        )
+
+        # 2) text_effect material（effect_id/resource_id 随 overlay 资源变化）
+        effect_material_id = _uuid_upper()
+        effects.append(
+            {
+                "id": effect_material_id,
+                "effect_id": effect_resource_id,
+                "resource_id": effect_resource_id,
+                "third_resource_id": "0",
+                "name": "视觉资源-" + effect_resource_id,
+                "type": "text_effect",
+                "sub_type": "none",
+                "path": effect_cache_path,
+                "value": 1.0,
+                "category_id": "panel-text-flower_fav",
+                "category_name": "收藏",
+                "source_platform": 1,
+                "request_id": "2026090416592393AE3735DEF5EBA30CB9",
+                "color_match_info": {},
+                "multi_language_current": "",
+                "beauty_face_auto_retouch_info": {},
+            }
+        )
+
+        # 3) material_animation（in 向上弹入 + out 烟雾消散）
+        anim_material_id = _uuid_upper()
+        animations.append(
+            {
+                "id": anim_material_id,
+                "type": "sticker_animation",
+                "animations": [
+                    {
+                        "id": _OVERLAY_ANIM_IN["id"],
+                        "type": "in",
+                        "duration": anim_dur,
+                        "path": _OVERLAY_ANIM_IN["cache_path"],
+                        "resource_id": _OVERLAY_ANIM_IN["id"],
+                        "third_resource_id": _OVERLAY_ANIM_IN["id"],
+                        "source_platform": 1,
+                        "name": _OVERLAY_ANIM_IN["name"],
+                        "category_id": _OVERLAY_ANIM_IN["category_id"],
+                        "category_name": _OVERLAY_ANIM_IN["category_name"],
+                        "material_type": "sticker",
+                        "request_id": "2026090410184740F30E339AC48FB1D8F9",
+                    },
+                    {
+                        "id": _OVERLAY_ANIM_OUT["id"],
+                        "type": "out",
+                        "duration": anim_dur,
+                        "path": _OVERLAY_ANIM_OUT["cache_path"],
+                        "resource_id": _OVERLAY_ANIM_OUT["id"],
+                        "third_resource_id": "0",
+                        "source_platform": 1,
+                        "name": _OVERLAY_ANIM_OUT["name"],
+                        "category_id": _OVERLAY_ANIM_OUT["category_id"],
+                        "category_name": _OVERLAY_ANIM_OUT["category_name"],
+                        "material_type": "sticker",
+                        "request_id": "2026090410184740F30E339AC48FB1D8F9",
+                    },
+                ],
+            }
+        )
+
+        # 4) segment（克隆手工结构；归属 lane，稍后统一写轨）
+        segment_id = _uuid32()
+        segment = {
+            "id": segment_id,
+            "target_timerange": {"start": start_us, "duration": dur_us},
+            "render_timerange": {},
+            "clip": {
+                "scale": {"x": 1.0, "y": 1.0},
+                "transform": {"x": pos_x, "y": pos_y},
+                "flip": {},
+            },
+            "uniform_scale": {},
+            "material_id": text_material_id,
+            "extra_material_refs": [anim_material_id, effect_material_id, effect_material_id],
+            "render_index": 2,
+            "enable_lut": False,
+            "enable_adjust": False,
+            "enable_hsl": False,
+            "track_render_index": track_render_index + lane,
+            "responsive_layout": {},
+            "enable_adjust_mask": False,
+            "source": "segmentsourcenormal",
+        }
+        lane_segments.setdefault(lane, []).append(segment)
+        summary.append({"type": "text_overlay", "text": text, "count": 1})
+
+    # 第二遍：固定轨道池 —— 每条 lane 创建一条 text 轨，写入该 lane 的所有（非重叠）segment。
+    for lane in sorted(lane_segments.keys()):
+        segs = lane_segments[lane]
+        # 同 lane 内按 start 排序（确保时间有序、不重叠）
+        segs.sort(key=lambda s: s["target_timerange"]["start"])
+        tracks.append(
+            {
+                "id": _uuid_upper(),
+                "type": "text",
+                "segments": segs,
+                "name": "caption",
+                "is_default_name": True,
+            }
+        )
+
+    with open(content_path, "w", encoding="utf-8") as f:
+        json.dump(content, f, ensure_ascii=False)
+    return summary
 
 
 def _default_user_data_path():
@@ -258,12 +499,10 @@ def build_draft(job, staging_root):
     if timeline.get("sfxTrack"):
         tracks.append(draft.TrackSpec(draft.TrackType.audio, "sfx"))
     tracks.append(draft.TrackSpec(draft.TrackType.video, "main"))
-    has_text = bool(
-        timeline.get("subtitleTrack")
-        or timeline.get("keywordTrack")
-        or timeline.get("titleTrack")
-    )
-    if has_text:
+    # caption 轨仅用于 keywordTrack / titleTrack；二者皆空时不建空轨
+    # （subtitle 轨由 import_srt 自行创建；textOverlayTrack 走独立文本轨后处理注入）。
+    has_caption = bool(timeline.get("keywordTrack") or timeline.get("titleTrack"))
+    if has_caption:
         tracks.append(draft.TrackSpec(draft.TrackType.text, "caption"))
     script.append_tracks(tracks)
 
@@ -415,6 +654,16 @@ def build_draft(job, staging_root):
 
     # ---------------- 保存 ----------------
     script.save()
+    # 独立文本覆盖轨（textOverlayTrack）：一个信息词 = 一条独立 text 轨。
+    # PJD fork 不支持该结构（花字/动画受枚举约束、同轨 no-overlap），故在明文草稿上后处理注入，
+    # 结构克隆自用户手工真值（MANUAL_TEMPLATE_REFERENCE），不改 fork / Worker 轨道主流程。
+    overlay_summary = _inject_text_overlays(os.path.join(staging_root, draft_name), timeline)
+    track_summary.extend(overlay_summary)
+    # 包装贴图（stickerTrack）与包装音效（packagingSfx）—— 结构克隆自用户手工草稿。
+    sticker_summary = _inject_stickers(os.path.join(staging_root, draft_name), timeline)
+    track_summary.extend(sticker_summary)
+    sfx_summary = _inject_packaging_sfx(os.path.join(staging_root, draft_name), timeline)
+    track_summary.extend(sfx_summary)
     duration = script.duration / 1_000_000.0
     draft_dir = os.path.join(staging_root, draft_name)
     return {
@@ -432,3 +681,165 @@ def _format_srt_time(seconds):
     m, ms = divmod(ms, 60000)
     s, ms = divmod(ms, 1000)
     return "%02d:%02d:%02d,%03d" % (h, m, s, ms)
+
+
+def _inject_stickers(draft_dir, timeline):
+    """后处理注入包装贴图轨（stickerTrack，来自 Visual Resource Registry）。
+
+    结构克隆自用户手工草稿的 sticker track（track[11]）：sticker material（type=sticker + path）
+    + sticker segment（clip scale/rotation/transform）。所有贴图放入一条 sticker 轨。
+    返回 track_summary 增量。
+    """
+    stickers = timeline.get("stickerTrack") or []
+    if not stickers:
+        return []
+    content_path = os.path.join(draft_dir, "draft_content.json")
+    with open(content_path, encoding="utf-8") as f:
+        content = json.load(f)
+    tracks = content.setdefault("tracks", [])
+    materials = content.setdefault("materials", {})
+    sticker_mats = materials.setdefault("stickers", [])
+
+    def _uuid32():
+        return uuid.uuid4().hex
+
+    def _uuid_upper():
+        return str(uuid.uuid4()).upper()
+
+    # 去重：按 path 判重
+    existing_paths = {m.get("path") for m in sticker_mats}
+    segments = []
+    for item in stickers:
+        path = item.get("path") or ""
+        if not path:
+            continue
+        start_us = int(round(float(item["start"]) * 1e6))
+        end_us = int(round(float(item["end"]) * 1e6))
+        dur_us = max(100_000, end_us - start_us)
+        pos_x = float(item.get("positionX", 0.0))
+        pos_y = float(item.get("positionY", 0.0))
+        scale = float(item.get("scale", 1.0))
+        rotation = float(item.get("rotation", 0.0))
+        # material：优先复用已有（按 path），否则新建
+        mat = next((m for m in sticker_mats if m.get("path") == path), None)
+        if mat is None:
+            mat = {
+                "id": item.get("materialId") or _uuid_upper(),
+                "type": "sticker",
+                "path": path,
+            }
+            sticker_mats.append(mat)
+        segments.append(
+            {
+                "id": _uuid32(),
+                "target_timerange": {"start": start_us, "duration": dur_us},
+                "render_timerange": {},
+                "clip": {
+                    "scale": {"x": scale, "y": scale},
+                    "rotation": rotation,
+                    "transform": {"x": pos_x, "y": pos_y},
+                    "flip": {},
+                },
+                "uniform_scale": {},
+                "material_id": mat["id"],
+                "extra_material_refs": [],
+                "render_index": 4,
+                "enable_lut": False,
+                "enable_adjust": False,
+                "enable_hsl": False,
+                "track_render_index": len(tracks),
+                "responsive_layout": {},
+                "enable_adjust_mask": False,
+                "source": "segmentsourcenormal",
+            }
+        )
+    if not segments:
+        return []
+    tracks.append(
+        {
+            "id": _uuid_upper(),
+            "type": "sticker",
+            "segments": segments,
+            "name": "sticker",
+        }
+    )
+    with open(content_path, "w", encoding="utf-8") as f:
+        json.dump(content, f, ensure_ascii=False)
+    return [{"type": "packaging_sticker", "count": len(segments)}]
+
+
+def _inject_packaging_sfx(draft_dir, timeline):
+    """后处理注入包装音效（packagingSfx，来自 Visual Resource Registry）。
+
+    结构克隆自用户手工草稿的 audio 音效段：audio material（type=sound + path + duration）
+    + audio segment（source_timerange + target_timerange）。所有包装音效放入一条 audio 轨。
+    返回 track_summary 增量。
+    """
+    sfx = timeline.get("packagingSfx") or []
+    if not sfx:
+        return []
+    content_path = os.path.join(draft_dir, "draft_content.json")
+    with open(content_path, encoding="utf-8") as f:
+        content = json.load(f)
+    tracks = content.setdefault("tracks", [])
+    materials = content.setdefault("materials", {})
+    audios = materials.setdefault("audios", [])
+
+    def _uuid32():
+        return uuid.uuid4().hex
+
+    def _uuid_upper():
+        return str(uuid.uuid4()).upper()
+
+    existing_paths = {a.get("path") for a in audios}
+    segments = []
+    for item in sfx:
+        path = item.get("path") or ""
+        if not path:
+            continue
+        start_us = int(round(float(item["start"]) * 1e6))
+        dur_us = int(round(float(item["duration"]) * 1e6))
+        if dur_us <= 0:
+            continue
+        volume = float(item.get("volume", 0.8))
+        mat = next((a for a in audios if a.get("path") == path), None)
+        if mat is None:
+            mat = {
+                "id": item.get("materialId") or _uuid_upper(),
+                "type": "sound",
+                "name": "包装音效",
+                "duration": dur_us,
+                "path": path,
+                "category_name": "热门",
+                "app_id": 1775,
+                "source_platform": 1,
+                "effect_id": item.get("sfxKey", ""),
+                "resource_id": item.get("sfxKey", ""),
+                "category_id": "10892",
+            }
+            audios.append(mat)
+        segments.append(
+            {
+                "id": _uuid_upper(),
+                "source_timerange": {"duration": dur_us},
+                "target_timerange": {"start": start_us, "duration": dur_us},
+                "render_timerange": {},
+                "material_id": mat["id"],
+                "extra_material_refs": [],
+                "volume": volume,
+                "source": "segmentsourcenormal",
+            }
+        )
+    if not segments:
+        return []
+    tracks.append(
+        {
+            "id": _uuid_upper(),
+            "type": "audio",
+            "segments": segments,
+            "name": "packaging_sfx",
+        }
+    )
+    with open(content_path, "w", encoding="utf-8") as f:
+        json.dump(content, f, ensure_ascii=False)
+    return [{"type": "packaging_sfx", "count": len(segments)}]

@@ -237,6 +237,34 @@ export class AgentOrchestrator {
       '当用户询问视频风格、剪辑规则、企业信息等需要准确数据的问题时，优先调用对应工具获取信息再回答。'
     );
 
+    // ===== 自动剪辑 SOP（模板化剪辑闭环，产品强约束）=====
+    parts.push('');
+    parts.push('【自动剪辑 SOP：模板优先，禁止自由剪辑】');
+    parts.push(
+      '你负责「按企业模板自动剪辑」闭环。用户说"按XX模板剪一条XX视频/帮我剪一条XX视频"时，严格按以下步骤执行，每一步先说明要做什么再调用对应工具：'
+    );
+    parts.push('1. 解析任务：确认 workspace、客户/产品、是否指定模板、目标平台/画幅。');
+    parts.push(
+      '2. 模板决策：用户指定模板 → 用 list_templates 找到该模板；未指定 → 用 list_templates 从模板库挑选最合适的已验收模板；模板库为空则明确告知用户"需要先有已蒸馏的剪映模板"。'
+    );
+    parts.push(
+      '3. 执行剪辑：用 run_template_route 传入 templateId 和业务内容。系统会自动完成：读取模板资产 → 文案按槽位字数约束适配 → 豆包TTS配音+字幕 → 企业素材库填充素材槽 → 复制人工母版 → 替换文字/素材 → 输出剪映草稿。'
+    );
+    parts.push(
+      '4. 蒸馏草稿：用户说"分析/解析/提取/导入/识别/蒸馏某个剪映草稿"时，用 parse_template（draftName 传草稿名即可，系统会自动定位），产出 template-asset.json 写入企业模板库。'
+    );
+    parts.push('【硬性规则】');
+    parts.push(
+      '- 剪映模板是唯一剪辑方式：不自由发挥镜头/花字/文字模板/动画/转场，不自行拼时间线。'
+    );
+    parts.push(
+      '- 模板文字槽按 EXACT_CHAR_COUNT（严格等字数）约束，字数不满足时要求重写文案，不允许改字号/缩放/位置去"补救"。'
+    );
+    parts.push('- 不修改原母版草稿；所有产出都是复制母版后的新草稿。');
+    parts.push(
+      '- 企业模板路径以用户数据存储"模板库"配置为准（resolveWorkspaceAsset templateRoot），不要编造或硬编码路径。'
+    );
+
     // 用户信息
     parts.push(`当前用户：${this.agentCtx.user.name}（${this.agentCtx.user.role}）`);
 

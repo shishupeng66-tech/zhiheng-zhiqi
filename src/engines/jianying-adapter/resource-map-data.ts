@@ -25,6 +25,9 @@ export const RESOURCE_MAP_REF = 'zhiheng-resource-map.v0.1.0';
 
 /** 生产资源数据文件相对本文件的路径：resource-map-data.ts → resources/resource-map.v0.json */
 function getProductionResourceMapFile(): string {
+  // 桌面自包含模式：安装包内 bundled 资源路径（由桌面层注入，与 Worker contract.py 同源）
+  const bundled = process.env.ZHIHENG_RESOURCE_MAP?.trim();
+  if (bundled && fs.existsSync(bundled)) return bundled;
   // Next.js Turbopack 打包下 __dirname 会变成虚拟 \ROOT\（无头 tsx 正常，Next 内失效），
   // 因此优先按 __dirname 解析，找不到时回退到进程工作目录的项目相对路径。
   const viaDirname = path.join(__dirname, 'resources', 'resource-map.v0.json');

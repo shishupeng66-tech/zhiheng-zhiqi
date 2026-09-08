@@ -99,6 +99,78 @@ export const KeywordSegmentSchema = z.object({
 });
 export type KeywordSegment = z.infer<typeof KeywordSegmentSchema>;
 
+/**
+ * 独立文本覆盖（Text Overlay）段 —— 一个信息词 = 一个独立文本对象。
+ *
+ * 语义：
+ * - 同组内各 overlay 时间允许重叠（start 不同、end 相同 = 组尾共同退场）；
+ * - 对象分配到「固定 Text Overlay 轨道池」（laneIndex）：同一 lane 内不重叠、不同 lane 允许重叠；
+ * - 固定槽位（slotIndex + positionY），词出现后位置不再变化；
+ * - 入场/出场动画为剪映真实动画 resource id（非 fork 枚举约束，桥接层注入）。
+ */
+export const TextOverlaySegmentSchema = z.object({
+  /** 覆盖段 ID */
+  id: NonEmptyString,
+  /** 文本内容（displayText：画面显示的关键词/短词组） */
+  text: NonEmptyString,
+  /** 开始时间（秒，由 sourceText 匹配 TTS_NATIVE 得到的真实口播 start） */
+  start: TimeSeconds,
+  /** 结束时间（秒，组内所有 overlay 相同 = 本组 groupEnd） */
+  end: TimeSeconds,
+  /** 槽位序号（0..n，自上而下/二维 Dense Slot Map），位置固定不重排 */
+  slotIndex: z.number().int().min(0),
+  /** 剪映 transform_x（相对屏幕中心，向右为正；Dense Info Wall 二维布局用） */
+  positionX: z.number().default(0),
+  /** 剪映 transform_y（相对屏幕中心，向上为正；画面中下部、底部字幕之上） */
+  positionY: z.number(),
+  /** 用户手工模板真实 effect/resource id（如 国庆黄红立体字效 7546423084874599705） */
+  effectResourceId: z.string(),
+  /** 入场动画真实 resource id（向上弹入 7123116334677758501） */
+  animationInId: z.string(),
+  /** 出场动画真实 resource id（烟雾消散 7678658611601493258） */
+  animationOutId: z.string(),
+  /** 动画时长（微秒） */
+  animationDurationUs: z.number().int().positive(),
+  /** 所属重点组 id */
+  groupId: z.string().optional(),
+  /** 固定轨道池 lane 索引（同 lane 内不重叠、不同 lane 允许重叠；由业务层 greedy allocator 分配） */
+  laneIndex: z.number().int().min(0).default(0),
+  /** 显示层级，数值越大越靠上 */
+  layer: z.number().int().min(0).default(5)
+});
+export type TextOverlaySegment = z.infer<typeof TextOverlaySegmentSchema>;
+
+/** 包装贴图段（sticker）：按 sourceText TTS 时间入场，生命周期与对应强调对象一致。 */
+export const StickerPackagingSegmentSchema = z.object({
+  id: NonEmptyString,
+  /** 语义贴图键（Registry stickerKey） */
+  stickerKey: NonEmptyString,
+  /** 剪映 sticker material id */
+  materialId: NonEmptyString,
+  /** 本地缓存路径 */
+  path: NonEmptyString,
+  start: TimeSeconds,
+  end: TimeSeconds,
+  positionX: z.number().default(0),
+  positionY: z.number().default(0),
+  scale: z.number().default(1),
+  rotation: z.number().default(0)
+});
+export type StickerPackagingSegment = z.infer<typeof StickerPackagingSegmentSchema>;
+
+/** 包装音效段（sfx）：绑定对应 visual overlay 的 start。 */
+export const PackagingSfxSegmentSchema = z.object({
+  id: NonEmptyString,
+  /** 语义音效键（Registry sfxKey） */
+  sfxKey: NonEmptyString,
+  materialId: NonEmptyString,
+  path: NonEmptyString,
+  start: TimeSeconds,
+  duration: TimeSeconds,
+  volume: z.number().default(1)
+});
+export type PackagingSfxSegment = z.infer<typeof PackagingSfxSegmentSchema>;
+
 // ============================================================================
 // Unified Timeline V2 —— 根对象
 // ============================================================================
@@ -132,7 +204,13 @@ export const UnifiedTimelineV2Schema = z.object({
   /** 音效轨道 */
   sfxTrack: z.array(SfxSegmentSchema).optional(),
   /** 关键词包装轨道（花字/动态字，V2 新增） */
-  keywordTrack: z.array(KeywordSegmentSchema).optional()
+  keywordTrack: z.array(KeywordSegmentSchema).optional(),
+  /** 独立文本覆盖轨（一个信息词 = 一个独立文本对象；各占独立 text 轨，允许时间重叠） */
+  textOverlayTrack: z.array(TextOverlaySegmentSchema).optional(),
+  /** 包装贴图轨（sticker，来自 Visual Resource Registry） */
+  stickerTrack: z.array(StickerPackagingSegmentSchema).optional(),
+  /** 包装音效（sfx，来自 Visual Resource Registry；绑定对应视觉 overlay start） */
+  packagingSfx: z.array(PackagingSfxSegmentSchema).optional()
 });
 export type UnifiedTimelineV2 = z.infer<typeof UnifiedTimelineV2Schema>;
 

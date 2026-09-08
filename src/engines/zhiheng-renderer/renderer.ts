@@ -317,7 +317,7 @@ export class ZhihengRenderer implements RendererInterface {
       assetResolver.getTaskManifest().saveToFile(path.join(workDir, 'task-asset-manifest.json'));
 
       // 3.5 初始化 Packaging Asset Resolver（音效/贴纸/花字模板库）
-      const packagingResolver = new PackagingAssetResolver();
+      const packagingResolver = await PackagingAssetResolver.create();
       const pkgStats = packagingResolver.getStats();
       logger.log(
         'info',

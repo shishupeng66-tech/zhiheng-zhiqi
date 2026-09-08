@@ -31,9 +31,23 @@ FIXTURES_DIR = Path(__file__).resolve().parent.parent.parent / "__fixtures__"
 
 # 生产 ResourceMap 数据：jianying-adapter/resources/resource-map.v0.json
 # （生产代码只读取正式资源文件，不依赖 __fixtures__；与 TS 侧同一文件，真正单源）
-PRODUCTION_RESOURCE_MAP_PATH = (
-    Path(__file__).resolve().parent.parent.parent / "resources" / "resource-map.v0.json"
-)
+# 桌面 Runtime（PyInstaller 冻结）：__file__ 位于 _MEIPASS，相对路径不存在；
+# 由桌面层设置 ZHIHENG_RESOURCE_MAP 指向安装包内 bundled resource-map.v0.json。
+def _resolve_resource_map_path():
+    env_path = os.environ.get("ZHIHENG_RESOURCE_MAP", "").strip()
+    if env_path and os.path.isfile(env_path):
+        return Path(env_path)
+    candidate = Path(__file__).resolve().parent.parent.parent / "resources" / "resource-map.v0.json"
+    if candidate.exists():
+        return candidate
+    # 最后兜底：包内随附拷贝（PyInstaller --add-data 时存在）
+    bundled = Path(__file__).resolve().parent / "resource-map.v0.json"
+    if bundled.exists():
+        return bundled
+    return candidate
+
+
+PRODUCTION_RESOURCE_MAP_PATH = _resolve_resource_map_path()
 
 SHARED_FIXTURE_FILES = (
     "job-minimal.json",

@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { resolveSystemAsset } from '@/lib/system-assets';
 
 // Skill 定义类型（与 schema.v1.json 对齐）
 export interface VideoEditingSkill {
@@ -65,7 +66,58 @@ let cachedSkills: VideoEditingSkill[] | null = null;
 let cacheMtime: number = 0;
 let cachePromise: Promise<VideoEditingSkill[]> | null = null;
 
-const SKILLS_DIR = path.join(process.cwd(), 'skills', 'video-editing');
+/** 旧默认 Skill 目录（保留为 fallback，避免迁移后 skill 加载为空）。 */
+const LEGACY_SKILLS_DIR = path.join(process.cwd(), 'skills', 'video-editing');
+
+/**
+ * 项目内置三层模板 Skill 目录（正式，随项目版本走）。
+ * 产品 Skill 固定在项目内部，不依赖客户 Obsidian；Obsidian 06 副本仅作企业可见说明。
+ */
+const PROJECT_TEMPLATE_SKILLS_DIR = path.join(process.cwd(), 'skills', 'template-editing');
+
+/** 判断目录下是否存在含 skill.json 的子目录。 */
+async function dirHasSkillJson(dir: string): Promise<boolean> {
+  try {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    const withJson = await Promise.all(
+      entries
+        .filter((e) => e.isDirectory())
+        .map(async (e) => {
+          try {
+            await fs.access(path.join(dir, e.name, 'skill.json'));
+            return true;
+          } catch {
+            return false;
+          }
+        })
+    );
+    return withJson.some(Boolean);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 解析 Editing Skill 根目录（优先级）：
+ * 1. 项目内置三层模板 Skill（skills/template-editing）—— 产品 Skill 正式源，随版本走
+ * 2. resolveSystemAsset('editingSkillRoot')（DB/ENV 可覆盖，指向系统资产 Skills 目录）
+ * 3. 旧默认目录 skills/video-editing（legacy fallback）
+ */
+async function resolveSkillsDir(): Promise<string> {
+  // 1) 项目内置三层模板 Skill（正式）
+  if (await dirHasSkillJson(PROJECT_TEMPLATE_SKILLS_DIR)) {
+    return PROJECT_TEMPLATE_SKILLS_DIR;
+  }
+  // 2) editingSkillRoot（DB/ENV 覆盖 / 系统资产 Skills 目录）
+  try {
+    const r = await resolveSystemAsset('editingSkillRoot');
+    if (r.exists && (await dirHasSkillJson(r.path))) return r.path;
+  } catch {
+    /* 忽略，回退 */
+  }
+  // 3) legacy
+  return LEGACY_SKILLS_DIR;
+}
 
 /**
  * 列出所有视频剪辑 Skill
@@ -103,7 +155,8 @@ export async function getSkillByContentType(
 
 async function loadAllSkills(): Promise<VideoEditingSkill[]> {
   try {
-    const dirStat = await fs.stat(SKILLS_DIR);
+    const skillsDir = await resolveSkillsDir();
+    const dirStat = await fs.stat(skillsDir);
     if (!dirStat.isDirectory()) {
       return [];
     }
@@ -113,13 +166,13 @@ async function loadAllSkills(): Promise<VideoEditingSkill[]> {
       return cachedSkills;
     }
 
-    const entries = await fs.readdir(SKILLS_DIR, { withFileTypes: true });
+    const entries = await fs.readdir(skillsDir, { withFileTypes: true });
     const skillDirs = entries.filter((e) => e.isDirectory());
 
     const skills: VideoEditingSkill[] = [];
 
     for (const dir of skillDirs) {
-      const skillPath = path.join(SKILLS_DIR, dir.name, 'skill.json');
+      const skillPath = path.join(skillsDir, dir.name, 'skill.json');
       try {
         const content = await fs.readFile(skillPath, 'utf-8');
         const skill = JSON.parse(content) as VideoEditingSkill;

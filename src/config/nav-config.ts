@@ -155,6 +155,14 @@ export const navGroups: NavGroup[] = [
         access: { role: 'super_admin' }
       },
       {
+        title: '环境诊断',
+        url: '/dashboard/desktop',
+        icon: 'adjustments',
+        isActive: false,
+        items: [],
+        access: { role: 'super_admin' }
+      },
+      {
         title: '账户',
         url: '#',
         icon: 'account',

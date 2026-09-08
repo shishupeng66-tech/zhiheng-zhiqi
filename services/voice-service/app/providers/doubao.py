@@ -50,6 +50,7 @@ class EventType(enum.IntEnum):
     TTSSentenceStart = 350
     TTSSentenceEnd = 351
     TTSResponse = 352
+    TTSSubtitle = 364
 
 
 class TTSWebSocketMessage:
@@ -209,7 +210,7 @@ class DoubaoVoiceProvider:
 
         request_id = str(uuid.uuid4())
         try:
-            audio_bytes = self._run_websocket_synthesis(
+            audio_bytes, char_timestamps, subtitle_words = self._run_websocket_synthesis(
                 endpoint=endpoint,
                 api_key=api_key,
                 resource_id=resource_id,
@@ -231,6 +232,8 @@ class DoubaoVoiceProvider:
             mime_type="audio/mpeg",
             provider=self.provider,
             provider_voice_id=provider_voice_id,
+            char_timestamps=char_timestamps,
+            subtitle_words=subtitle_words,
         )
 
     @staticmethod
@@ -253,7 +256,7 @@ class DoubaoVoiceProvider:
         provider_voice_id: str,
         speed: float,
         volume: float,
-    ) -> bytes:
+    ) -> tuple[bytes, list | None, list | None]:
         return asyncio.run(
             self._synthesize_websocket(
                 endpoint=endpoint,
@@ -276,9 +279,11 @@ class DoubaoVoiceProvider:
         provider_voice_id: str,
         speed: float,
         volume: float,
-    ) -> bytes:
+    ) -> tuple[bytes, list | None, list | None]:
         session_id = str(uuid.uuid4())
         audio = bytearray()
+        char_timestamps: list | None = None
+        subtitle_words: list | None = None
         headers = {
             "X-Api-Key": api_key,
             "X-Api-Resource-Id": resource_id,
@@ -307,6 +312,8 @@ class DoubaoVoiceProvider:
                         "sample_rate": DEFAULT_SAMPLE_RATE,
                         "speech_rate": self._speech_rate(speed),
                         "loudness_rate": self._loudness_rate(volume),
+                        # 开启字幕识别：TTS2.0(seed-tts-2.0) 经 TTSSubtitle(364) 事件返回逐字时间戳
+                        "enable_subtitle": True,
                     },
                 },
             }
@@ -333,8 +340,40 @@ class DoubaoVoiceProvider:
                         encoded_audio = payload.get("data") or payload.get("audio")
                         if isinstance(encoded_audio, str) and encoded_audio:
                             audio.extend(base64.b64decode(encoded_audio))
+                        # 字级时间戳：additions.speech_timestamp = [{start_time, end_time}, ...]（毫秒）
+                        additions = payload.get("additions") or {}
+                        ts = additions.get("speech_timestamp")
+                        if isinstance(ts, list) and len(ts) > 0 and char_timestamps is None:
+                            parsed = []
+                            for item in ts:
+                                if isinstance(item, dict):
+                                    st = item.get("start_time")
+                                    et = item.get("end_time")
+                                    if isinstance(st, (int, float)) and isinstance(et, (int, float)):
+                                        parsed.append({"start": int(st), "end": int(et)})
+                            if parsed:
+                                char_timestamps = parsed
                     elif message.payload:
                         audio.extend(message.payload)
+                elif message.event == EventType.TTSSubtitle:
+                    # TTS2.0 字幕事件（流式，每句/每块一个）：words = [{word, startTime, endTime, confidence}]
+                    # 需把多个事件的字幕**按顺序累加**，才覆盖完整文本（每个事件只含一句/一块）。
+                    payload = message.payload_json()
+                    if isinstance(payload, dict):
+                        words = payload.get("words")
+                        if isinstance(words, list):
+                            if subtitle_words is None:
+                                subtitle_words = []
+                            for item in words:
+                                if isinstance(item, dict) and isinstance(item.get("word"), str):
+                                    st = item.get("startTime")
+                                    et = item.get("endTime")
+                                    if isinstance(st, (int, float)) and isinstance(et, (int, float)):
+                                        subtitle_words.append({
+                                            "text": item["word"],
+                                            "startMs": int(round(float(st) * 1000)),
+                                            "endMs": int(round(float(et) * 1000)),
+                                        })
                 elif message.event == EventType.SessionFinished:
                     break
                 elif message.event in {
@@ -350,7 +389,7 @@ class DoubaoVoiceProvider:
 
         if not audio:
             raise RuntimeError("Doubao TTS websocket returned no audio data.")
-        return bytes(audio)
+        return bytes(audio), char_timestamps, subtitle_words
 
     async def _send_event(
         self,

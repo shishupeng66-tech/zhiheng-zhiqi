@@ -1,5 +1,6 @@
 import {
   IconAdjustmentsHorizontal,
+  IconActivity,
   IconAlertCircle,
   IconAlertTriangle,
   IconArrowRight,
@@ -32,6 +33,7 @@ import {
   IconDeviceLaptop,
   IconDots,
   IconDotsVertical,
+  IconDownload,
   IconEdit,
   IconExternalLink,
   IconEyeOff,
@@ -60,6 +62,7 @@ import {
   IconPalette,
   IconPaperclip,
   IconPhone,
+  IconPlayerPlay,
   IconPhoto,
   IconPizza,
   IconPlus,
@@ -203,6 +206,7 @@ export const Icons = {
   trendingUp: IconTrendingUp,
   eyeOff: IconEyeOff,
   adjustments: IconAdjustmentsHorizontal,
+  activity: IconActivity,
 
   // Text formatting
   bold: IconBold,
@@ -225,5 +229,7 @@ export const Icons = {
   calendar: IconCalendar,
   galleryVerticalEnd: IconStack2,
   library: IconStack2,
-  moreHorizontal: IconDots
+  moreHorizontal: IconDots,
+  download: IconDownload,
+  play: IconPlayerPlay
 };

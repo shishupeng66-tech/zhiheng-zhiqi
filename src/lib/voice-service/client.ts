@@ -23,7 +23,19 @@ type VoiceServiceResponse = {
   mime_type: string;
   provider: string;
   provider_voice_id: string;
+  /** 字级时间戳（TTS 支持时返回）；否则缺省 */
+  char_timestamps?: Array<{ start: number; end: number }>;
+  /** 真实音频语音段（停顿边界，秒），供字幕与口播对齐 */
+  speech_segments?: Array<{ start: number; end: number }>;
+  /** TTS 原生逐字时间戳：{source, words:[{text,startMs,endMs}]} */
+  timing?: {
+    source: string;
+    words: Array<{ text: string; startMs: number; endMs: number }>;
+  } | null;
 };
+
+/** 真实音频语音段（停顿边界，秒） */
+export type VoiceSpeechSegment = { start: number; end: number };
 
 export function getVoiceServiceUrl() {
   return process.env.VOICE_SERVICE_URL || 'http://127.0.0.1:5015';

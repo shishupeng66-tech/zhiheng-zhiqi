@@ -26,7 +26,8 @@ export async function GET(request: NextRequest, { params }: Ctx) {
   }
 
   const { searchParams } = request.nextUrl;
-  const text = searchParams.get('text')?.slice(0, 200) || undefined;
+  const text =
+    searchParams.get('text')?.slice(0, 200) || '你好，这是音色试听，欢迎使用知衡智企智能配音。';
   const speed = Number(searchParams.get('speed') ?? '1');
   const volume = Number(searchParams.get('volume') ?? '1');
 

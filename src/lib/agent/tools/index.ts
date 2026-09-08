@@ -16,6 +16,324 @@ import {
 } from '@/lib/workspaces/automation-editing';
 import { getWorkspaceBySlug } from '@/lib/workspaces/service';
 import { startMoneyPrinterTaskWorker } from '@/lib/workspaces/moneyprinter-engine';
+import { listTemplateAssets } from '@/lib/templates/template-asset-store';
+import { runTemplateParse } from '@/lib/workspaces/template-parse';
+import { runTemplateRoute } from '@/lib/workspaces/template-route';
+import { findDraftDir } from '@/lib/workspaces/draft-locator';
+import fs from 'node:fs';
+import path from 'node:path';
+import { chat } from '@/lib/ai';
+
+/** 工具默认工作空间：无显式上下文时的兜底（与自动化剪辑空间保持一致）。 */
+const DEFAULT_TEMPLATE_WORKSPACE = 'enterprise-media';
+
+/**
+ * 根据模板资产中的文字槽内容，让 LLM 生成中文业务名（3~8 字）。
+ * 失败时返回 null（保持原草稿名），不阻断解析成功。
+ */
+async function autoNameTemplate(assetPath: string): Promise<string | null> {
+  try {
+    const asset = JSON.parse(fs.readFileSync(assetPath, 'utf-8')) as {
+      templateName?: string;
+      textSlots?: Array<{ text?: string; originalText?: string }>;
+    };
+    const samples = (asset.textSlots ?? [])
+      .map((s) => s.text ?? s.originalText ?? '')
+      .filter((t) => t && t.trim().length >= 2)
+      .slice(0, 10);
+    if (samples.length === 0) return null;
+
+    const prompt =
+      '你是知衡智企模板命名助手。下面是从一个企业短视频模板中提取的文案片段，' +
+      '请给这个模板起一个简洁的中文业务名（3~8个字，风格类似「饮品贴牌避坑」「工厂实力展示」「老板IP观点」），' +
+      '直接输出名字本身，不要引号、不要标点、不要解释、不要换行。\n文案片段：\n' +
+      samples.map((t, i) => `${i + 1}. ${t}`).join('\n');
+
+    const name = (await chat([{ role: 'user', content: prompt }])).trim();
+    if (!name || name.length < 2 || name.length > 12) return null;
+    const clean = name.replace(/[「」""''。，、.!！?？\n]/g, '').trim();
+    if (!clean) return null;
+
+    // 写回 template-asset.json，让模板名持久化
+    asset.templateName = clean;
+    fs.writeFileSync(assetPath, JSON.stringify(asset, null, 2), 'utf-8');
+    return clean;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 把模板文件夹重命名为中文业务名（蒸馏入库规则：模板文件夹名=业务名）。
+ * 同步更新 template-asset.json 内的 templateId。
+ * 同名冲突时追加短后缀，避免覆盖已有模板。
+ */
+async function renameTemplateFolder(
+  assetPath: string,
+  newName: string
+): Promise<{ ok: boolean; templateId?: string; assetPath?: string; error?: string }> {
+  try {
+    const dir = path.dirname(assetPath); // .../企业模板/<oldId>
+    const parent = path.dirname(dir); // .../企业模板
+    const oldId = path.basename(dir);
+    const clean = newName
+      .trim()
+      .replace(/[\\/:*?"<>|]/g, '-')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!clean || clean === oldId) {
+      return { ok: true, templateId: oldId, assetPath };
+    }
+    let target = path.join(parent, clean);
+    if (fs.existsSync(target)) {
+      target = path.join(parent, `${clean}-${Date.now().toString(36).slice(-3)}`);
+    }
+    fs.renameSync(dir, target);
+    const newAssetPath = path.join(target, 'template-asset.json');
+    if (fs.existsSync(newAssetPath)) {
+      const asset = JSON.parse(fs.readFileSync(newAssetPath, 'utf-8')) as Record<string, unknown>;
+      asset.templateId = path.basename(target);
+      if (!asset.templateName) asset.templateName = clean;
+      fs.writeFileSync(newAssetPath, JSON.stringify(asset, null, 2), 'utf-8');
+    }
+    return { ok: true, templateId: path.basename(target), assetPath: newAssetPath };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : '重命名模板文件夹失败' };
+  }
+}
+
+// ============================================================
+// Tool 8: list_templates
+// 列出企业模板库中的全部模板（供 Agent 选择/蒸馏后确认）
+// ============================================================
+
+const listTemplatesInput = z.object({
+  workspaceSlug: z
+    .string()
+    .optional()
+    .describe('工作空间 slug，默认 enterprise-media（自动化剪辑空间）')
+});
+
+const listTemplatesTool: AgentTool<
+  z.infer<typeof listTemplatesInput>,
+  {
+    ok: boolean;
+    count: number;
+    templates: Array<{
+      templateId: string;
+      templateName: string;
+      status: string;
+      aspectRatio?: string;
+      durationSec?: number;
+      textSlotCount?: number;
+      mediaSlotCount?: number;
+    }>;
+    error?: string;
+  }
+> = {
+  name: 'list_templates',
+  displayName: '列出企业模板库',
+  description:
+    '列出企业模板库（用户数据存储中配置的模板库路径）中所有已蒸馏入库的剪映模板资产。' +
+    '当用户询问"有哪些模板"、"模板库有什么"、"用哪个模板"时调用此工具。',
+  inputSchema: listTemplatesInput,
+  riskLevel: 'low',
+  requiredPermission: undefined,
+  execute: async (input) => {
+    const slug = input.workspaceSlug || DEFAULT_TEMPLATE_WORKSPACE;
+    const workspace = getWorkspaceBySlug(slug);
+    if (!workspace) return { ok: false, count: 0, templates: [], error: `工作空间不存在: ${slug}` };
+    const loaded = await listTemplateAssets(workspace.id);
+    const templates = loaded
+      .filter((l) => l.ok && l.asset)
+      .map((l) => {
+        const a = l.asset!;
+        return {
+          templateId: a.templateId,
+          templateName: a.templateName || a.templateId,
+          status: a.status ?? 'unknown',
+          aspectRatio: a.templateInfo?.canvas
+            ? `${a.templateInfo.canvas.width}x${a.templateInfo.canvas.height}`
+            : undefined,
+          durationSec: a.templateInfo?.durationSec,
+          textSlotCount: a.textSlots?.length ?? 0,
+          mediaSlotCount: a.mediaSlots?.length ?? 0
+        };
+      });
+    return { ok: true, count: templates.length, templates };
+  }
+};
+
+// ============================================================
+// Tool 9: parse_template
+// 把人工剪映草稿蒸馏为企业模板资产（template-asset.json）
+// ============================================================
+
+const parseTemplateInput = z.object({
+  draftName: z
+    .string()
+    .optional()
+    .describe('剪映草稿名称（如「9月5日 (1)」「8月28日」），或剪映草稿完整目录路径（D:\\...）。'),
+  templateName: z.string().optional().describe('可选：模板中文名（如 饮品贴牌避坑），缺省用草稿名'),
+  workspaceSlug: z
+    .string()
+    .optional()
+    .describe('工作空间 slug，默认 enterprise-media（自动化剪辑空间）')
+});
+
+const parseTemplateTool: AgentTool<
+  z.infer<typeof parseTemplateInput>,
+  {
+    ok: boolean;
+    templateId?: string;
+    templateName?: string;
+    assetPath?: string;
+    textSlotCount?: number;
+    mediaSlotCount?: number;
+    message?: string;
+    error?: string;
+  }
+> = {
+  name: 'parse_template',
+  displayName: '解析剪映草稿为模板',
+  description:
+    '把用户人工剪辑完成的剪映草稿解析（蒸馏）为企业模板资产 template-asset.json，写入企业模板库（用户数据存储配置的模板库路径）。' +
+    '当用户说"分析/解析/提取/导入/识别某个剪映草稿"、"把这个草稿变成模板"、"蒸馏草稿"时调用此工具。' +
+    'draftName 可以是草稿名（会在剪映草稿根和模板库目录中按名称查找）或完整路径。',
+  inputSchema: parseTemplateInput,
+  riskLevel: 'low',
+  requiredPermission: 'video:generate',
+  execute: async (input) => {
+    const slug = input.workspaceSlug || DEFAULT_TEMPLATE_WORKSPACE;
+    if (!input.draftName) {
+      return { ok: false, error: '请提供要解析的剪映草稿名称或路径。' };
+    }
+    // 1) 定位草稿（支持名称/路径；多候选不猜测）
+    const located = await findDraftDir(input.draftName, slug);
+    if (!located.ok) {
+      return { ok: false, error: located.error };
+    }
+    // 2) 解析为模板资产
+    const tpl = await runTemplateParse({
+      workspaceSlug: slug,
+      draftDir: located.draftDir,
+      templateName: input.templateName || located.draftName
+    });
+    if (!tpl.ok || !tpl.templateId) {
+      return { ok: false, error: tpl.error ?? '模板解析失败' };
+    }
+    // 3) 自动命名：用户没指定模板名时，根据草稿文字内容语义生成中文业务名
+    //    （蒸馏技能规则：新模板入库必须有一个可读的业务名，不能只是草稿文件名）
+    let templateName = tpl.templateName ?? located.draftName;
+    let templateId = tpl.templateId!;
+    let assetPath = tpl.assetPath;
+    if (!input.templateName && tpl.assetPath) {
+      const generated = await autoNameTemplate(tpl.assetPath);
+      if (generated) {
+        templateName = generated;
+        // 蒸馏入库规则：文件夹名=中文业务名，前端模板库显示即业务名
+        const renamed = await renameTemplateFolder(tpl.assetPath, generated);
+        if (renamed.ok && renamed.templateId) {
+          templateId = renamed.templateId;
+          if (renamed.assetPath) assetPath = renamed.assetPath;
+        }
+      }
+    }
+    return {
+      ok: true,
+      templateId,
+      templateName,
+      assetPath,
+      textSlotCount: tpl.textSlotCount,
+      mediaSlotCount: tpl.mediaSlotCount,
+      message: `已把剪映草稿「${tpl.templateName}」解析为模板「${templateName}」：${tpl.textSlotCount ?? 0} 个文字槽、${tpl.mediaSlotCount ?? 0} 个素材槽，已写入企业模板库。`
+    };
+  }
+};
+
+// ============================================================
+// Tool 10: run_template_route
+// 按指定企业模板自动剪辑一条视频（模板优先路线，含TTS/字幕/素材替换）
+// ============================================================
+
+const runTemplateRouteInput = z.object({
+  templateId: z
+    .string()
+    .describe('要使用的企业模板 ID 或模板名（如 0828-yinpin-tiepai-bikeng / 饮品贴牌避坑）'),
+  businessContext: z
+    .string()
+    .describe('本次视频需求/业务内容：客户、产品、口播方向、平台、画幅等用户要求'),
+  workspaceSlug: z
+    .string()
+    .optional()
+    .describe('工作空间 slug，默认 enterprise-media（自动化剪辑空间）')
+});
+
+const runTemplateRouteTool: AgentTool<
+  z.infer<typeof runTemplateRouteInput>,
+  {
+    ok: boolean;
+    route?: string;
+    templateId?: string;
+    draftName?: string;
+    draftPath?: string;
+    textFillCount?: number;
+    textFillTotal?: number;
+    mediaPlanCount?: number;
+    voiceOk?: boolean;
+    message?: string;
+    error?: string;
+  }
+> = {
+  name: 'run_template_route',
+  displayName: '按模板自动剪辑视频',
+  description:
+    '按指定企业模板自动剪辑一条视频：读取模板资产 → 生成/适配文案（严格按槽位字数约束）→ 豆包TTS配音+字幕 → 企业素材库检索填充素材槽 → 复制人工母版 → 替换文字/素材 → 输出剪映草稿。' +
+    '当用户说"按XX模板剪一条XX视频"、"用XX模板做一条视频"时调用此工具。' +
+    '执行前如有必要先调用 list_templates 确认模板 ID。',
+  inputSchema: runTemplateRouteInput,
+  riskLevel: 'low',
+  requiredPermission: 'video:generate',
+  execute: async (input) => {
+    const slug = input.workspaceSlug || DEFAULT_TEMPLATE_WORKSPACE;
+    // 模板名 → ID：支持直接 ID / 模板名（含/等于匹配）
+    let templateId = input.templateId;
+    const workspace = getWorkspaceBySlug(slug);
+    if (workspace) {
+      const loaded = await listTemplateAssets(workspace.id);
+      const hit = loaded.find(
+        (l) =>
+          l.ok &&
+          l.asset &&
+          (l.asset.templateId === input.templateId ||
+            l.asset.templateName === input.templateId ||
+            (l.asset.templateName ?? '').includes(input.templateId) ||
+            input.templateId.includes(l.asset.templateId))
+      );
+      if (hit?.ok && hit.asset) templateId = hit.asset.templateId;
+    }
+    const result = await runTemplateRoute({
+      workspaceSlug: slug,
+      templateId,
+      businessContext: input.businessContext
+    });
+    if (!result.ok) {
+      return { ok: false, route: 'template', templateId, error: result.error ?? '模板剪辑失败' };
+    }
+    return {
+      ok: true,
+      route: result.route,
+      templateId: result.templateId,
+      draftName: result.draftName,
+      draftPath: result.draftPath,
+      textFillCount: result.textFillCount,
+      textFillTotal: result.textFillTotal,
+      mediaPlanCount: result.mediaPlanCount,
+      voiceOk: result.voice?.ok ?? false,
+      message: `模板剪辑完成：${result.textFillCount}/${result.textFillTotal} 文字槽已填充、${result.mediaPlanCount} 个素材槽已替换，配音${result.voice?.ok ? '成功' : '未生成'}，草稿已输出：${result.draftName}`
+    };
+  }
+};
 
 // ============================================================
 // Tool 1: list_video_skills
@@ -840,13 +1158,14 @@ function buildGuardrailWarnings(companyContext: CompanyContext | null): string[]
 // 注册所有 Tool
 // ============================================================
 
-toolRegistry.register(listVideoSkillsTool);
-toolRegistry.register(getVideoSkillTool);
+// Agent-native 自由剪辑工具（listVideoSkills/getVideoSkill/createVideoPlan/saveVideoPlanAsDraft/executeVideoTask）
+// 已按产品决策从知衡助手对话中摘除：自由剪辑效果不可控，正式剪辑统一走「人工母版模板」路线。
+// 定义保留（export 兼容），但不再注册进对话工具集。
 toolRegistry.register(getCompanyContextSummaryTool);
 toolRegistry.register(searchVideoAssetsTool);
-toolRegistry.register(createVideoPlanTool);
-toolRegistry.register(saveVideoPlanAsDraftTool);
-toolRegistry.register(executeVideoTaskTool);
+toolRegistry.register(listTemplatesTool);
+toolRegistry.register(parseTemplateTool);
+toolRegistry.register(runTemplateRouteTool);
 
 export {
   listVideoSkillsTool,
@@ -855,6 +1174,9 @@ export {
   searchVideoAssetsTool,
   createVideoPlanTool,
   saveVideoPlanAsDraftTool,
-  executeVideoTaskTool
+  executeVideoTaskTool,
+  listTemplatesTool,
+  parseTemplateTool,
+  runTemplateRouteTool
 };
 export type { CompanyContextSummary };

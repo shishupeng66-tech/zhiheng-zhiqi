@@ -1,4 +1,9 @@
 import type { ServiceDefinition } from '../types';
+import { getVoiceServiceUrl } from '@/lib/voice-service/client';
+
+// 桌面版语音能力由主进程内嵌的 TTS 桥提供（端口随机，经 VOICE_SERVICE_URL 注入）；
+// 开发版无环境变量时回退 5015 兼容旧的独立 Voice Service。
+const voiceBaseUrl = getVoiceServiceUrl();
 
 export const voiceServiceDefinition: ServiceDefinition = {
   id: 'voice',
@@ -7,11 +12,11 @@ export const voiceServiceDefinition: ServiceDefinition = {
   description: '提供音色试听、TTS 配音生成、声音复刻训练能力',
   icon: 'music',
   health: {
-    endpoint: 'http://127.0.0.1:5015/health',
+    endpoint: `${voiceBaseUrl}/health`,
     timeoutMs: 5000,
     extractMetrics: async () => {
       try {
-        const res = await fetch('http://127.0.0.1:5015/v1/voices', {
+        const res = await fetch(`${voiceBaseUrl}/v1/voices`, {
           signal: AbortSignal.timeout(3000)
         });
         if (res.ok) {

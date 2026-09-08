@@ -437,7 +437,7 @@ export function refreshAssetIndexCache(): void {
 // ============================================================
 
 async function getAssetsRootPath(): Promise<string> {
-  return getPath('assets');
+  return getPath('videos');
 }
 
 async function loadIndexInternal(): Promise<VideoAsset[]> {

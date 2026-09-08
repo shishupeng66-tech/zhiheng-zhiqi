@@ -4,6 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { V0AiChat, type V0ChatAttachment, type V0ChatMessage } from '@/components/ui/v0-ai-chat';
 import { Icons } from '@/components/icons';
 import { WorkspaceHeaderActions } from '@/features/workspaces/components/workspace-header-actions';
@@ -42,6 +43,19 @@ type VoiceCatalogItem = {
   gender?: string | null;
   scene?: string | null;
   enabledForProduction?: boolean;
+};
+
+type EnterpriseTemplate = {
+  templateId: string;
+  /** 模板库目录里的文件夹名（用户改名后即跟随） */
+  displayName: string;
+  templateName: string;
+  status: string;
+  canvas: string;
+  durationSec: number;
+  textSlotCount: number;
+  mediaSlotCount: number;
+  assetPath: string;
 };
 
 const RATIO_LABELS: Record<string, string> = {
@@ -105,7 +119,7 @@ export function AutomationEditingOverviewPage({
   const [selectedVoiceId, setSelectedVoiceId] = React.useState('auto');
   const [selectedRatio, setSelectedRatio] = React.useState('9:16');
   const [selectedResolution, setSelectedResolution] = React.useState('1080p');
-  const restoredRef = React.useRef(false);
+  const [enterpriseTemplates, setEnterpriseTemplates] = React.useState<EnterpriseTemplate[]>([]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -138,65 +152,24 @@ export function AutomationEditingOverviewPage({
     };
   }, [workspaceSlug]);
 
-  // 刷新 / 重进页面后，若后端任务 API 可用，则恢复最近一条自动剪辑任务的状态卡片。
+  // 加载企业模板库（数据存储「模板库」根目录），供「视频类型」选择使用。
   React.useEffect(() => {
-    if (restoredRef.current) return;
-    restoredRef.current = true;
     let cancelled = false;
-
     (async () => {
       try {
-        const response = await fetch(`/api/workspaces/${workspaceSlug}/automation/tasks`, {
-          cache: 'no-store'
-        });
-        if (!response.ok) return;
+        const response = await fetch(
+          `/api/templates/enterprise?workspace=${encodeURIComponent(workspaceSlug)}`,
+          { cache: 'no-store' }
+        );
         const payload = (await response.json().catch(() => null)) as {
-          tasks?: Array<{
-            id: string;
-            title?: string;
-            createdAt?: string | number;
-            materialAssetIds?: string[];
-            status?: string;
-          }>;
+          templates?: EnterpriseTemplate[];
         } | null;
-        const tasks = Array.isArray(payload?.tasks) ? payload!.tasks : [];
-        if (cancelled || tasks.length === 0) return;
-
-        setMessages((current) => {
-          if (current.length > 0) return current;
-          const latest = tasks[0];
-          const rawCreated = latest.createdAt;
-          const createdAt =
-            typeof rawCreated === 'number'
-              ? rawCreated
-              : new Date(rawCreated ?? '').getTime() || Date.now();
-          const restoredTitle = latest.title || '未命名任务';
-          return [
-            {
-              id: crypto.randomUUID(),
-              role: 'assistant',
-              content: `已为你恢复最近一次自动剪辑任务：${restoredTitle}`,
-              contentNode: (
-                <AutoEditTaskCard
-                  workspaceSlug={workspaceSlug}
-                  taskId={latest.id}
-                  title={restoredTitle}
-                  createdAt={createdAt}
-                  ratioLabel={RATIO_LABELS[selectedRatio] ?? selectedRatio}
-                  assetCount={
-                    Array.isArray(latest.materialAssetIds) ? latest.materialAssetIds.length : 0
-                  }
-                  draftPath={`企业素材库/剪映草稿/${restoredTitle}.draft`}
-                />
-              )
-            }
-          ];
-        });
+        if (cancelled || !payload?.templates) return;
+        setEnterpriseTemplates(payload.templates);
       } catch {
-        // 恢复失败不影响新建任务，忽略即可。
+        if (!cancelled) setEnterpriseTemplates([]);
       }
     })();
-
     return () => {
       cancelled = true;
     };
@@ -488,6 +461,99 @@ export function AutomationEditingOverviewPage({
     }
   }
 
+  /** 第一步：选择企业模板 + 用户需求 → 只生成脚本文案（快），用户确认后再匹配素材、再生成。 */
+  async function generateByTemplate(template: EnterpriseTemplate, topic?: string) {
+    setSelectedStyle(null);
+    const fallbackTopic =
+      [...messages].reverse().find((message) => message.role === 'user')?.content ?? '';
+    const businessContext = topic?.trim() || fallbackTopic || '';
+    const assistantId = crypto.randomUUID();
+    setMessages((current) => [
+      ...current,
+      {
+        id: assistantId,
+        role: 'assistant',
+        content: `正在按「${template.displayName}」模板生成脚本文案…`
+      }
+    ]);
+
+    try {
+      const response = await fetch(`/api/workspaces/${workspaceSlug}/automation/template-plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ templateId: template.templateId, businessContext })
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        ok?: boolean;
+        templateId?: string;
+        textFillCount?: number;
+        textFillTotal?: number;
+        constraintFailures?: Array<{ slotId?: string; reason?: string }>;
+        mediaPlanCount?: number;
+        textPlan?: Record<string, string>;
+        message?: string;
+        error?: string;
+      };
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || payload.message || '生成文案失败，请稍后重试');
+      }
+      const textPlan = payload.textPlan || {};
+      setMessages((current) =>
+        current.map((item) =>
+          item.id === assistantId
+            ? {
+                ...item,
+                content: `已按「${template.displayName}」模板生成脚本文案（${Object.keys(textPlan).length} 段）。请先确认文案，再匹配素材。`,
+                contentNode: (
+                  <TemplateStepCard
+                    workspaceSlug={workspaceSlug}
+                    templateId={template.templateId}
+                    templateName={template.displayName}
+                    businessContext={businessContext}
+                    textPlan={textPlan}
+                    constraintFailures={payload.constraintFailures ?? []}
+                    onComplete={(info) => {
+                      setMessages((cur) =>
+                        cur.map((m) =>
+                          m.id === assistantId
+                            ? {
+                                ...m,
+                                content: `已生成剪映草稿：${info.draftName}`,
+                                contentNode: (
+                                  <AutoEditTaskCard
+                                    workspaceSlug={workspaceSlug}
+                                    taskId={info.draftName}
+                                    title={info.draftName}
+                                    createdAt={Date.now()}
+                                    ratioLabel={RATIO_LABELS['9:16'] ?? '9:16'}
+                                    durationLabel={undefined}
+                                    assetCount={info.mediaPlanCount}
+                                    draftPath={
+                                      info.draftPath ||
+                                      `企业素材库/剪映草稿/${info.draftName}.draft`
+                                    }
+                                  />
+                                )
+                              }
+                            : m
+                        )
+                      );
+                    }}
+                  />
+                )
+              }
+            : item
+        )
+      );
+    } catch (error) {
+      const content = error instanceof Error ? error.message : '生成文案失败，请稍后重试。';
+      setMessages((current) =>
+        current.map((item) => (item.id === assistantId ? { ...item, content } : item))
+      );
+      toast.error(content);
+    }
+  }
+
   async function handleSubmit(message: string, files: File[]) {
     await createAutomationTask(message, files);
   }
@@ -557,18 +623,18 @@ export function AutomationEditingOverviewPage({
           }}
           quickActions={[
             {
-              label: '自动生成视频脚本',
+              label: '按模板生成方案',
               icon: <Icons.sparkles className='size-4' />,
               menuItems: [
-                ...VIDEO_SCRIPT_STYLES.map((style) => ({
-                  label: style.name,
-                  description: style.description,
+                ...enterpriseTemplates.map((t) => ({
+                  label: t.displayName,
+                  description: `${t.templateName && t.templateName !== t.displayName ? t.templateName + ' · ' : ''}${t.canvas || '—'} · ${t.status === 'approved' ? '已验收' : '测试中'} · ${t.textSlotCount}文字槽`,
                   icon: <Icons.video className='size-4' />,
-                  onClick: (topic?: string) => void generateScript(style, topic)
+                  onClick: (topic?: string) => void generateByTemplate(t, topic)
                 })),
                 {
-                  label: '添加视频风格',
-                  description: '进入风格库维护更多视频风格',
+                  label: '添加剪映模板',
+                  description: '进入模板库管理可复用的剪映模板',
                   icon: <Icons.add className='size-4' />,
                   onClick: () => router.push(`/dashboard/workspaces/${workspaceSlug}/projects`)
                 }
@@ -589,5 +655,184 @@ export function AutomationEditingOverviewPage({
         />
       </div>
     </>
+  );
+}
+
+/**
+ * 模板分步卡片（SOP：先文案 → 再素材 → 最后生成）。
+ * - step=script：展示生成的脚本文案，用户确认后匹配素材
+ * - step=media ：展示素材计划，用户确认后生成剪映草稿
+ * - step=done  ：生成完成，回调 onComplete 交给外层替换为任务卡
+ */
+function TemplateStepCard({
+  workspaceSlug,
+  templateId,
+  templateName,
+  businessContext,
+  textPlan,
+  constraintFailures,
+  onComplete
+}: {
+  workspaceSlug: string;
+  templateId: string;
+  templateName: string;
+  businessContext: string;
+  textPlan: Record<string, string>;
+  constraintFailures: Array<{ slotId?: string; reason?: string }>;
+  onComplete: (info: { draftName: string; draftPath?: string; mediaPlanCount: number }) => void;
+}) {
+  const [step, setStep] = React.useState<'script' | 'media' | 'done'>('script');
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const [mediaPlan, setMediaPlan] = React.useState<
+    Record<string, { fileName?: string; assetPath?: string; assetDurationSec?: number }>
+  >({});
+  const entries = Object.entries(textPlan || {});
+  const failed = (constraintFailures || []).filter((f) => typeof f.slotId === 'string' && f.reason);
+  const mediaEntries = Object.entries(mediaPlan || {});
+
+  async function confirmScript() {
+    setBusy(true);
+    setError('');
+    try {
+      const response = await fetch(`/api/workspaces/${workspaceSlug}/automation/template-media`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ templateId, businessContext, explicitTextPlan: textPlan })
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        ok?: boolean;
+        mediaPlan?: Record<
+          string,
+          { fileName?: string; assetPath?: string; assetDurationSec?: number }
+        >;
+        mediaPlanCount?: number;
+        error?: string;
+      };
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || '素材匹配失败，请稍后重试');
+      }
+      setMediaPlan(payload.mediaPlan ?? {});
+      setStep('media');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '素材匹配失败，请稍后重试。');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirmMedia() {
+    setBusy(true);
+    setError('');
+    try {
+      const response = await fetch(
+        `/api/workspaces/${workspaceSlug}/automation/template-finalize`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            templateId,
+            businessContext,
+            explicitTextPlan: textPlan,
+            mediaPlan
+          })
+        }
+      );
+      const payload = (await response.json().catch(() => ({}))) as {
+        ok?: boolean;
+        draftName?: string;
+        draftPath?: string;
+        mediaPlanCount?: number;
+        error?: string;
+      };
+      if (!response.ok || !payload.ok || !payload.draftName) {
+        throw new Error(payload.error || '生成剪映草稿失败');
+      }
+      setStep('done');
+      onComplete({
+        draftName: payload.draftName,
+        draftPath: payload.draftPath,
+        mediaPlanCount: payload.mediaPlanCount ?? mediaEntries.length
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '生成剪映草稿失败，请稍后重试。');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className='rounded-lg border bg-background/60 p-4'>
+      <div className='mb-3 flex items-start justify-between gap-3'>
+        <div>
+          <p className='font-medium'>
+            模板：{templateName}
+            {step === 'media' && (
+              <span className='ml-2 text-xs text-muted-foreground'>文案已确认</span>
+            )}
+            {step === 'done' && <span className='ml-2 text-xs text-green-500'>已生成</span>}
+          </p>
+          <p className='mt-0.5 text-xs text-muted-foreground'>
+            {step === 'script' && `${entries.length} 段文案 · 请确认后匹配素材`}
+            {step === 'media' && `${mediaEntries.length} 个素材槽 · 请确认后生成剪映草稿`}
+            {failed.length > 0 && (
+              <span className='ml-2 text-amber-500'>{failed.length} 个槽位未通过字数约束</span>
+            )}
+          </p>
+        </div>
+        {step === 'script' && (
+          <Button size='sm' disabled={busy} onClick={() => void confirmScript()}>
+            {busy ? '正在匹配素材…' : '确认文案，匹配素材'}
+          </Button>
+        )}
+        {step === 'media' && (
+          <Button size='sm' disabled={busy} onClick={() => void confirmMedia()}>
+            {busy ? '正在生成…' : '确认素材，生成剪映草稿'}
+          </Button>
+        )}
+      </div>
+
+      {error && <p className='mb-2 text-xs text-red-500'>{error}</p>}
+
+      {step === 'script' && (
+        <div className='max-h-64 space-y-1.5 overflow-y-auto rounded-md bg-muted/30 p-3'>
+          {entries.length === 0 && (
+            <p className='text-xs text-muted-foreground'>该模板没有可替换文字槽位。</p>
+          )}
+          {entries.map(([slotId, text], index) => (
+            <div key={slotId} className='flex items-baseline gap-2 text-sm'>
+              <span className='shrink-0 text-xs text-muted-foreground' title={`槽位 ID：${slotId}`}>
+                {index + 1}.
+              </span>
+              <span className='break-all'>{text}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {step === 'media' && (
+        <div className='max-h-64 space-y-1.5 overflow-y-auto rounded-md bg-muted/30 p-3'>
+          {mediaEntries.length === 0 && (
+            <p className='text-xs text-muted-foreground'>
+              未匹配到素材（请确认“系统管理 /
+              数据存储”中的“视频素材库”路径与索引）。可直接生成，草稿将沿用母版素材。
+            </p>
+          )}
+          {mediaEntries.map(([materialId, info]) => (
+            <div key={materialId} className='flex items-baseline gap-2 text-sm'>
+              <span className='shrink-0 font-mono text-[10px] text-muted-foreground'>
+                {info.fileName || materialId}
+              </span>
+              <span className='break-all text-muted-foreground'>
+                {info.assetPath ?? ''}
+                {typeof info.assetDurationSec === 'number'
+                  ? ` · ${info.assetDurationSec.toFixed(1)}s`
+                  : ''}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

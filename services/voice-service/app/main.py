@@ -15,7 +15,7 @@ from .providers.clone import (
     DoubaoCloneProvider,
     SpeakerIdInvalid as CloneSpeakerIdInvalid,
 )
-from .utils import audio_duration_seconds, ensure_output_dir
+from .utils import audio_duration_seconds, detect_speech_segments, ensure_output_dir
 from .volcengine_seed_tts_voices import all_voices, RESOURCE_ID
 
 
@@ -58,6 +58,12 @@ class TtsResponse(BaseModel):
     mime_type: str
     provider: str
     provider_voice_id: str
+    # 字级时间戳（毫秒起止，与输入 text 逐字符对齐）；TTS 不支持时为 null。
+    char_timestamps: list | None = None
+    # 真实音频语音段（停顿边界，秒），供字幕与口播对齐；检测失败为 null。
+    speech_segments: list | None = None
+    # TTS 原生逐字时间戳：{source: "TTS_NATIVE", words: [{text, startMs, endMs}]}；无则 null。
+    timing: dict | None = None
 
 
 app = FastAPI(title="Zhiheng Voice Service", version="0.2.0")
@@ -181,6 +187,13 @@ def tts(request: TtsRequest):
             mime_type=result.mime_type,
             provider=result.provider,
             provider_voice_id=result.provider_voice_id,
+            char_timestamps=result.char_timestamps,
+            speech_segments=detect_speech_segments(Path(result.audio_path).resolve()),
+            timing=(
+                {"source": "TTS_NATIVE", "words": result.subtitle_words}
+                if result.subtitle_words
+                else None
+            ),
         )
     except Exception as exc:  # pragma: no cover - surfaced to Next.js worker logs.
         raise HTTPException(status_code=500, detail=str(exc)) from exc

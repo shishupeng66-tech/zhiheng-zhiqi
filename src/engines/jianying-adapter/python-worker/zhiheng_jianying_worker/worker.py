@@ -30,7 +30,7 @@ from .contract import CONTRACT_VERSION, validate_job, validate_result
 from .errors import WorkerError, WorkerError as _WE  # noqa: F401  # 兼容导入
 from .pjd_bridge import build_draft, repair_registration_paths
 from .draft_validator import validate_draft_dir
-from .pjd_source import verify_pjd_source
+from .pjd_source import verify_pjd_source_runtime
 from .path_safety import resolve_backup_path
 from .logger import JobLogger
 
@@ -96,9 +96,9 @@ class JobRunner:
             else:
                 self._mkdir(staging_root)
 
-            # 3. PJD 来源验证（Phase C.2：完整 commit + 源码干净度 + module.__file__）
+            # 3. PJD 来源验证（桌面：SHA256 指纹；开发：git commit + 干净度；统一入口）
             try:
-                pjd_meta = verify_pjd_source()
+                pjd_meta = verify_pjd_source_runtime()
             except WorkerError as we:
                 return self._finish(
                     job_id, start_ts, staging_root, output_draft_dir,
@@ -329,7 +329,9 @@ class JobRunner:
 
 def run_job_from_stdin():
     """从 stdin 读取 Job 并执行，stdout 输出唯一 Result JSON。"""
-    raw = sys.stdin.read()
+    # 显式按字节读取 + UTF-8 解码：PyInstaller 冻结 EXE 的 sys.stdin 文本编码
+    # 可能回退到 ANSI 代码页，会把 UTF-8 中文误读成孤立代理字符（\udcXX）。
+    raw = sys.stdin.buffer.read().decode("utf-8")
     try:
         job = json.loads(raw)
     except Exception as exc:  # noqa: BLE001
@@ -368,10 +370,9 @@ def _protocol_fail(job_id, code, message):
 
 
 def _emit(result):
-    """stdout 输出唯一 Result JSON（UTF-8）。"""
-    sys.stdout.write(json.dumps(result, ensure_ascii=False))
-    sys.stdout.write("\n")
-    sys.stdout.flush()
+    """stdout 输出唯一 Result JSON（UTF-8 字节直写，冻结 EXE 不受控制台代码页影响）。"""
+    sys.stdout.buffer.write((json.dumps(result, ensure_ascii=False) + "\n").encode("utf-8"))
+    sys.stdout.buffer.flush()
 
 
 def _sha256_file(path):

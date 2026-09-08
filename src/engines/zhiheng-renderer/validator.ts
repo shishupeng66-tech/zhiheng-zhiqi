@@ -124,6 +124,11 @@ export class TimelineValidator {
     this.validateWithinTotalDuration(timeline, totalDuration, errors);
 
     // ------------------------------------------------------------------------
+    // 6b. textOverlayTrack 固定轨道池规则（lane 合法 + 同 lane 内不重叠）
+    // ------------------------------------------------------------------------
+    this.validateOverlayLanes(timeline, errors);
+
+    // ------------------------------------------------------------------------
     // 7. styleId 必须存在于 Style Registry
     // ------------------------------------------------------------------------
     this.validateStyleIds(timeline, errors);
@@ -198,6 +203,12 @@ export class TimelineValidator {
       check(seg.start, `keywordTrack[${i}].start`);
       check(seg.duration, `keywordTrack[${i}].duration`);
     }
+    const overlays = this.getTextOverlayTrack(timeline);
+    for (let i = 0; i < overlays.length; i++) {
+      const seg = overlays[i];
+      check(seg.start, `textOverlayTrack[${i}].start`);
+      check(seg.end, `textOverlayTrack[${i}].end`);
+    }
   }
 
   /**
@@ -264,6 +275,17 @@ export class TimelineValidator {
     for (let i = 0; i < keywords.length; i++) {
       check(keywords[i], `keywordTrack[${i}]`);
     }
+    const overlays = this.getTextOverlayTrack(timeline);
+    for (let i = 0; i < overlays.length; i++) {
+      const seg = overlays[i];
+      if (seg.end > totalDuration + 0.001) {
+        errors.push({
+          field: `textOverlayTrack[${i}]`,
+          message: `textOverlayTrack[${i}] 结束时间 ${seg.end.toFixed(3)}s 超过视频总时长 ${totalDuration.toFixed(3)}s（超出 ${(seg.end - totalDuration).toFixed(3)}s）`,
+          code: ERROR_CODE.EXCEEDS_TOTAL_DURATION
+        });
+      }
+    }
   }
 
   /**
@@ -312,6 +334,62 @@ export class TimelineValidator {
       return timeline.keywordTrack as Array<{ id: string; start: number; duration: number }>;
     }
     return [];
+  }
+
+  /** 获取 textOverlayTrack（仅 V2 存在；V1 返回空数组） */
+  private getTextOverlayTrack(
+    timeline: CommonTimeline
+  ): Array<{ id: string; start: number; end: number; laneIndex: number }> {
+    if ('textOverlayTrack' in timeline && timeline.textOverlayTrack) {
+      return timeline.textOverlayTrack as Array<{
+        id: string;
+        start: number;
+        end: number;
+        laneIndex: number;
+      }>;
+    }
+    return [];
+  }
+
+  /**
+   * 验证 textOverlayTrack 的固定轨道池规则：
+   * - laneIndex 必须连续合法（0..laneCount-1）；
+   * - 同一 lane 内不得 overlap（不同 lane 允许 overlap）。
+   */
+  private validateOverlayLanes(timeline: CommonTimeline, errors: ValidationError[]): void {
+    const overlays = this.getTextOverlayTrack(timeline);
+    if (overlays.length === 0) return;
+    const laneCount = Math.max(...overlays.map((o) => o.laneIndex)) + 1;
+    for (const o of overlays) {
+      if (o.laneIndex < 0 || o.laneIndex >= laneCount) {
+        errors.push({
+          field: `textOverlayTrack[${o.id}]`,
+          message: `textOverlayTrack laneIndex ${o.laneIndex} 非法（lane 总数 ${laneCount}）`,
+          code: ERROR_CODE.SCHEMA_INVALID
+        });
+      }
+    }
+    // 逐 lane 检查同 lane 内不重叠
+    const byLane = new Map<number, Array<{ id: string; start: number; end: number }>>();
+    for (const o of overlays) {
+      const arr = byLane.get(o.laneIndex) ?? [];
+      arr.push({ id: o.id, start: o.start, end: o.end });
+      byLane.set(o.laneIndex, arr);
+    }
+    for (const [lane, segs] of byLane) {
+      const sorted = [...segs].sort((a, b) => a.start - b.start);
+      for (let i = 1; i < sorted.length; i++) {
+        const prev = sorted[i - 1];
+        const curr = sorted[i];
+        if (curr.start < prev.end - 1e-9) {
+          errors.push({
+            field: `textOverlayTrack.lane[${lane}]`,
+            message: `textOverlayTrack 同 lane ${lane} 内重叠：${prev.id}(${prev.start.toFixed(3)}-${prev.end.toFixed(3)}) 与 ${curr.id}(${curr.start.toFixed(3)}-${curr.end.toFixed(3)})`,
+            code: ERROR_CODE.SCHEMA_INVALID
+          });
+        }
+      }
+    }
   }
 }
 

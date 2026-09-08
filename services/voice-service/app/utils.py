@@ -13,6 +13,91 @@ def ensure_output_dir() -> Path:
     return output_dir.resolve()
 
 
+def _find_ffmpeg() -> str:
+    """定位 ffmpeg：优先 PATH，其次常见安装路径。找不到返回 'ffmpeg'（让 subprocess 尝试）。"""
+    import shutil
+
+    path_ffmpeg = shutil.which("ffmpeg")
+    if path_ffmpeg:
+        return path_ffmpeg
+    for candidate in (
+        r"D:\JianyingPro\11.3.0.14362\ffmpeg.exe",
+        r"C:\Program Files\ffmpeg\bin\ffmpeg.exe",
+    ):
+        if os.path.exists(candidate):
+            return candidate
+    return "ffmpeg"
+
+
+def detect_speech_segments(
+    audio_path: Path,
+    *,
+    silence_db: float = -35,
+    min_silence: float = 0.25,
+    min_speech: float = 0.15,
+) -> list | None:
+    """用 ffmpeg silencedetect 检测语音段（真实停顿边界），供字幕与口播对齐。
+
+    返回 [{"start": 秒, "end": 秒}, ...]；检测失败返回 None（调用方回退估算）。
+    """
+    duration = audio_duration_seconds(audio_path)
+    if duration <= 0:
+        return None
+    try:
+        result = subprocess.run(
+            [
+                _find_ffmpeg(),
+                "-hide_banner",
+                "-i",
+                str(audio_path),
+                "-af",
+                f"silencedetect=noise={silence_db}dB:d={min_silence}",
+                "-f",
+                "null",
+                "-",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+    except Exception:
+        return None
+
+    output = result.stderr or ""
+    events: list[tuple[str, float]] = []
+    for line in output.splitlines():
+        sm = re.search(r"silence_start:\s*([\d.]+)", line)
+        em = re.search(r"silence_end:\s*([\d.]+)", line)
+        if sm:
+            events.append(("s", float(sm.group(1))))
+        if em:
+            events.append(("e", float(em.group(1))))
+
+    silences: list[tuple[float, float]] = []
+    current: float | None = None
+    for typ, time in events:
+        if typ == "s":
+            current = time
+        elif typ == "e" and current is not None:
+            silences.append((current, time))
+            current = None
+
+    segments: list[dict] = []
+    cursor = 0.0
+    for ss, se in silences:
+        ss = max(0.0, ss)
+        se = min(duration, se)
+        if ss > cursor and ss - cursor >= min_speech:
+            segments.append({"start": round(cursor, 3), "end": round(ss, 3)})
+        cursor = max(cursor, se)
+    if duration - cursor >= min_speech:
+        segments.append({"start": round(cursor, 3), "end": round(duration, 3)})
+
+    return segments if segments else None
+
+
 def audio_duration_seconds(audio_path: Path) -> float:
     if audio_path.suffix.lower() == ".wav":
         with wave.open(str(audio_path), "rb") as audio:

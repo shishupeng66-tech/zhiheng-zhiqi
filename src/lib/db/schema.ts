@@ -427,9 +427,12 @@ export const storageKeys = [
   'customers',
   'products',
   'assets',
+  'images',
+  'chats',
   'videos',
   'voices',
-  'knowledge'
+  'knowledge',
+  'templates'
 ] as const;
 export type StorageKey = (typeof storageKeys)[number];
 
