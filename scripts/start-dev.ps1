@@ -14,12 +14,12 @@ if (!(Test-Path $PythonExe)) {
   $PythonExe = Join-Path $ServiceDir ".venv\Scripts\python.exe"
 }
 
-# 清理：遇到 Ctrl+C 时停止两个子进程
+# Cleanup child processes on Ctrl+C/exit.
 $jobs = @()
 $processes = @()
 
 function Cleanup {
-  Write-Host "`n[zhiqihq] 正在停止所有服务..." -ForegroundColor Yellow
+  Write-Host "`n[zhiqihq] Stopping services..." -ForegroundColor Yellow
   foreach ($p in $processes) {
     try {
       if (!$p.HasExited) {
@@ -47,25 +47,25 @@ $global:EngineIntrinsicEvent = Register-EngineEvent PowerShell.Exiting -Action {
 } | Out-Null
 
 Write-Host "===============================================" -ForegroundColor Cyan
-Write-Host "  知衡智企 - 一键启动开发环境" -ForegroundColor Cyan
+Write-Host "  Zhiheng Zhiqi - development environment" -ForegroundColor Cyan
 Write-Host "===============================================" -ForegroundColor Cyan
 Write-Host ""
 
-# ── Voice Service ──────────────────────────────────────────────
+# Voice Service
 if ($SkipVoiceService) {
-  Write-Host "[skip] 已跳过 Voice Service 启动" -ForegroundColor Gray
+  Write-Host "[skip] Voice Service skipped" -ForegroundColor Gray
 } else {
   if (!(Test-Path $PythonExe)) {
-    Write-Host "[error] Voice Service Python 环境不存在：$PythonExe" -ForegroundColor Red
-    Write-Host "         请先在 services\voice-service\ 下创建虚拟环境并安装依赖。" -ForegroundColor Red
+    Write-Host "[error] Voice Service Python environment not found: $PythonExe" -ForegroundColor Red
+    Write-Host "        Create the virtual environment under services\voice-service and install dependencies first." -ForegroundColor Red
     exit 1
   }
 
   $env:VOICE_SERVICE_OUTPUT_DIR = Join-Path $RepoRoot "storage\voice-service\outputs"
 
-  Write-Host "[voice] 正在启动 Voice Service..." -ForegroundColor Green
-  Write-Host "        地址: http://${HostName}:${Port}" -ForegroundColor Gray
-  Write-Host "        执行: $PythonExe -m uvicorn app.main:app --host $HostName --port $Port" -ForegroundColor Gray
+  Write-Host "[voice] Starting Voice Service..." -ForegroundColor Green
+  Write-Host "        URL: http://${HostName}:${Port}" -ForegroundColor Gray
+  Write-Host "        Cmd: $PythonExe -m uvicorn app.main:app --host $HostName --port $Port" -ForegroundColor Gray
   Write-Host ""
 
   $voiceJob = Start-Job -Name "voice-service" -ScriptBlock {
@@ -76,21 +76,21 @@ if ($SkipVoiceService) {
   $jobs += $voiceJob
 }
 
-# ── Next.js dev server ──────────────────────────────────────────
-Write-Host "[next ] 正在启动 Next.js Dev Server..." -ForegroundColor Green
-Write-Host "        地址: http://localhost:${NextPort}" -ForegroundColor Gray
-Write-Host "        执行: npm run dev -- --port $NextPort" -ForegroundColor Gray
+# Next.js dev server
+Write-Host "[next ] Starting Next.js Dev Server..." -ForegroundColor Green
+Write-Host "        URL: http://localhost:${NextPort}" -ForegroundColor Gray
+Write-Host "        Cmd: npm run dev -- --port $NextPort" -ForegroundColor Gray
 Write-Host ""
 
-# 直接启动 Next.js 进程并收集输出
+# Start Next.js and collect logs.
 $nextArgs = "run", "dev", "--", "--port", "$NextPort"
-$nextProc = Start-Process -FilePath "npm" -ArgumentList $nextArgs `
+$nextProc = Start-Process -FilePath "npm.cmd" -ArgumentList $nextArgs `
   -WorkingDirectory $RepoRoot `
   -NoNewWindow -PassThru -RedirectStandardOutput (Join-Path $RepoRoot "logs\next-dev.log") `
   -RedirectStandardError (Join-Path $RepoRoot "logs\next-dev.err.log")
 $processes += $nextProc
 
-# 实时显示 next 的日志
+# Tail Next.js logs.
 Start-Job -Name "next-log-tail" -ScriptBlock {
   param($LogFile)
   $lastLen = 0
@@ -109,7 +109,7 @@ Start-Job -Name "next-log-tail" -ScriptBlock {
   }
 } -ArgumentList (Join-Path $RepoRoot "logs\next-dev.log") | Out-Null
 
-# 等待 voice-service 就绪（最多 40 秒），显示提示
+# Wait for Voice Service readiness, up to 40 seconds.
 if (!$SkipVoiceService) {
   $ready = $false
   for ($i = 0; $i -lt 40; $i++) {
@@ -120,18 +120,18 @@ if (!$SkipVoiceService) {
     Start-Sleep -Seconds 1
   }
   if ($ready) {
-    Write-Host "`n[ready] Voice Service 就绪 ✓" -ForegroundColor Green
+    Write-Host "`n[ready] Voice Service is ready" -ForegroundColor Green
   } else {
-    Write-Host "`n[warn ] Voice Service 仍在启动中，请稍后检查状态指示器。" -ForegroundColor Yellow
+    Write-Host "`n[warn ] Voice Service is still starting. Check the status indicator later." -ForegroundColor Yellow
   }
 }
 
-Write-Host "`n[ready] 开发环境启动完成" -ForegroundColor Green
+Write-Host "`n[ready] Development environment started" -ForegroundColor Green
 Write-Host "        Next.js   → http://localhost:${NextPort}" -ForegroundColor White
 Write-Host "        Voice Svc → http://${HostName}:${Port}" -ForegroundColor White
-Write-Host "`n        按 Ctrl+C 停止所有服务。`n" -ForegroundColor Gray
+Write-Host "`n        Press Ctrl+C to stop all services.`n" -ForegroundColor Gray
 
-# 挂起等待进程结束
+# Wait for Next.js to exit.
 try {
   $nextProc.WaitForExit()
 } finally {
