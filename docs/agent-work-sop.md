@@ -17,11 +17,11 @@ Agent 侧一律通过统一 Resolver 解析，**禁止**直接拼 `D:\...`、禁
 |---|---|---|---|
 | `customerRoot` | 客户资料 | `customers` | 知识库/20_客户资料 |
 | `productRoot` | 产品资料 | `products` | 知识库/21_产品资料 |
-| `materialRoot` | 素材总资源 | `assets` | 知识库/30_素材资源 |
-| `videoRoot` | 视频素材库 | `videos` | 知识库/30_素材资源/视频库 |
-| `voiceRoot` | TTS 音频库 | `voices` | 知识库/30_素材资源/音频库 |
+| `materialRoot` | 剪映模板库（人工母版草稿） | `assets` | 知识库/05_模板/剪映模板库 |
+| `videoRoot` | 视频素材库 | `videos` | 知识库/06_视频库 |
+| `voiceRoot` | TTS 音频库 | `voices` | 知识库/08_音频库 |
 | `knowledgeRoot` | 企业知识库根 | `knowledge` | 知识库根目录 |
-| `outputRoot` | 输出 | `assets` | 知识库/30_素材资源 |
+| `outputRoot` | 输出 | `assets` | 知识库/05_模板/剪映模板库 |
 | `templateRoot` | 企业剪映模板 | `templates` | 知识库/05_模板/企业模板 |
 
 解析返回：`{ key, path, source, exists, writable }`。
@@ -77,7 +77,7 @@ Agent 一般**不直接访问**；由桌面 Runtime（`runtime-env.cjs` 注入�
   │      · 指定 → resolveWorkspaceAsset(templateRoot) 下找 template-asset.json
   │      · 未指定 → 列出 approved/testing 模板让用户选 / 自动匹配
   │      · 无合适 → 阻断，提示先蒸馏或选择模板
-  ├─ 2. 业务上下文（resolveWorkspaceAsset: customers/products/knowledgeRoot + 素材）
+  ├─ 2. 业务上下文（resolveWorkspaceAsset: customers/products/knowledgeRoot + videos/images/voices）
   ├─ 3. LLM 生成完整口播脚本（先解决"说什么"）
   ├─ 4. 模板内容适配（template-usage）
   │      · 完整脚本 → 映射 semantic slots → 按约束压缩 → EXACT 校验

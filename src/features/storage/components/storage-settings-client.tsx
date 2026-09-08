@@ -212,7 +212,7 @@ export default function StorageSettingsClient() {
       <div className='space-y-1'>
         <h1 className='text-xl font-semibold'>数据存储</h1>
         <p className='text-sm text-muted-foreground'>
-          统一管理知衡智企所有业务文件资产（客户附件 / 产品资料 / 素材 / 视频 / 音频 /
+          统一管理知衡智企所有业务文件资产（客户附件 / 产品资料 / 剪映模板 / 视频 / 音频 /
           知识文件）的本地保存位置。仅超级管理员可访问；SQLite 数据库路径不在本页面管理范围。
         </p>
       </div>
@@ -236,7 +236,7 @@ export default function StorageSettingsClient() {
         <CardHeader>
           <CardTitle className='text-base'>默认数据根目录</CardTitle>
           <CardDescription>
-            所有业务目录（customers / products / assets / videos / voices /
+            所有业务目录（customers / products / jianying templates / videos / voices /
             knowledge）默认在此根目录下。
           </CardDescription>
         </CardHeader>

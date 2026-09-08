@@ -50,7 +50,7 @@ D:\知衡智企数据库\知识库\05_模板\企业模板\<templateId>\
 
 ### Step 4 素材检索
 按 mediaSlots 语义从素材索引检索:
-- `D:\知衡智企数据库\知识库\30_素材资源\视频库\video-assets-detailed.json`
+- `resolveWorkspaceAsset('videoRoot')\video-assets-detailed.json`
 - 优先: 竖屏素材 > 语义匹配 > 质量等级
 
 ### Step 5 替换执行

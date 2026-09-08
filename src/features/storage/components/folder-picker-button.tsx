@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 /**
  * FolderPickerButton —— Windows 原生文件夹选择按钮（统一组件）。
  *
- * 所有目录配置（root / customers / products / assets / videos / voices / knowledge）
+ * 所有目录配置（root / customers / products / jianying templates / videos / voices / knowledge）
  * 共用本组件：点击 → 调 /api/system/storage/select-directory → 服务端弹 Windows
  * FolderBrowserDialog → 返回真实绝对路径 → 通过 onSelect 回填输入框。
  *

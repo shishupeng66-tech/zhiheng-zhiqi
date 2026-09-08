@@ -15,10 +15,12 @@ import { getWorkspaceBySlug } from '@/lib/workspaces/service';
  *   1. 消息中的显式绝对路径（最可靠，D:\...）
  *   2. 剪映草稿根目录（%LOCALAPPDATA%\JianyingPro\...\com.lveditor.draft）
  *      按「名称精确 → 归一化精确 → 包含」匹配
- *   3. 企业模板研究区 resolveSystemAsset('jianyingTemplateRoot')
+ *   3. 数据存储里的“剪映模板库”（storage key: assets / materialRoot）
+ *      按「名称精确 → 归一化精确 → 包含」匹配
+ *   4. 企业模板研究区 resolveSystemAsset('jianyingTemplateRoot')
  *      （即 05_模板\剪映模板库，用户解压待蒸馏草稿的常用位置）
  *      同样按「名称精确 → 归一化精确 → 包含」匹配
- *   4. 多个候选命中 → 不猜测，返回候选列表由用户确认
+ *   5. 多个候选命中 → 不猜测，返回候选列表由用户确认
  */
 
 export type DraftLocateResult =
@@ -167,17 +169,23 @@ export async function findDraftDir(
   const roots: Array<{ root: string; label: string }> = [
     { root: draftRootDefault(), label: '剪映草稿根' }
   ];
+  const pushRoot = (root: string, label: string) => {
+    if (!root) return;
+    const normalized = path.resolve(root).toLowerCase();
+    const exists = roots.some((item) => path.resolve(item.root).toLowerCase() === normalized);
+    if (!exists) roots.push({ root, label });
+  };
   if (workspaceSlug) {
     try {
       const ws = getWorkspaceBySlug(workspaceSlug);
       if (ws) {
+        const jianyingTplRoot = (await resolveWorkspaceAsset(ws.id, 'materialRoot')).path;
+        pushRoot(jianyingTplRoot, '剪映模板库');
         const tplRoot = (await resolveWorkspaceAsset(ws.id, 'templateRoot')).path;
-        if (tplRoot && tplRoot !== roots[0].root) {
-          roots.push({ root: tplRoot, label: '模板库' });
-          const researchSub = path.join(tplRoot, '剪映模板库');
-          if (fs.existsSync(researchSub)) {
-            roots.push({ root: researchSub, label: '模板库-剪映草稿' });
-          }
+        pushRoot(tplRoot, '企业模板库');
+        const researchSub = path.join(tplRoot, '剪映模板库');
+        if (fs.existsSync(researchSub)) {
+          pushRoot(researchSub, '企业模板库-剪映草稿');
         }
       }
     } catch {
@@ -186,9 +194,7 @@ export async function findDraftDir(
   }
   try {
     const researchRoot = (await resolveSystemAsset('jianyingTemplateRoot')).path;
-    if (researchRoot && researchRoot !== roots[0].root) {
-      roots.push({ root: researchRoot, label: '模板库' });
-    }
+    pushRoot(researchRoot, '系统剪映模板库');
   } catch {
     /* 忽略 */
   }

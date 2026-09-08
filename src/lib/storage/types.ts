@@ -55,9 +55,9 @@ export const STORAGE_KEY_META: Record<StorageKey, StorageKeyMeta> = {
   },
   assets: {
     key: 'assets',
-    label: '素材资源',
-    description: '系统上传素材与历史素材目录（剪辑用视频素材请统一放在“视频素材库”）',
-    defaultSubdir: '素材资源'
+    label: '剪映模板库',
+    description: '人工在剪映剪好的母版草稿目录；Agent 解析/蒸馏草稿时优先从这里定位',
+    defaultSubdir: '05_模板\\剪映模板库'
   },
   images: {
     key: 'images',
@@ -91,10 +91,10 @@ export const STORAGE_KEY_META: Record<StorageKey, StorageKeyMeta> = {
   },
   templates: {
     key: 'templates',
-    label: '模板库',
+    label: '企业模板库',
     description:
       '企业人工母版解析后的剪映模板资产（template-asset.json），Agent 蒸馏与套模板时统一从这里读取',
-    defaultSubdir: '剪辑模板'
+    defaultSubdir: '05_模板\\企业模板'
   }
 };
 

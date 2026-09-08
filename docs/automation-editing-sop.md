@@ -43,7 +43,7 @@ Agent 解析任务：
 - 客户知识（customers）
 - 产品资料（products）
 - 历史内容（chats / knowledge）
-- 素材库（assets / images / voices）
+- 素材库（videos / images / voices）
 - 风格知识（styleKnowledgeRoot）+ Editing Skill（editingSkillRoot）
 
 统一通过 `resolveSystemAsset()` / `resolveWorkspaceAsset()` 获取路径，禁止硬编码绝对路径。
@@ -115,7 +115,7 @@ template-asset.json（textSlots + mediaSlots + constraints + dependencies + base
   ↓
 人工验证关键 Slot → 更新 constraint evidence
   ↓
-模板进入企业 Obsidian（<企业知识库>\剪辑模板\<templateId>\）
+模板进入企业 Obsidian（<企业知识库>\05_模板\企业模板\<templateId>\）
   ↓
 以后正式运行直接读取 template-asset（不再重新 parser）
 ```

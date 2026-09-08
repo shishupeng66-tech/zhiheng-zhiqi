@@ -14,7 +14,7 @@
   ]
  },
  "output": {
-  "assetPath": "<企业Obsidian>\\剪辑模板\\<templateId>\\template-asset.json",
+  "assetPath": "<企业Obsidian>\\05_模板\\企业模板\\<templateId>\\template-asset.json",
   "requiredFields": [
    "templateId",
    "templateName",

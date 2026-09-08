@@ -12,7 +12,7 @@
    "step5_verify.py: 结构 diff 验证"
   ]
  },
- "templatesRoot": "<企业Obsidian>\\剪辑模板",
+ "templatesRoot": "<企业Obsidian>\\05_模板\\企业模板",
  "rules": [
   "使用模板前必须先加载 template-editing-rules（第三层），所有操作受其约束",
   "先解析用户任务 → 决定用哪个模板（用户指定 or 模板库检索）",
