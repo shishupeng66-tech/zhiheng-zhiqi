@@ -1,0 +1,61 @@
+/* Extend the shared UI without changing its behavior or other consumers. */
+.theme :global(.bg-neutral-950) {
+  background-color: var(--card);
+  color: var(--card-foreground);
+}
+
+.theme textarea {
+  background-color: transparent;
+  color: var(--foreground);
+}
+
+.theme textarea::placeholder {
+  color: var(--muted-foreground);
+}
+
+.theme :global(.text-white),
+.theme :global(.text-zinc-200) {
+  color: var(--foreground);
+}
+
+.theme :global(.text-zinc-400),
+.theme :global(.text-neutral-400) {
+  color: var(--muted-foreground);
+}
+
+.theme :global(.border-zinc-800),
+.theme :global(.border-zinc-700),
+.theme :global(.border-neutral-800) {
+  border-color: var(--border);
+}
+
+.theme :global(.bg-neutral-900),
+.theme :global(.bg-neutral-800) {
+  background-color: var(--muted);
+}
+
+.theme :global(.hover\:bg-zinc-900):hover,
+.theme :global(.hover\:bg-zinc-800):hover,
+.theme :global(.hover\:bg-neutral-800):hover {
+  background-color: var(--accent);
+}
+
+.theme :global(.hover\:border-zinc-700):hover,
+.theme :global(.hover\:border-zinc-600):hover {
+  border-color: var(--input);
+}
+
+.theme :global(.hover\:text-zinc-200):hover,
+.theme :global(.hover\:text-white):hover {
+  color: var(--accent-foreground);
+}
+
+.theme :global(.bg-white),
+.theme :global(.bg-white):hover {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.theme :global(.bg-white) :global(.text-black) {
+  color: var(--primary-foreground);
+}

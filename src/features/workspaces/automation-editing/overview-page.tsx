@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { buttonVariants } from '@/components/ui/button';
 import { Button } from '@/components/ui/button';
-import { V0AiChat, type V0ChatAttachment, type V0ChatMessage } from '@/components/ui/v0-ai-chat';
+import type { V0ChatAttachment, V0ChatMessage } from '@/components/ui/v0-ai-chat';
+import { ThemeAwareAiChat } from '@/components/theme-aware-ai-chat';
 import { Icons } from '@/components/icons';
 import { WorkspaceHeaderActions } from '@/features/workspaces/components/workspace-header-actions';
 import { AutoEditTaskCard } from '@/features/workspaces/automation-editing/auto-edit-task-card';
@@ -588,7 +589,7 @@ export function AutomationEditingOverviewPage({
       </WorkspaceHeaderActions>
 
       <div className='min-h-[calc(100vh-180px)] bg-background'>
-        <V0AiChat
+        <ThemeAwareAiChat
           title='今天要生成什么视频？'
           placeholder='描述视频主题、目标客户、口播方向或成片要求，也可以直接上传素材...'
           messages={messages}

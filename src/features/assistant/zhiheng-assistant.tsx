@@ -189,8 +189,11 @@ export function ZhihengAssistant() {
   const suppressClickRef = React.useRef(false);
   const [pendingVideoPlan, setPendingVideoPlan] = React.useState<PendingVideoPlan | null>(null);
   const [savingDraft, setSavingDraft] = React.useState(false);
-  const [viewportSize, setViewportSize] = React.useState(getInitialViewportSize);
-  const [orbPosition, setOrbPosition] = React.useState<AssistantOrbPosition>(getInitialOrbPosition);
+  // Use the same initial values during SSR and hydration, then restore the
+  // saved position against the actual client viewport after mounting.
+  const [viewportSize, setViewportSize] = React.useState({ width: 1280, height: 720 });
+  const [orbPosition, setOrbPosition] = React.useState<AssistantOrbPosition>({ x: 1200, y: 640 });
+  const [positionReady, setPositionReady] = React.useState(false);
 
   React.useEffect(() => {
     const updateViewport = () => {
@@ -200,6 +203,9 @@ export function ZhihengAssistant() {
       setOrbPosition((current) => clampOrbPosition(current, width, height));
     };
 
+    setViewportSize(getInitialViewportSize());
+    setOrbPosition(getInitialOrbPosition());
+    setPositionReady(true);
     window.addEventListener('resize', updateViewport);
     return () => window.removeEventListener('resize', updateViewport);
   }, []);
@@ -740,12 +746,13 @@ export function ZhihengAssistant() {
         }}
         className={cn(
           'fixed z-50 size-[73px] touch-none cursor-grab overflow-hidden rounded-full border-0 bg-transparent shadow-none transition-transform hover:scale-105 active:cursor-grabbing',
-          'focus:outline-none'
+          'focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring',
+          !positionReady && 'invisible'
         )}
+        title='知衡助手 · 点击对话，拖动调整位置'
         aria-label={isOpen ? '关闭知衡助手' : '打开知衡助手'}
       >
         <GradientOrb
-          className='mix-blend-screen'
           config={{
             background: 'transparent',
             hue: isOpen ? 34 : 0,
