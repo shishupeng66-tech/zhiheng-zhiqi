@@ -44,6 +44,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <AppSidebar />
           <SidebarInset id='main-content' tabIndex={-1} className='scroll-mt-16'>
             <Header />
+            {process.env.DEMO_MODE === 'true' ? (
+              <div
+                role='status'
+                className='border-b border-border bg-muted px-4 py-2 text-center text-sm text-muted-foreground'
+              >
+                产品演示 · 当前为虚构示例数据，仅供浏览；保存、上传和 AI 生成暂不开放。
+              </div>
+            ) : null}
             <InfobarProvider defaultOpen={false}>
               {children}
               <InfoSidebar side='right' />

@@ -17,6 +17,15 @@ function isProtectedRoute(pathname: string): boolean {
 
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  if (process.env.DEMO_MODE === 'true') {
+    if (pathname.startsWith('/api/') && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+      return NextResponse.json(
+        { error: 'demo_read_only', message: '这是只读演示环境，未连接真实业务服务。' },
+        { status: 403 }
+      );
+    }
+    return NextResponse.next();
+  }
   if (isProtectedRoute(pathname)) {
     const token = req.cookies.get(SESSION_COOKIE)?.value;
     if (!token) {

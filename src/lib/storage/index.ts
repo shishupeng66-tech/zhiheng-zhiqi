@@ -14,6 +14,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { getDb } from '@/lib/db';
@@ -31,6 +32,8 @@ function now(): Date {
 
 /** 根目录缺省值：优先 env STORAGE_ROOT，否则 <项目根>/data（与 DB 同一目录但不参与 DB 迁移） */
 export function defaultRootPath(): string {
+  if (process.env.DEMO_MODE === 'true')
+    return path.join(os.tmpdir(), 'zhiheng-public-demo', 'data');
   return process.env.STORAGE_ROOT || path.join(process.cwd(), 'data');
 }
 

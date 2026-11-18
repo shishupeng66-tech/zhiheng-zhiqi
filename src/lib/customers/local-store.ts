@@ -30,6 +30,16 @@ async function filePath() {
 }
 
 async function readFile(): Promise<CustomerFile> {
+  if (process.env.DEMO_MODE === 'true') {
+    const { demoCustomers } = await import('@/lib/demo/data');
+    return {
+      schemaVersion: 1,
+      storageKey: 'customers',
+      demo: true,
+      updatedAt: '2026-01-01T00:00:00Z',
+      records: demoCustomers.map((record) => ({ ...record }))
+    };
+  }
   const target = await filePath();
   try {
     const raw = (await fs.readFile(target, 'utf8')).replace(/^\uFEFF/, '');

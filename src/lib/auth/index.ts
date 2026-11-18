@@ -49,6 +49,10 @@ export async function login(username: string, password: string): Promise<LoginRe
  * 仅读取 Cookie，不写入，可在只读上下文安全调用。
  */
 export async function getCurrentUser(): Promise<PublicUser | null> {
+  if (process.env.DEMO_MODE === 'true') {
+    const { demoUser } = await import('@/lib/demo/data');
+    return demoUser;
+  }
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   const user = await getUserBySessionToken(token);

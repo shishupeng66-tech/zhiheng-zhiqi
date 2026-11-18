@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import * as schema from './schema';
@@ -14,6 +15,8 @@ import * as schema from './schema';
  * 本地部署备份要点：备份该路径指向的 .db 文件（及其 -wal / -shm 临时文件）即可。
  */
 export function resolveDbPath(): string {
+  if (process.env.DEMO_MODE === 'true')
+    return path.join(os.tmpdir(), 'zhiheng-public-demo', 'demo.db');
   return process.env.DATABASE_PATH || process.env.SQLITE_DB_PATH || './data/zhiheng.db';
 }
 
@@ -39,6 +42,27 @@ export function getDb() {
   // 不设 busy_timeout 时会立刻返回 SQLITE_BUSY 导致请求崩溃（HTTP 000）。
   _sqlite.pragma('busy_timeout = 5000');
   _db = drizzle(_sqlite, { schema });
+  if (process.env.DEMO_MODE === 'true') {
+    migrate(_db, { migrationsFolder: path.join(process.cwd(), 'drizzle') });
+    _db
+      .insert(schema.users)
+      .values({
+        id: 'demo-admin',
+        username: 'demo',
+        name: '演示管理员',
+        employeeNo: 'DEMO001',
+        passwordHash: 'DEMO_LOGIN_DISABLED',
+        role: 'super_admin',
+        status: 'active',
+        mustChangePassword: false,
+        department: '产品演示',
+        position: '管理员',
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+        updatedAt: new Date('2026-01-01T00:00:00Z')
+      })
+      .onConflictDoNothing()
+      .run();
+  }
   return _db;
 }
 
