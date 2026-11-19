@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,7 +51,7 @@ function durationLabel(sec: number): string {
  * 由 Agent 调用，不在此页面展示。
  */
 export function AutomationEditingTemplateLibraryPage() {
-  const params = useParams<{ workspaceSlug: string }>();
+  const params = { workspaceSlug: usePathname().split('/')[3] };
   const workspaceSlug = params?.workspaceSlug ?? 'enterprise-media';
 
   const [templates, setTemplates] = useState<EnterpriseTemplate[]>([]);
